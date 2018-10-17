@@ -25,9 +25,20 @@ typedef struct relation
  * It consists of an array of tuples and a size of the relation.
  */
 
+
+
  typedef struct result
  {
+ 	int32_t key_R;
+ 	int32_t key_S;
 
  }result;
+
+struct result_listnode
+{
+	char buff[1048576];
+ 	struct result_listnode* next;
+ 	int current_load;
+};
 
 #endif
