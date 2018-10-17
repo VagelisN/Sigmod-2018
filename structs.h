@@ -6,8 +6,8 @@
 /** Type definition for a tuple */
 typedef struct tuple
 {
-	int32_t key;
-	int32_t payload;
+	int32_t Value;
+	int32_t RowId;
 }tuple;
 
 /**
