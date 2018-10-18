@@ -58,6 +58,8 @@ int main(void)
 
 	printf("printing result list\n");
 	print_result_list(head);
+	printf("%d\n",hash_function_1(70,7));
+
 
 
 	free_result_list(head);

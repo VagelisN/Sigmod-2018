@@ -12,5 +12,7 @@ void print_result_list(struct result_listnode*);
 
 void free_result_list(struct result_listnode*);
 
+uint32_t hash_function_1(int32_t, int);
+
 
 #endif

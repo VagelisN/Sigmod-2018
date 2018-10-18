@@ -8,6 +8,14 @@ result* RadixHashJoin(relation *relR, relation* relS)
 
 }
 
+uint32_t hash_function_1(int32_t num, int n)
+{
+	uint32_t mask = 0b11111111111111111111111111111111;
+	mask = mask<<32-n;
+	mask =mask >> 32-n;
+	uint32_t hash_value = num & mask;
+	return hash_value;
+}
 
 int insert_result(struct result_listnode **head, result *res)
 {
