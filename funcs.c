@@ -5,6 +5,10 @@
 
 result* RadixHashJoin(relation *relR, relation* relS)
 {
+	//Create Histogram,Psum,R',S'
+
+	//create bucket , chain for the smaller array
+	
 
 }
 
@@ -16,6 +20,34 @@ uint32_t hash_function_1(int32_t num, int n)
 	uint32_t hash_value = num & mask;
 	return hash_value;
 }
+
+uint32_t hash_function_2(int32_t num)
+{
+	return num%31;
+}
+
+int init_index(index** ind, int num_bucket,int num_chain)
+{
+	(*ind) = malloc(sizeof(index));
+	(*ind)->bucket = malloc(num_bucket*sizeof(int));
+	(*ind)->chain = malloc(num_chain*sizeof(int));
+	return 0;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 int insert_result(struct result_listnode **head, result *res)
 {

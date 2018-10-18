@@ -14,5 +14,7 @@ void free_result_list(struct result_listnode*);
 
 uint32_t hash_function_1(int32_t, int);
 
+int init_index(index **, int, int);
+
 
 #endif

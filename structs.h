@@ -22,13 +22,6 @@ typedef struct relation
 	uint32_t num_tuples;
 }relation;
 
-/**
- * Type definition for a relation.
- * It consists of an array of tuples and a size of the relation.
- */
-
-
-
  typedef struct result
  {
  	int32_t key_R;
@@ -42,5 +35,12 @@ struct result_listnode
  	struct result_listnode* next;
  	int current_load;
 };
+
+typedef struct index
+{
+	int* bucket;
+	int* chain;
+}index;
+
 
 #endif
