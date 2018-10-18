@@ -3,6 +3,8 @@
 
 #include <stdint.h>
 
+#define RESULTLIST_MAX_BUFFER (1024*1024)
+
 /** Type definition for a tuple */
 typedef struct tuple
 {
@@ -36,7 +38,7 @@ typedef struct relation
 
 struct result_listnode
 {
-	char buff[1048576];
+	char *buff;
  	struct result_listnode* next;
  	int current_load;
 };

@@ -9,12 +9,8 @@ int main(void)
 	int i;
 	for (i = 0; i < 3; ++i)
 	{
-		relR.tuples[i].key = i;
-		relR.tuples[i].payload = i*3; 
-	}
-	for (i = 0; i < 3; ++i)
-	{
-		printf("%d %d\n",relR.tuples[i].key, relR.tuples[i].payload);
+		relR.tuples[i].RowId = i;
+		relR.tuples[i].Value = i*3; 
 	}
 
 	result res1,res2,res3;
@@ -29,8 +25,42 @@ int main(void)
 
 	struct result_listnode *head = NULL;
 
-	insert_result(&head, &res1);
 
+
+	insert_result(&head, &res1);
+	insert_result(&head, &res2);
+	insert_result(&head, &res3);
+	insert_result(&head, &res1);
+	insert_result(&head, &res2);
+	insert_result(&head, &res3);
+	insert_result(&head, &res1);
+	insert_result(&head, &res2);
+	insert_result(&head, &res3);
+		insert_result(&head, &res1);
+	insert_result(&head, &res2);
+	insert_result(&head, &res3);
+		insert_result(&head, &res1);
+	insert_result(&head, &res2);
+	insert_result(&head, &res3);
+		insert_result(&head, &res1);
+	insert_result(&head, &res2);
+	insert_result(&head, &res3);
+		insert_result(&head, &res1);
+	insert_result(&head, &res2);
+	insert_result(&head, &res3);
+		insert_result(&head, &res1);
+	insert_result(&head, &res2);
+	insert_result(&head, &res3);
+		insert_result(&head, &res1);
+	insert_result(&head, &res2);
+	insert_result(&head, &res3);
+
+
+	printf("printing result list\n");
+	print_result_list(head);
+
+
+	free_result_list(head);
 	free(relR.tuples);
 	return 0;
 }
