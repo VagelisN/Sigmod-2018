@@ -103,49 +103,46 @@ int GetResults(ReorderedRelation* full_relation,ReorderedRelation* indexed_relat
 	{
 		//check the second layer of the second relation
 		hash_value = hash_function_2(full_relation->RelArray->tuples[i].Value);
-
 		//if there are elements in this second layer's hash value
 		if( ind->bucket[hash_value] != -1)
 		{
 			//scan the values following the chain for equality
 			if(indexed_relation->RelArray->tuples[(ind->bucket[hash_value]-1)].Value == full_relation->RelArray->tuples[i].Value)
 			{
-				printf("PEOS %d %d\n",indexed_relation->RelArray->tuples[(ind->bucket[hash_value]-1)].RowId , full_relation->RelArray->tuples[i].RowId);
-				result *curr_res = malloc(sizeof(result));
+				result curr_res;
+
 				//index is on relation S
-				if (r_s ==0)
+				if (r_s == 0)
 				{
-					curr_res->key_R = full_relation->RelArray->tuples[i].RowId;
-					curr_res->key_S = indexed_relation->RelArray->tuples[(ind->bucket[hash_value]-1)].RowId;
+					curr_res.key_R = full_relation->RelArray->tuples[i].RowId;
+					curr_res.key_S = indexed_relation->RelArray->tuples[(ind->bucket[hash_value]-1)].RowId;
 				}
 				else 
 				{
-					curr_res->key_S = full_relation->RelArray->tuples[i].RowId;
-					curr_res->key_R = indexed_relation->RelArray->tuples[(ind->bucket[hash_value]-1)].RowId;
+					curr_res.key_S = full_relation->RelArray->tuples[i].RowId;
+					curr_res.key_R = indexed_relation->RelArray->tuples[(ind->bucket[hash_value]-1)].RowId;
 				}
-
-				insert_result(res, curr_res);
+				insert_result(res,&curr_res);
 			}
-			sp = (ind->bucket[i]-1);
+			sp = (ind->bucket[hash_value]-1);
 			while( ind->chain[sp] != 0)
 			{
-				if(indexed_relation->RelArray->tuples[(ind->chain[hash_value]-1)].Value == full_relation->RelArray->tuples[i].Value)
+				if(indexed_relation->RelArray->tuples[(ind->chain[sp]-1)].Value == full_relation->RelArray->tuples[i].Value)
 				{
-					printf("PEOS %d %d\n",indexed_relation->RelArray->tuples[(ind->bucket[hash_value]-1)].RowId , full_relation->RelArray->tuples[i].RowId);
-					result *curr_res = malloc(sizeof(result));
-					if (r_s ==0)
+					result curr_res;
+					if (r_s == 0)
 					{
-						curr_res->key_R = full_relation->RelArray->tuples[i].RowId;
-						curr_res->key_S = indexed_relation->RelArray->tuples[(ind->bucket[hash_value]-1)].RowId;
+						curr_res.key_R = full_relation->RelArray->tuples[i].RowId;
+						curr_res.key_S = indexed_relation->RelArray->tuples[(ind->chain[sp]-1)].RowId;
 					}
 					else 
 					{
-						curr_res->key_S = full_relation->RelArray->tuples[i].RowId;
-						curr_res->key_R = indexed_relation->RelArray->tuples[(ind->bucket[hash_value]-1)].RowId;
+						curr_res.key_S = full_relation->RelArray->tuples[i].RowId;
+						curr_res.key_R = indexed_relation->RelArray->tuples[(ind->chain[sp]-1)].RowId;
 					}
-					insert_result(res, curr_res);
+					insert_result(res, &curr_res);
 				}	
-				sp = ind->chain[sp]-1;
+				sp = (ind->chain[sp]-1);
 			}
 		}
 	}
