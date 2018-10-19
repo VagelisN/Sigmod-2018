@@ -14,7 +14,16 @@ void free_result_list(struct result_listnode*);
 
 uint32_t hash_function_1(int32_t, int);
 
-int init_index(index **, int, int);
+uint32_t hash_function_2(int32_t);
 
+void ReorderArray(relation*, int, ReorderedRelation** );
+
+int init_index(bc_index **, int, int);
+
+int CreateIndex(ReorderedRelation*, bc_index**,int);
+
+void PrintIndex(bc_index* ind);
+
+int GetResults(ReorderedRelation*,ReorderedRelation* ,bc_index *,struct result_listnode **, int);
 
 #endif

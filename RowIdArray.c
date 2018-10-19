@@ -3,14 +3,6 @@
 #include "structs.h"
 #include "funcs.h"
 
-typedef struct ReorderRelation 
-{
-	int Hist_size;
-	int **Psum;
-	int **Hist;
-	relation* RelArray;
-} ReorderedRelation;
-
 // Takes a table and converts it to an array of tuples for faster join access 
 relation* ToRow(int** OriginalArray, int NumOfRows, int RowToJoin, relation* NewRel)
 {
@@ -28,23 +20,31 @@ relation* ToRow(int** OriginalArray, int NumOfRows, int RowToJoin, relation* New
  * same bucket. Stores the ordered array , the histogram and the Psum array in a 
  * ReorderedRelation variable.
  */
-void ReorderArray(relation* RelArray, int NumOfRows, int n_lsb, ReorderedRelation** NewRel)
+void ReorderArray(relation* RelArray, int n_lsb, ReorderedRelation** NewRel)
 {
 	int i = 0, flag = 0;
 	uint32_t HashedValue = 0;
+
+	(*NewRel) = malloc(sizeof(ReorderedRelation));
+	(*NewRel)->Hist_size = -1;
+
 	//Check the arguments
-	if ((RelArray == NULL) || (NumOfRows <= 0) || (n_lsb <= 0))
+	if ((RelArray == NULL) || (RelArray->num_tuples <= 0) || (n_lsb <= 0))
 	{
 		printf("Error in ReorderArray. Invalid arguments\n");
 		exit(1);
 	}
+
 	//Find the size of the Psum and the Hist arrays
+
 	(*NewRel)->Hist_size = 1;
+	printf("aaaaaaaaaaaaaaaaaa\n");
 	for (i = 0; i < n_lsb; ++i)
 	{
+
 		(*NewRel)->Hist_size *= 2;
 	}
-
+	
 	// Allocate space for the Hist and Psum arrays
 	(*NewRel)->Psum = malloc((*NewRel)->Hist_size * sizeof(int*));
 	(*NewRel)->Hist = malloc((*NewRel)->Hist_size * sizeof(int*));
@@ -53,13 +53,15 @@ void ReorderArray(relation* RelArray, int NumOfRows, int n_lsb, ReorderedRelatio
 		(*NewRel)->Psum[i] = malloc(2 * sizeof(int));
 		(*NewRel)->Psum[i][0] = i; //Bucket number
 		(*NewRel)->Psum[i][1] = -1; //Initialize the starting point of each bucket in the reordered array to -1
+
 		(*NewRel)->Hist[i] = malloc(2 * sizeof(int));
 		(*NewRel)->Hist[i][0] = i; // Bucket number
 		(*NewRel)->Hist[i][1] = 0; // Each bucket starts with 0 allocated values
 	}
 
+
 	//Run RelArray with the hash function and build the histogram
-	for (i = 0; i < NumOfRows; ++i)
+	for (i = 0; i < RelArray->num_tuples; ++i)
 	{
 		HashedValue = hash_function_1((int32_t) RelArray->tuples[i].Value, n_lsb);
 		(*NewRel)->Hist[HashedValue][1]++;
@@ -105,10 +107,11 @@ void ReorderArray(relation* RelArray, int NumOfRows, int n_lsb, ReorderedRelatio
 
 	//Allocate space for the ordered array in NewRel variable
 	(*NewRel)->RelArray = malloc(sizeof(relation));
-	(*NewRel)->RelArray->num_tuples = NumOfRows;
-	(*NewRel)->RelArray->tuples = malloc(NumOfRows * sizeof(tuple));
+	(*NewRel)->RelArray->num_tuples = RelArray->num_tuples;
+	(*NewRel)->RelArray->tuples = malloc(RelArray->num_tuples * sizeof(tuple));
+
 	//Initialize the array
-	for (i = 0; i < NumOfRows; ++i)
+	for (i = 0; i < RelArray->num_tuples; ++i)
 	{
 		(*NewRel)->RelArray->tuples[i].Value = -1;
 		(*NewRel)->RelArray->tuples[i].RowId = -1;
@@ -117,14 +120,15 @@ void ReorderArray(relation* RelArray, int NumOfRows, int n_lsb, ReorderedRelatio
 	int StartingPoint = 0;
 	int NextActiveBucket = 0;
 	int UpperBound = -1;
+
 	//Traverse through the original array
-	for (i = 0; i < NumOfRows; ++i)
+	for (i = 0; i < RelArray->num_tuples; ++i)
 	{
 		//Find the hash value of the current tuple
 		HashedValue = hash_function_1((int32_t) RelArray->tuples[i].Value, n_lsb);
 		//Using the hash value find the starting point using the Psum array
 		StartingPoint = (*NewRel)->Psum[HashedValue][1];
-		if (StartingPoint < 0 || StartingPoint > NumOfRows)
+		if (StartingPoint < 0 || StartingPoint > RelArray->num_tuples)
 		{
 			printf("Error, hash value is outside of array borders!\n");
 			exit(1);
@@ -133,7 +137,7 @@ void ReorderArray(relation* RelArray, int NumOfRows, int n_lsb, ReorderedRelatio
 		//If we write in the last bucket then our upper bound is the 'edge' of the array
 		if (HashedValue >= (*NewRel)->Hist_size )
 		{
-			UpperBound = NumOfRows;
+			UpperBound = RelArray->num_tuples;
 		}
 		else
 		{	
@@ -147,7 +151,7 @@ void ReorderArray(relation* RelArray, int NumOfRows, int n_lsb, ReorderedRelatio
 					break;
 				}
 			}
-			if (flag == 0) UpperBound = NumOfRows;
+			if (flag == 0) UpperBound = RelArray->num_tuples;
 			else UpperBound = (*NewRel)->Psum[NextActiveBucket][1];
 		}
 		/*
@@ -193,19 +197,46 @@ int main(int argc, char const *argv[])
 		}
 	}
 
+	relation* NewRel2 = malloc(sizeof(relation));
+	NewRel2->tuples = malloc(NumOfRows * sizeof(tuple));
+	NewRel2->num_tuples = NumOfRows;
+	for (int i = 0; i < NumOfRows; ++i)
+	{
+		NewRel2->tuples[i].Value = -1;
+		NewRel2->tuples[i].RowId = -1;
+		OriginalArray[i] = malloc(NumOfColumns * sizeof(int));
+		for (int j = 0; j < NumOfColumns; ++j)
+		{
+			OriginalArray[i][j] = (i*j)/3;
+		}
+	}
+
 	//Transform the original array to row stored array using relation struct
 	NewRel = ToRow(OriginalArray, NumOfRows, 4, NewRel);
+	NewRel2 = ToRow(OriginalArray, NumOfRows, 2, NewRel);
+	/*for (int i = 0; i < 10; ++i)
+	{
+		printf("%d %d\n",NewRel->tuples[i].RowId,NewRel->tuples[i].Value );
+	}
+	for (int i = 0; i < 10; ++i)
+	{
+		printf("%d %d\n",NewRel2->tuples[i].RowId,NewRel2->tuples[i].Value );
+	}*/
+
+
 
 	ReorderedRelation* Reordered = malloc(sizeof(ReorderedRelation));
 	Reordered->Hist_size = -1;
 	
 	//Reorder the original array and store it in Reordered 
-	ReorderArray(NewRel, NumOfRows, 3, &Reordered);
+	/*ReorderArray(NewRel, 3, &Reordered);
 
 	for (int i = 0; i < NewRel->num_tuples; ++i)
 	{
 		printf("%2d %2d || %2d %2d\n", NewRel->tuples[i].Value, NewRel->tuples[i].RowId, Reordered->RelArray->tuples[i].Value, Reordered->RelArray->tuples[i].RowId);
-	}
+	}*/
+
+	RadixHashJoin(NewRel,NewRel2);
 
 	/*-------------------------Free allocated space-------------------------*/
 
@@ -222,7 +253,7 @@ int main(int argc, char const *argv[])
 	free(NewRel);
 
 	//Free Reordered
-	if (Reordered != NULL)
+	/*if (Reordered != NULL)
 	{
 		//Free Psum and Hist
 		if (Reordered->Hist_size != -1)
@@ -242,5 +273,5 @@ int main(int argc, char const *argv[])
 			free(Reordered->RelArray);
 		}
 		free(Reordered);
-	}
+	}*/
 }

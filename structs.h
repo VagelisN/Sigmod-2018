@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-#define RESULTLIST_MAX_BUFFER (1024*1024)
+#define RESULTLIST_MAX_BUFFER 1024
 
 /** Type definition for a tuple */
 typedef struct tuple
@@ -36,11 +36,20 @@ struct result_listnode
  	int current_load;
 };
 
-typedef struct index
+
+typedef struct ReorderRelation 
+{
+	int Hist_size;
+	int **Psum;
+	int **Hist;
+	relation* RelArray;
+} ReorderedRelation;
+
+typedef struct bc_index
 {
 	int* bucket;
 	int* chain;
-}index;
+}bc_index;
 
 
 #endif
