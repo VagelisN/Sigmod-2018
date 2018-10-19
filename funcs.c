@@ -11,7 +11,9 @@ result* RadixHashJoin(relation *relR, relation* relS)
 
 	//Create Histogram,Psum,R',S'
 	ReorderedRelation* NewR = NULL;
-	ReorderedRelation* NewS = NULL; 
+	ReorderedRelation* NewS = NULL;
+
+	//NewR and NewS both have the first index 
 	ReorderArray(relR, N_LSB, &NewR);
 	ReorderArray(relS, N_LSB, &NewS);
 
@@ -40,32 +42,39 @@ result* RadixHashJoin(relation *relR, relation* relS)
 	}
 
 
-	//for every bucket
+	
 	struct result_listnode* results= NULL;
+
+
+	//for every bucket
 	for (i = 0; i < NewR->Hist_size; ++i)
 	{
+		//if both relations have elements in this bucket
 		if (NewR->Hist[i][1] != 0 && NewS->Hist[i][1] != 0)
 		{
-			
+			//if R is bigger than S
 			if( NewR->Hist[i][1] >= NewS->Hist[i][1])
 			{
 				bc_index* indS;
+				//Create a second layer index for the respective bucket of S
 				CreateIndex(NewS,&indS,i);
+
 				//Get results
 				GetResults(NewR,NewS,indS,&results,i,0);
 				
 
 			}
+			//if S is bigger than R
 			else
 			{
-				//Create index for R
+				//Create a second layer index for the respective bucket of R
 				bc_index* indR;
 				CreateIndex(NewR,&indR,i);
+
 				//GetResults
 				GetResults(NewS,NewR,indR,&results,i,1);
 			}
 		}
-
 	}
 	print_result_list(results);
 
@@ -75,7 +84,7 @@ result* RadixHashJoin(relation *relR, relation* relS)
 int GetResults(ReorderedRelation* full_relation,ReorderedRelation* indexed_relation,bc_index * ind,struct result_listnode ** res,int curr_bucket,int r_s)
 {
 	int i ,j, start , end, hash_value, sp;
-	if(full_relation->Hist[curr_bucket][1]!=0)
+	if(full_relation->Hist[curr_bucket][1] != 0)
 	{
 		start = full_relation->Psum[curr_bucket][1];
 		end = start + full_relation->Hist[curr_bucket][1];
@@ -89,6 +98,7 @@ int GetResults(ReorderedRelation* full_relation,ReorderedRelation* indexed_relat
 				//find values
 				if(indexed_relation->RelArray->tuples[(ind->bucket[hash_value]-1)].Value == full_relation->RelArray->tuples[i].Value)
 				{
+					printf("PEOS %d %d\n",indexed_relation->RelArray->tuples[(ind->bucket[hash_value]-1)].RowId , full_relation->RelArray->tuples[i].RowId);
 					result *curr_res = malloc(sizeof(result));
 					//index is on relation S
 					if (r_s ==0)
@@ -109,6 +119,7 @@ int GetResults(ReorderedRelation* full_relation,ReorderedRelation* indexed_relat
 				{
 					if(indexed_relation->RelArray->tuples[(ind->chain[hash_value]-1)].Value == full_relation->RelArray->tuples[i].Value)
 					{
+						printf("PEOS %d %d\n",indexed_relation->RelArray->tuples[(ind->bucket[hash_value]-1)].RowId , full_relation->RelArray->tuples[i].RowId);
 						result *curr_res = malloc(sizeof(result));
 						if (r_s ==0)
 						{
@@ -130,21 +141,30 @@ int GetResults(ReorderedRelation* full_relation,ReorderedRelation* indexed_relat
 }
 
 
+/**
+ * Creates the second layer index for a bucket of a relation
+ * that already has a first layer index
+ */
+
 int CreateIndex(ReorderedRelation *rel, bc_index** ind,int curr_bucket)
 {
 	int start,end,i,hash_value;
 
+	//the start of the current bucket is in Psum
 	start = rel->Psum[curr_bucket][1];
-	end = start + rel->Hist[curr_bucket][1];
-	printf("%d ,%d\n",start, end );
 
+	//the end is at Psum + the number of elements in current bucket
+	end = start + rel->Hist[curr_bucket][1];
+
+	//create an index
 	init_index(ind , N_HASH_2, rel->Hist[curr_bucket][1]);
 
-	//Hash every value of the bucket with H2 and set up bucket and chain
+	//Hash every value of the bucket from last to first with H2 and set up bucket and chain
 	for (i = end-1; i >= start; --i)
 	{
 		hash_value = hash_function_2(rel->RelArray->tuples[i].Value);
-		//first encounter
+
+		//last encounter
 		if ((*ind)->bucket[hash_value] == -1 )
 		{
 			(*ind)->bucket[hash_value] = i+1;
@@ -154,7 +174,7 @@ int CreateIndex(ReorderedRelation *rel, bc_index** ind,int curr_bucket)
 		//second or later encounter ->also need to adjust chain
 		else
 		{
-			//while chain is not -1 go to the next
+			//while chain is not 0 go to the next
 			int sp = (*ind)->bucket[hash_value] - 1;
 			while( (*ind)->chain[sp] != 0)
 			{
@@ -167,6 +187,8 @@ int CreateIndex(ReorderedRelation *rel, bc_index** ind,int curr_bucket)
 	PrintIndex((*ind));
 	return 0;
 }
+
+/** Prints the second layer index of a bucket*/
 
 void PrintIndex(bc_index* ind)
 {
