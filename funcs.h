@@ -24,6 +24,6 @@ int CreateIndex(ReorderedRelation*, bc_index**,int);
 
 void PrintIndex(bc_index* ind);
 
-int GetResults(ReorderedRelation*,ReorderedRelation* ,bc_index *,struct result_listnode **, int);
+int GetResults(ReorderedRelation*,ReorderedRelation* ,bc_index *,struct result_listnode **, int, int);
 
 #endif

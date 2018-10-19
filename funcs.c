@@ -52,7 +52,7 @@ result* RadixHashJoin(relation *relR, relation* relS)
 				bc_index* indS;
 				CreateIndex(NewS,&indS,i);
 				//Get results
-				GetResults(NewR,NewS,indS,&results,i);
+				GetResults(NewR,NewS,indS,&results,i,0);
 				
 
 			}
@@ -62,7 +62,7 @@ result* RadixHashJoin(relation *relR, relation* relS)
 				bc_index* indR;
 				CreateIndex(NewR,&indR,i);
 				//GetResults
-				GetResults(NewS,NewR,indR,&results,i);
+				GetResults(NewS,NewR,indR,&results,i,1);
 			}
 		}
 
@@ -72,7 +72,7 @@ result* RadixHashJoin(relation *relR, relation* relS)
 
 }
 
-int GetResults(ReorderedRelation* full_relation,ReorderedRelation* indexed_relation,bc_index * ind,struct result_listnode ** res,int curr_bucket)
+int GetResults(ReorderedRelation* full_relation,ReorderedRelation* indexed_relation,bc_index * ind,struct result_listnode ** res,int curr_bucket,int r_s)
 {
 	int i ,j, start , end, hash_value, sp;
 	if(full_relation->Hist[curr_bucket][1]!=0)
@@ -90,8 +90,18 @@ int GetResults(ReorderedRelation* full_relation,ReorderedRelation* indexed_relat
 				if(indexed_relation->RelArray->tuples[(ind->bucket[hash_value]-1)].Value == full_relation->RelArray->tuples[i].Value)
 				{
 					result *curr_res = malloc(sizeof(result));
-					curr_res->key_R = 1;
-					curr_res->key_S = 1;
+					//index is on relation S
+					if (r_s ==0)
+					{
+						curr_res->key_R = full_relation->RelArray->tuples[i].RowId;
+						curr_res->key_S = indexed_relation->RelArray->tuples[(ind->bucket[hash_value]-1)].RowId;
+					}
+					else 
+					{
+						curr_res->key_S = full_relation->RelArray->tuples[i].RowId;
+						curr_res->key_R = indexed_relation->RelArray->tuples[(ind->bucket[hash_value]-1)].RowId;
+					}
+
 					insert_result(res, curr_res);
 				}
 				sp = (ind->bucket[i]-1);
@@ -100,11 +110,18 @@ int GetResults(ReorderedRelation* full_relation,ReorderedRelation* indexed_relat
 					if(indexed_relation->RelArray->tuples[(ind->chain[hash_value]-1)].Value == full_relation->RelArray->tuples[i].Value)
 					{
 						result *curr_res = malloc(sizeof(result));
-						curr_res->key_R = 1;
-						curr_res->key_S = 1;
+						if (r_s ==0)
+						{
+							curr_res->key_R = full_relation->RelArray->tuples[i].RowId;
+							curr_res->key_S = indexed_relation->RelArray->tuples[(ind->bucket[hash_value]-1)].RowId;
+						}
+						else 
+						{
+							curr_res->key_S = full_relation->RelArray->tuples[i].RowId;
+							curr_res->key_R = indexed_relation->RelArray->tuples[(ind->bucket[hash_value]-1)].RowId;
+						}
 						insert_result(res, curr_res);
-					}
-						
+					}	
 					sp = ind->chain[sp]-1;
 				}
 			}
