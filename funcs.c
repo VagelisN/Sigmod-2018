@@ -81,26 +81,58 @@ result* RadixHashJoin(relation *relR, relation* relS)
 
 }
 
+/**
+ * Gets two relations. The first one only has a first layer index and the second one
+ * also has a second layer index (ind) for a bucket (curr_bucket). For every element
+ * of the first relation's bucket it checks for equalityin the second layer index 
+ * of the second relation and returns the results 
+*/
+
 int GetResults(ReorderedRelation* full_relation,ReorderedRelation* indexed_relation,bc_index * ind,struct result_listnode ** res,int curr_bucket,int r_s)
 {
 	int i ,j, start , end, hash_value, sp;
-	if(full_relation->Hist[curr_bucket][1] != 0)
+
+	//the start of the current bucket is in Psum
+	start = full_relation->Psum[curr_bucket][1];
+
+	//the end is at Psum + the number of elements in current bucket
+	end = start + full_relation->Hist[curr_bucket][1];
+
+	//for every element of the first relation's bucket
+	for (i = start; i < end; ++i)
 	{
-		start = full_relation->Psum[curr_bucket][1];
-		end = start + full_relation->Hist[curr_bucket][1];
-		printf("%d %d\n",start, end );
-		for (i = start; i < end; ++i)
+		//check the second layer of the second relation
+		hash_value = hash_function_2(full_relation->RelArray->tuples[i].Value);
+
+		//if there are elements in this second layer's hash value
+		if( ind->bucket[hash_value] != -1)
 		{
-			hash_value = hash_function_2(full_relation->RelArray->tuples[i].Value);
-			if( ind->bucket[hash_value] != -1)
+			//scan the values following the chain for equality
+			if(indexed_relation->RelArray->tuples[(ind->bucket[hash_value]-1)].Value == full_relation->RelArray->tuples[i].Value)
 			{
-				//printf("hash_value%d \n",hash_value );
-				//find values
-				if(indexed_relation->RelArray->tuples[(ind->bucket[hash_value]-1)].Value == full_relation->RelArray->tuples[i].Value)
+				printf("PEOS %d %d\n",indexed_relation->RelArray->tuples[(ind->bucket[hash_value]-1)].RowId , full_relation->RelArray->tuples[i].RowId);
+				result *curr_res = malloc(sizeof(result));
+				//index is on relation S
+				if (r_s ==0)
+				{
+					curr_res->key_R = full_relation->RelArray->tuples[i].RowId;
+					curr_res->key_S = indexed_relation->RelArray->tuples[(ind->bucket[hash_value]-1)].RowId;
+				}
+				else 
+				{
+					curr_res->key_S = full_relation->RelArray->tuples[i].RowId;
+					curr_res->key_R = indexed_relation->RelArray->tuples[(ind->bucket[hash_value]-1)].RowId;
+				}
+
+				insert_result(res, curr_res);
+			}
+			sp = (ind->bucket[i]-1);
+			while( ind->chain[sp] != 0)
+			{
+				if(indexed_relation->RelArray->tuples[(ind->chain[hash_value]-1)].Value == full_relation->RelArray->tuples[i].Value)
 				{
 					printf("PEOS %d %d\n",indexed_relation->RelArray->tuples[(ind->bucket[hash_value]-1)].RowId , full_relation->RelArray->tuples[i].RowId);
 					result *curr_res = malloc(sizeof(result));
-					//index is on relation S
 					if (r_s ==0)
 					{
 						curr_res->key_R = full_relation->RelArray->tuples[i].RowId;
@@ -111,30 +143,9 @@ int GetResults(ReorderedRelation* full_relation,ReorderedRelation* indexed_relat
 						curr_res->key_S = full_relation->RelArray->tuples[i].RowId;
 						curr_res->key_R = indexed_relation->RelArray->tuples[(ind->bucket[hash_value]-1)].RowId;
 					}
-
 					insert_result(res, curr_res);
-				}
-				sp = (ind->bucket[i]-1);
-				while( ind->chain[sp] != 0)
-				{
-					if(indexed_relation->RelArray->tuples[(ind->chain[hash_value]-1)].Value == full_relation->RelArray->tuples[i].Value)
-					{
-						printf("PEOS %d %d\n",indexed_relation->RelArray->tuples[(ind->bucket[hash_value]-1)].RowId , full_relation->RelArray->tuples[i].RowId);
-						result *curr_res = malloc(sizeof(result));
-						if (r_s ==0)
-						{
-							curr_res->key_R = full_relation->RelArray->tuples[i].RowId;
-							curr_res->key_S = indexed_relation->RelArray->tuples[(ind->bucket[hash_value]-1)].RowId;
-						}
-						else 
-						{
-							curr_res->key_S = full_relation->RelArray->tuples[i].RowId;
-							curr_res->key_R = indexed_relation->RelArray->tuples[(ind->bucket[hash_value]-1)].RowId;
-						}
-						insert_result(res, curr_res);
-					}	
-					sp = ind->chain[sp]-1;
-				}
+				}	
+				sp = ind->chain[sp]-1;
 			}
 		}
 	}
