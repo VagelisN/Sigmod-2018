@@ -47,6 +47,7 @@ typedef struct ReorderRelation
 
 typedef struct bc_index
 {
+	int index_size;
 	int* bucket;
 	int* chain;
 }bc_index;

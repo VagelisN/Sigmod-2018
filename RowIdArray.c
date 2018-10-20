@@ -176,7 +176,6 @@ void ReorderArray(relation* RelArray, int n_lsb, ReorderedRelation** NewRel)
 	}
 }
 
-
 int main(int argc, char const *argv[])
 {
 	// Malloc and initialize the original array
@@ -275,3 +274,5 @@ int main(int argc, char const *argv[])
 		free(Reordered);
 	}*/
 }
+
+

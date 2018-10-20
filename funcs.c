@@ -17,18 +17,18 @@ result* RadixHashJoin(relation *relR, relation* relS)
 	ReorderArray(relR, N_LSB, &NewR);
 	ReorderArray(relS, N_LSB, &NewS);
 
-	for (int i = 0; i < relR->num_tuples; ++i)
+
+	int i;
+	for (i = 0; i < relR->num_tuples; ++i)
 	{
 		printf("%2d %2d || %2d %2d\n", relR->tuples[i].Value, relR->tuples[i].RowId, NewR->RelArray->tuples[i].Value, NewR->RelArray->tuples[i].RowId);
 	}
 	printf("\n");
-	for (int i = 0; i < relS->num_tuples; ++i)
+	for (i = 0; i < relS->num_tuples; ++i)
 	{
 		printf("%2d %2d || %2d %2d\n", relS->tuples[i].Value, relS->tuples[i].RowId, NewS->RelArray->tuples[i].Value, NewS->RelArray->tuples[i].RowId);
 	}
 
-
-		int i;
 	printf("Hist:\n");
 	for (i = 0; i < NewR->Hist_size; ++i)
 	{
@@ -41,10 +41,8 @@ result* RadixHashJoin(relation *relR, relation* relS)
 		printf("%d %d\n", NewR->Psum[i][0], NewR->Psum[i][1]);
 	}
 
-
-	
 	struct result_listnode* results= NULL;
-
+	uint32_t index_size;
 
 	//for every bucket
 	for (i = 0; i < NewR->Hist_size; ++i)
@@ -67,8 +65,9 @@ result* RadixHashJoin(relation *relR, relation* relS)
 			//if S is bigger than R
 			else
 			{
-				//Create a second layer index for the respective bucket of R
 				bc_index* indR;
+
+				//Create a second layer index for the respective bucket of R
 				CreateIndex(NewR,&indR,i);
 
 				//GetResults
@@ -102,7 +101,7 @@ int GetResults(ReorderedRelation* full_relation,ReorderedRelation* indexed_relat
 	for (i = start; i < end; ++i)
 	{
 		//check the second layer of the second relation
-		hash_value = hash_function_2(full_relation->RelArray->tuples[i].Value);
+		hash_value = hash_function_2(full_relation->RelArray->tuples[i].Value, ind->index_size);
 		//if there are elements in this second layer's hash value
 		if( ind->bucket[hash_value] != -1)
 		{
@@ -165,12 +164,11 @@ int CreateIndex(ReorderedRelation *rel, bc_index** ind,int curr_bucket)
 	end = start + rel->Hist[curr_bucket][1];
 
 	//create an index
-	init_index(ind , N_HASH_2, rel->Hist[curr_bucket][1]);
-
+	init_index(ind, rel->Hist[curr_bucket][1]);
 	//Hash every value of the bucket from last to first with H2 and set up bucket and chain
 	for (i = end-1; i >= start; --i)
 	{
-		hash_value = hash_function_2(rel->RelArray->tuples[i].Value);
+		hash_value = hash_function_2(rel->RelArray->tuples[i].Value,(*ind)->index_size);
 
 		//last encounter
 		if ((*ind)->bucket[hash_value] == -1 )
@@ -202,7 +200,7 @@ void PrintIndex(bc_index* ind)
 {
 	int i;
 	int sp;
-	for (i = 0; i < N_HASH_2; ++i)
+	for (i = 0; i < ind->index_size; ++i)
 	{
 		if (ind->bucket[i] != -1)
 		{
@@ -226,21 +224,53 @@ uint32_t hash_function_1(int32_t num, int n)
 	return hash_value;
 }
 
-uint32_t hash_function_2(int32_t num)
+uint32_t FindNextPrime(uint32_t num)
 {
-	return num%5;
+	if(num == 1) return 1;
+	if(num == 2) return 2;
+
+	uint32_t next_prime;
+	if (num % 2 == 0) next_prime = num + 1;
+	else next_prime = num;
+
+	int found = 0 , i,is_prime = 1;
+	while ( found == 0 )
+	{
+    	for (i = 3; i <= next_prime / 2; i += 2)
+	    {
+	        if (next_prime % i == 0)     //found a factor that isn't 1 or n, therefore not prime
+	        {
+	        	is_prime = 0;
+	        	break;
+	        }   
+	    }
+	    if (is_prime == 1)found = 1;
+	    else 
+		{
+			next_prime += 2;
+			is_prime =1;
+		}
+	}
+	return next_prime;
 }
 
-int init_index(bc_index** ind, int num_bucket,int num_chain)
+uint32_t hash_function_2(int32_t num, uint32_t prime)
 {
+	return num % prime;
+}
+
+int init_index(bc_index** ind,int bucket_size)
+{
+	uint32_t hash_size = FindNextPrime(bucket_size);
 	(*ind) = malloc(sizeof(index));
-	(*ind)->bucket = malloc(num_bucket*sizeof(int));
-	(*ind)->chain = malloc(num_chain*sizeof(int));
+	(*ind)->bucket = malloc(hash_size*sizeof(int));
+	(*ind)->chain = malloc(bucket_size*sizeof(int));
 	int i;
-	for (i = 0; i < num_bucket; ++i)
+	for (i = 0; i < hash_size; ++i)
 	{
 		(*ind)->bucket[i] = -1;
 	}
+	(*ind)->index_size = hash_size;
 	return 0;
 }
 
@@ -296,7 +326,6 @@ void print_result_list(struct result_listnode* head)
 	{
 		data = head->buff;
 		temp_curr_load = head->current_load;
-		printf("%d\n",temp_curr_load );
 		while(temp_curr_load > 0)
 		{
 			memcpy(&res,data,sizeof(result));
