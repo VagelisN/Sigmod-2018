@@ -1,7 +1,9 @@
-#include "funcs.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "rhjoin.h"
+#include "preprocess.h"
+#include "results.h"
 
 #define N_LSB 3
 #define N_HASH_2 5
@@ -75,7 +77,7 @@ result* RadixHashJoin(relation *relR, relation* relS)
 			}
 		}
 	}
-	print_result_list(results);
+	PrintResultList(results);
 
 
 }
@@ -101,7 +103,7 @@ int GetResults(ReorderedRelation* full_relation,ReorderedRelation* indexed_relat
 	for (i = start; i < end; ++i)
 	{
 		//check the second layer of the second relation
-		hash_value = hash_function_2(full_relation->RelArray->tuples[i].Value, ind->index_size);
+		hash_value = HashFunction2((full_relation->RelArray->tuples[i].Value), ind->index_size);
 		//if there are elements in this second layer's hash value
 		if( ind->bucket[hash_value] != -1)
 		{
@@ -121,7 +123,7 @@ int GetResults(ReorderedRelation* full_relation,ReorderedRelation* indexed_relat
 					curr_res.key_S = full_relation->RelArray->tuples[i].RowId;
 					curr_res.key_R = indexed_relation->RelArray->tuples[(ind->bucket[hash_value]-1)].RowId;
 				}
-				insert_result(res,&curr_res);
+				InsertResult(res,&curr_res);
 			}
 			sp = (ind->bucket[hash_value]-1);
 			while( ind->chain[sp] != 0)
@@ -139,7 +141,7 @@ int GetResults(ReorderedRelation* full_relation,ReorderedRelation* indexed_relat
 						curr_res.key_S = full_relation->RelArray->tuples[i].RowId;
 						curr_res.key_R = indexed_relation->RelArray->tuples[(ind->chain[sp]-1)].RowId;
 					}
-					insert_result(res, &curr_res);
+					InsertResult(res, &curr_res);
 				}	
 				sp = (ind->chain[sp]-1);
 			}
@@ -164,11 +166,11 @@ int CreateIndex(ReorderedRelation *rel, bc_index** ind,int curr_bucket)
 	end = start + rel->Hist[curr_bucket][1];
 
 	//create an index
-	init_index(ind, rel->Hist[curr_bucket][1]);
+	InitIndex(ind, rel->Hist[curr_bucket][1]);
 	//Hash every value of the bucket from last to first with H2 and set up bucket and chain
 	for (i = end-1; i >= start; --i)
 	{
-		hash_value = hash_function_2(rel->RelArray->tuples[i].Value,(*ind)->index_size);
+		hash_value = HashFunction2(rel->RelArray->tuples[i].Value,(*ind)->index_size);
 
 		//last encounter
 		if ((*ind)->bucket[hash_value] == -1 )
@@ -215,7 +217,7 @@ void PrintIndex(bc_index* ind)
 	}
 }
 
-uint32_t hash_function_1(int32_t num, int n)
+uint32_t HashFunction1(int32_t num, int n)
 {
 	uint32_t mask = 0b11111111111111111111111111111111;
 	mask = mask<<32-n;
@@ -254,12 +256,12 @@ uint32_t FindNextPrime(uint32_t num)
 	return next_prime;
 }
 
-uint32_t hash_function_2(int32_t num, uint32_t prime)
+uint32_t HashFunction2(int32_t num, uint32_t prime)
 {
 	return num % prime;
 }
 
-int init_index(bc_index** ind,int bucket_size)
+int InitIndex(bc_index** ind, int bucket_size)
 {
 	uint32_t hash_size = FindNextPrime(bucket_size);
 	(*ind) = malloc(sizeof(index));
@@ -275,75 +277,3 @@ int init_index(bc_index** ind,int bucket_size)
 }
 
 
-int insert_result(struct result_listnode **head, result *res)
-{
-	//if the list is empty create the first node and insert the first result
-	if( (*head) == NULL )
-	{
-		(*head)=malloc(sizeof(struct result_listnode));
-
-		(*head)->buff = malloc(RESULTLIST_MAX_BUFFER * sizeof(char));
-		(*head)->current_load = 1;
-		(*head)->next = NULL;
-
-		memcpy((*head)->buff,res,sizeof(result));
-
-	}
-	//else find the first node with available space
-	else
-	{
-		struct result_listnode *temp = (*head);
-		//printf("%ld\n",(temp->current_load*sizeof(result)) + sizeof(result));
-		while( ((temp->current_load*sizeof(result)) + sizeof(result)) > RESULTLIST_MAX_BUFFER)
-		{
-			if ( temp->next != NULL) temp = temp->next;
-			//if all nodes are full create a new one
-			else 
-			{
-				temp->next = malloc(sizeof(struct result_listnode));
-				temp->next->buff = malloc(RESULTLIST_MAX_BUFFER * sizeof(char));
-				(temp)->next->current_load = 1;
-				temp->next->next = NULL;
-				memcpy(temp->next->buff,res,sizeof(result));
-				return 0;
-			}
-		}
-		//found the last, make the insertion
-		void* data = temp->buff;
-		data += (temp->current_load*sizeof(result));
-		memcpy(data, res, sizeof(result));
-		temp->current_load ++;
-		return 0;
-	}
-}
-
-void print_result_list(struct result_listnode* head)
-{
-	int temp_curr_load;
-	void* data;
-	result res;
-	while(head!=NULL)
-	{
-		data = head->buff;
-		temp_curr_load = head->current_load;
-		while(temp_curr_load > 0)
-		{
-			memcpy(&res,data,sizeof(result));
-			printf("Rowid R %d Rowid S %d\n" ,res.key_R,res.key_S );
-			data += sizeof(result);
-			temp_curr_load --;
-		}
-		head = head->next;
-	}
-}
-
-void free_result_list(struct result_listnode* head)
-{
-	struct result_listnode* temp;
-	while(head != NULL)
-	{
-		temp = head;
-		head=head->next;
-		free(temp->buff);
-	}
-}
