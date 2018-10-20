@@ -43,7 +43,7 @@ result* RadixHashJoin(relation *relR, relation* relS)
 		printf("%d %d\n", NewR->Psum[i][0], NewR->Psum[i][1]);
 	}
 
-	struct result_listnode* results= NULL;
+	struct result* results= NULL;
 	uint32_t index_size;
 
 	//for every bucket
@@ -77,9 +77,8 @@ result* RadixHashJoin(relation *relR, relation* relS)
 			}
 		}
 	}
-	PrintResultList(results);
-
-
+	PrintResult(results);
+	FreeResult(results);
 }
 
 /**
@@ -89,7 +88,7 @@ result* RadixHashJoin(relation *relR, relation* relS)
  * of the second relation and returns the results 
 */
 
-int GetResults(ReorderedRelation* full_relation,ReorderedRelation* indexed_relation,bc_index * ind,struct result_listnode ** res,int curr_bucket,int r_s)
+int GetResults(ReorderedRelation* full_relation,ReorderedRelation* indexed_relation,bc_index * ind,struct result ** res,int curr_bucket,int r_s)
 {
 	int i ,j, start , end, hash_value, sp;
 
@@ -110,18 +109,24 @@ int GetResults(ReorderedRelation* full_relation,ReorderedRelation* indexed_relat
 			//scan the values following the chain for equality
 			if(indexed_relation->RelArray->tuples[(ind->bucket[hash_value]-1)].Value == full_relation->RelArray->tuples[i].Value)
 			{
-				result curr_res;
+				result_tuples curr_res;
 
 				//index is on relation S
 				if (r_s == 0)
 				{
-					curr_res.key_R = full_relation->RelArray->tuples[i].RowId;
-					curr_res.key_S = indexed_relation->RelArray->tuples[(ind->bucket[hash_value]-1)].RowId;
+					curr_res.tuple_R.RowId = full_relation->RelArray->tuples[i].RowId;
+					curr_res.tuple_R.Value = full_relation->RelArray->tuples[i].Value;
+
+					curr_res.tuple_S.RowId = indexed_relation->RelArray->tuples[(ind->bucket[hash_value]-1)].RowId;
+					curr_res.tuple_S.Value = indexed_relation->RelArray->tuples[(ind->bucket[hash_value]-1)].Value;
 				}
 				else 
 				{
-					curr_res.key_S = full_relation->RelArray->tuples[i].RowId;
-					curr_res.key_R = indexed_relation->RelArray->tuples[(ind->bucket[hash_value]-1)].RowId;
+					curr_res.tuple_S.RowId = full_relation->RelArray->tuples[i].RowId;
+					curr_res.tuple_S.Value = full_relation->RelArray->tuples[i].Value;
+
+					curr_res.tuple_R.RowId = indexed_relation->RelArray->tuples[(ind->bucket[hash_value]-1)].RowId;
+					curr_res.tuple_R.Value = indexed_relation->RelArray->tuples[(ind->bucket[hash_value]-1)].Value;
 				}
 				InsertResult(res,&curr_res);
 			}
@@ -130,16 +135,22 @@ int GetResults(ReorderedRelation* full_relation,ReorderedRelation* indexed_relat
 			{
 				if(indexed_relation->RelArray->tuples[(ind->chain[sp]-1)].Value == full_relation->RelArray->tuples[i].Value)
 				{
-					result curr_res;
+					result_tuples curr_res;
 					if (r_s == 0)
 					{
-						curr_res.key_R = full_relation->RelArray->tuples[i].RowId;
-						curr_res.key_S = indexed_relation->RelArray->tuples[(ind->chain[sp]-1)].RowId;
+						curr_res.tuple_R.RowId = full_relation->RelArray->tuples[i].RowId;
+						curr_res.tuple_R.Value = full_relation->RelArray->tuples[i].Value;
+
+						curr_res.tuple_S.RowId = indexed_relation->RelArray->tuples[(ind->chain[sp]-1)].RowId;
+						curr_res.tuple_S.Value = indexed_relation->RelArray->tuples[(ind->chain[sp]-1)].Value;
 					}
 					else 
 					{
-						curr_res.key_S = full_relation->RelArray->tuples[i].RowId;
-						curr_res.key_R = indexed_relation->RelArray->tuples[(ind->chain[sp]-1)].RowId;
+						curr_res.tuple_S.RowId = full_relation->RelArray->tuples[i].RowId;
+						curr_res.tuple_S.Value = full_relation->RelArray->tuples[i].Value;
+
+						curr_res.tuple_R.RowId = indexed_relation->RelArray->tuples[(ind->chain[sp]-1)].RowId;
+						curr_res.tuple_R.Value = indexed_relation->RelArray->tuples[(ind->chain[sp]-1)].Value;
 					}
 					InsertResult(res, &curr_res);
 				}	

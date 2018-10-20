@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-#define RESULTLIST_MAX_BUFFER 1024
+#define RESULT_MAX_BUFFER 1024
 
 /** Type definition for a tuple */
 typedef struct tuple
@@ -24,17 +24,17 @@ typedef struct relation
 
  typedef struct result
  {
- 	int32_t key_R;
- 	int32_t key_S;
+ 	char *buff;
+ 	struct result* next;
+ 	int current_load;
 
  }result;
 
-struct result_listnode
+typedef struct result_tuples
 {
-	char *buff;
- 	struct result_listnode* next;
- 	int current_load;
-};
+	tuple tuple_R;
+	tuple tuple_S;
+}result_tuples;
 
 
 typedef struct ReorderRelation 

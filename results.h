@@ -3,10 +3,10 @@
 
 #include "structs.h"
 
-int InsertResult(struct result_listnode **, result*);
+int InsertResult(result **, result_tuples*);
 
-void PrintResultList(struct result_listnode*);
+void PrintResult(result*);
 
-void FreeResultList(struct result_listnode*);
+void FreeResult(result*);
 
 #endif
