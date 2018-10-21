@@ -229,18 +229,18 @@ int CreateIndex(ReorderedRelation *rel, bc_index** ind,int curr_bucket)
 
 	//the end is at Psum + the number of elements in current bucket
 	end = start + rel->Hist[curr_bucket][1];
-
 	//create an index
 	//InitIndex(ind, rel->Hist[curr_bucket][1]);
 	
 	//Hash every value of the bucket from last to first with H2 and set up bucket and chain
 	for (i = (rel->Hist[curr_bucket][1]-1); i >= 0; i--)
 	{
-		hash_value = HashFunction2(rel->RelArray->tuples[(((*ind)->end) -i -1)].Value,(*ind)->index_size);
+		hash_value = HashFunction2(rel->RelArray->tuples[start+i].Value,(*ind)->index_size);
 
 		//last encounter
 		if ((*ind)->bucket[hash_value] == -1 )
 		{
+
 			(*ind)->bucket[hash_value] = i+1;
 			(*ind)->chain[i] = 0;
 		}
@@ -291,6 +291,7 @@ uint32_t HashFunction1(int32_t num, int n)
 	mask = mask<<32-n;
 	mask =mask >> 32-n;
 	uint32_t hash_value = num & mask;
+
 	return hash_value;
 }
 
@@ -332,6 +333,7 @@ uint32_t HashFunction2(int32_t num, uint32_t prime)
 int InitIndex(bc_index** ind, int bucket_size, int start)
 {
 	uint32_t hash_size = FindNextPrime(bucket_size);
+	printf("ELA MWRE %d\n",hash_size );
 	(*ind) = malloc(sizeof(bc_index));
 	CheckMalloc((*ind), "*ind (rhjoin.c)");
 	(*ind)->bucket = malloc(hash_size * sizeof(int32_t));

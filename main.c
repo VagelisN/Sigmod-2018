@@ -11,7 +11,7 @@
 int main(int argc, char const *argv[])
 {
 	// Malloc and initialize: OriginalArray, array_R ,array_S
-	int NumOfRows = 10;
+	int NumOfRows = 100;
 	int NumOfColumns = 5;
 	int **OriginalArray = malloc(NumOfRows * sizeof(int*));
 	CheckMalloc(OriginalArray, "**OriginalArray (main.c)");

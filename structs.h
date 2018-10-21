@@ -5,7 +5,6 @@
 
 #define RESULT_MAX_BUFFER 1024
 #define N_LSB 5
-#define N_HASH_2 8
 
 /** Type definition for a tuple */
 typedef struct tuple
