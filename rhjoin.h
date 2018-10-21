@@ -10,7 +10,9 @@ uint32_t HashFunction1(int32_t, int);
 
 uint32_t HashFunction2(int32_t, uint32_t);
 
-int InitIndex(bc_index**, int);
+int InitIndex(bc_index**, int, int);
+
+int DeleteIndex(bc_index**);
 
 int CreateIndex(ReorderedRelation*, bc_index**, int);
 

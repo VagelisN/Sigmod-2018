@@ -33,6 +33,7 @@ void ReorderArray(relation* RelArray, int n_lsb, ReorderedRelation** NewRel)
 	uint32_t hashed_value = 0;
 
 	(*NewRel) = malloc(sizeof(ReorderedRelation));
+	CheckMalloc((*NewRel), "*NewRel (preprocess.c)");
 	(*NewRel)->Hist_size = -1;
 	//Find the size of the Psum and the Hist arrays
 	(*NewRel)->Hist_size = 1;
@@ -43,20 +44,26 @@ void ReorderArray(relation* RelArray, int n_lsb, ReorderedRelation** NewRel)
 	
 	// Allocate space for the Hist and Psum arrays
 	(*NewRel)->Psum = malloc((*NewRel)->Hist_size * sizeof(int*));
+	CheckMalloc((*NewRel)->Psum, "*NewRel->Psum (preprocess.c)");
 	(*NewRel)->Hist = malloc((*NewRel)->Hist_size * sizeof(int*));
+	CheckMalloc((*NewRel)->Hist, "*NewRel->Hist (preprocess.c)");
 	
 	//TempPsum array is used only in this function for faster reordering of the array
 	int** TempPsum = malloc((*NewRel)->Hist_size * sizeof(int*));
+	CheckMalloc(TempPsum, "*TempPsum (preprocess.c)");
 	for (i = 0; i < (*NewRel)->Hist_size; ++i)
 	{
 		TempPsum[i] = malloc(2 * sizeof(int));
+		CheckMalloc(TempPsum[i], "*TempPsum[i] (preprocess.c)");
 		(*NewRel)->Psum[i] = malloc(2 * sizeof(int));
+		CheckMalloc((*NewRel)->Psum[i], "*NewRel->Psum[i] (preprocess.c)");
 		(*NewRel)->Psum[i][0] = i; //Bucket number
 		(*NewRel)->Psum[i][1] = -1; //Initialize the starting point of each bucket in the reordered array to -1
 		TempPsum[i][0] = i;
 		TempPsum[i][1] = -1;
 
 		(*NewRel)->Hist[i] = malloc(2 * sizeof(int));
+		CheckMalloc((*NewRel)->Hist[i], "*NewRel->Hist[i] (preprocess.c)");
 		(*NewRel)->Hist[i][0] = i; // Bucket number
 		(*NewRel)->Hist[i][1] = 0; // Each bucket starts with 0 allocated values
 	}
@@ -106,8 +113,10 @@ void ReorderArray(relation* RelArray, int n_lsb, ReorderedRelation** NewRel)
 
 	//Allocate space for the ordered array in NewRel variable
 	(*NewRel)->RelArray = malloc(sizeof(relation));
+	CheckMalloc((*NewRel)->RelArray, "*NewRel->RelArray (preprocess.c)");
 	(*NewRel)->RelArray->num_tuples = RelArray->num_tuples;
 	(*NewRel)->RelArray->tuples = malloc(RelArray->num_tuples * sizeof(tuple));
+	CheckMalloc((*NewRel)->RelArray->tuples, "*NewRel->RelArray->tuples (preprocess.c)");
 
 	//Initialize the array
 	for (i = 0; i < RelArray->num_tuples; ++i)
@@ -150,4 +159,15 @@ void ReorderArray(relation* RelArray, int n_lsb, ReorderedRelation** NewRel)
 		free(TempPsum[i]);
 	}
 	free(TempPsum);
+}
+
+
+int CheckMalloc(void* ptr, char* txt)
+{
+	if (ptr == NULL)
+	{
+		fprintf(stderr,"Error in malloc! In: %s \n",txt);
+		exit(-1);
+	}
+	return 0;//if ptr != null return 0
 }

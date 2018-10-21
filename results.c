@@ -1,4 +1,5 @@
 #include "results.h"
+#include "preprocess.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -10,8 +11,9 @@ int InsertResult(struct result **head, result_tuples *res_tuples)
 	if( (*head) == NULL )
 	{
 		(*head)=malloc(sizeof(result));
-
+		CheckMalloc((*head), "*head (results.c)");
 		(*head)->buff = malloc(RESULT_MAX_BUFFER * sizeof(char));
+		CheckMalloc((*head)->buff, "*head->buff (results.c)");
 		(*head)->current_load = 1;
 		(*head)->next = NULL;
 
@@ -29,7 +31,9 @@ int InsertResult(struct result **head, result_tuples *res_tuples)
 			else 
 			{
 				temp->next = malloc(sizeof(struct result));
+				CheckMalloc(temp->next, "temp->next (results.c)");
 				temp->next->buff = malloc(RESULT_MAX_BUFFER * sizeof(char));
+				CheckMalloc(temp->next->buff, "temp->next->buff (results.c)");
 				temp->next->current_load = 1;
 				temp->next->next = NULL;
 				memcpy(temp->next->buff,res_tuples,sizeof(result_tuples));
@@ -47,6 +51,8 @@ int InsertResult(struct result **head, result_tuples *res_tuples)
 
 void PrintResult(struct result* head)
 {
+	printf("------------------------------\n");
+	printf("Printing results:\n");
 	int temp_curr_load;
 	void* data;
 	result_tuples res_tuples;
@@ -57,13 +63,15 @@ void PrintResult(struct result* head)
 		while(temp_curr_load > 0)
 		{
 			memcpy(&res_tuples,data,sizeof(result_tuples));
-			printf("Rowid R %d Value R %d || " ,res_tuples.tuple_R.RowId,res_tuples.tuple_R.Value);
-			printf("Rowid S %d Value S %d\n" ,res_tuples.tuple_S.RowId,res_tuples.tuple_S.Value);
+			printf("Rowid R %2d Value R %2d || " ,res_tuples.tuple_R.RowId,res_tuples.tuple_R.Value);
+			printf("Rowid S %2d Value S %2d\n" ,res_tuples.tuple_S.RowId,res_tuples.tuple_S.Value);
 			data += sizeof(result_tuples);
 			temp_curr_load --;
 		}
 		head = head->next;
 	}
+	printf("Finished printing results!\n");
+	printf("-------------------------------\n");
 }
 
 void FreeResult(struct result* head)
@@ -74,5 +82,6 @@ void FreeResult(struct result* head)
 		temp = head;
 		head=head->next;
 		free(temp->buff);
+		free(temp);
 	}
 }

@@ -5,9 +5,6 @@
 #include "preprocess.h"
 #include "results.h"
 
-#define N_LSB 3
-#define N_HASH_2 5
-
 result* RadixHashJoin(relation *relR, relation* relS)
 {
 
@@ -55,30 +52,87 @@ result* RadixHashJoin(relation *relR, relation* relS)
 			//if R is bigger than S
 			if( NewR->Hist[i][1] >= NewS->Hist[i][1])
 			{
-				bc_index* indS;
+				bc_index* indS = NULL;
 				//Create a second layer index for the respective bucket of S
+				
+				InitIndex(&indS, NewS->Hist[i][1], NewS->Psum[i][1]);
+
 				CreateIndex(NewS,&indS,i);
 
 				//Get results
 				GetResults(NewR,NewS,indS,&results,i,0);
+
+				DeleteIndex(&indS);
 				
 
 			}
 			//if S is bigger than R
 			else
 			{
-				bc_index* indR;
+				bc_index* indR = NULL;
+
+				//Initialize the 2nd layer index
+				InitIndex(&indR, NewR->Hist[i][1], NewR->Psum[i][1]);
 
 				//Create a second layer index for the respective bucket of R
 				CreateIndex(NewR,&indR,i);
 
 				//GetResults
 				GetResults(NewS,NewR,indR,&results,i,1);
+
+				//Delete the 2nd layer index
+				DeleteIndex(&indR);
+
 			}
 		}
 	}
 	PrintResult(results);
 	FreeResult(results);
+	//Free NewS
+	if (NewS != NULL)
+	{
+		//Free Psum and Hist
+		if (NewS->Hist_size != -1)
+		{
+			for (int i = 0; i < NewS->Hist_size; ++i)
+			{
+				free(NewS->Hist[i]);
+				free(NewS->Psum[i]);
+			}
+			free(NewS->Psum);
+			free(NewS->Hist);
+		}
+		//Free RelArray
+		if (NewS->RelArray != NULL)
+		{
+			if (NewS->RelArray->tuples != NULL)free(NewS->RelArray->tuples);
+			free(NewS->RelArray);
+		}
+		free(NewS);
+	}
+
+	//Free NewR
+	if (NewR != NULL)
+	{
+		//Free Psum and Hist
+		if (NewR->Hist_size != -1)
+		{
+			for (int i = 0; i < NewR->Hist_size; ++i)
+			{
+				free(NewR->Hist[i]);
+				free(NewR->Psum[i]);
+			}
+			free(NewR->Psum);
+			free(NewR->Hist);
+		}
+		//Free RelArray
+		if (NewR->RelArray != NULL)
+		{
+			if (NewR->RelArray->tuples != NULL)free(NewR->RelArray->tuples);
+			free(NewR->RelArray);
+		}
+		free(NewR);
+	}
 }
 
 /**
@@ -99,58 +153,58 @@ int GetResults(ReorderedRelation* full_relation,ReorderedRelation* indexed_relat
 	end = start + full_relation->Hist[curr_bucket][1];
 
 	//for every element of the first relation's bucket
-	for (i = start; i < end; ++i)
+	for (i = 0; i < full_relation->Hist[curr_bucket][1]; i++)
 	{
 		//check the second layer of the second relation
-		hash_value = HashFunction2((full_relation->RelArray->tuples[i].Value), ind->index_size);
+		hash_value = HashFunction2((full_relation->RelArray->tuples[((ind->start) + i)].Value), ind->index_size);
 		//if there are elements in this second layer's hash value
 		if( ind->bucket[hash_value] != -1)
 		{
 			//scan the values following the chain for equality
-			if(indexed_relation->RelArray->tuples[(ind->bucket[hash_value]-1)].Value == full_relation->RelArray->tuples[i].Value)
+			if(indexed_relation->RelArray->tuples[(start + (ind->bucket[hash_value])-1)].Value == full_relation->RelArray->tuples[((ind->start) + i)].Value)
 			{
 				result_tuples curr_res;
 
 				//index is on relation S
 				if (r_s == 0)
 				{
-					curr_res.tuple_R.RowId = full_relation->RelArray->tuples[i].RowId;
-					curr_res.tuple_R.Value = full_relation->RelArray->tuples[i].Value;
+					curr_res.tuple_R.RowId = full_relation->RelArray->tuples[((ind->start) + i)].RowId;
+					curr_res.tuple_R.Value = full_relation->RelArray->tuples[((ind->start) + i)].Value;
 
-					curr_res.tuple_S.RowId = indexed_relation->RelArray->tuples[(ind->bucket[hash_value]-1)].RowId;
-					curr_res.tuple_S.Value = indexed_relation->RelArray->tuples[(ind->bucket[hash_value]-1)].Value;
+					curr_res.tuple_S.RowId = indexed_relation->RelArray->tuples[(start + (ind->bucket[hash_value])-1)].RowId;
+					curr_res.tuple_S.Value = indexed_relation->RelArray->tuples[(start + (ind->bucket[hash_value])-1)].Value;
 				}
 				else 
 				{
-					curr_res.tuple_S.RowId = full_relation->RelArray->tuples[i].RowId;
-					curr_res.tuple_S.Value = full_relation->RelArray->tuples[i].Value;
+					curr_res.tuple_S.RowId = full_relation->RelArray->tuples[((ind->start) + i)].RowId;
+					curr_res.tuple_S.Value = full_relation->RelArray->tuples[((ind->start) + i)].Value;
 
-					curr_res.tuple_R.RowId = indexed_relation->RelArray->tuples[(ind->bucket[hash_value]-1)].RowId;
-					curr_res.tuple_R.Value = indexed_relation->RelArray->tuples[(ind->bucket[hash_value]-1)].Value;
+					curr_res.tuple_R.RowId = indexed_relation->RelArray->tuples[(start + (ind->bucket[hash_value])-1)].RowId;
+					curr_res.tuple_R.Value = indexed_relation->RelArray->tuples[(start + (ind->bucket[hash_value])-1)].Value;
 				}
 				InsertResult(res,&curr_res);
 			}
 			sp = (ind->bucket[hash_value]-1);
 			while( ind->chain[sp] != 0)
 			{
-				if(indexed_relation->RelArray->tuples[(ind->chain[sp]-1)].Value == full_relation->RelArray->tuples[i].Value)
+				if(indexed_relation->RelArray->tuples[(ind->start + (ind->chain[sp]-1))].Value == full_relation->RelArray->tuples[((ind->start) + i)].Value)
 				{
 					result_tuples curr_res;
 					if (r_s == 0)
 					{
-						curr_res.tuple_R.RowId = full_relation->RelArray->tuples[i].RowId;
-						curr_res.tuple_R.Value = full_relation->RelArray->tuples[i].Value;
+						curr_res.tuple_R.RowId = full_relation->RelArray->tuples[((ind->start) + i)].RowId;
+						curr_res.tuple_R.Value = full_relation->RelArray->tuples[((ind->start) + i)].Value;
 
-						curr_res.tuple_S.RowId = indexed_relation->RelArray->tuples[(ind->chain[sp]-1)].RowId;
-						curr_res.tuple_S.Value = indexed_relation->RelArray->tuples[(ind->chain[sp]-1)].Value;
+						curr_res.tuple_S.RowId = indexed_relation->RelArray->tuples[(ind->start + (ind->chain[sp]-1))].RowId;
+						curr_res.tuple_S.Value = indexed_relation->RelArray->tuples[(ind->start + (ind->chain[sp]-1))].Value;
 					}
 					else 
 					{
-						curr_res.tuple_S.RowId = full_relation->RelArray->tuples[i].RowId;
-						curr_res.tuple_S.Value = full_relation->RelArray->tuples[i].Value;
+						curr_res.tuple_S.RowId = full_relation->RelArray->tuples[((ind->start) + i)].RowId;
+						curr_res.tuple_S.Value = full_relation->RelArray->tuples[((ind->start) + i)].Value;
 
-						curr_res.tuple_R.RowId = indexed_relation->RelArray->tuples[(ind->chain[sp]-1)].RowId;
-						curr_res.tuple_R.Value = indexed_relation->RelArray->tuples[(ind->chain[sp]-1)].Value;
+						curr_res.tuple_R.RowId = indexed_relation->RelArray->tuples[(ind->start + (ind->chain[sp]-1))].RowId;
+						curr_res.tuple_R.Value = indexed_relation->RelArray->tuples[(ind->start + (ind->chain[sp]-1))].Value;
 					}
 					InsertResult(res, &curr_res);
 				}	
@@ -177,11 +231,12 @@ int CreateIndex(ReorderedRelation *rel, bc_index** ind,int curr_bucket)
 	end = start + rel->Hist[curr_bucket][1];
 
 	//create an index
-	InitIndex(ind, rel->Hist[curr_bucket][1]);
+	//InitIndex(ind, rel->Hist[curr_bucket][1]);
+	
 	//Hash every value of the bucket from last to first with H2 and set up bucket and chain
-	for (i = end-1; i >= start; --i)
+	for (i = (rel->Hist[curr_bucket][1]-1); i >= 0; i--)
 	{
-		hash_value = HashFunction2(rel->RelArray->tuples[i].Value,(*ind)->index_size);
+		hash_value = HashFunction2(rel->RelArray->tuples[(((*ind)->end) -i -1)].Value,(*ind)->index_size);
 
 		//last encounter
 		if ((*ind)->bucket[hash_value] == -1 )
@@ -213,7 +268,8 @@ void PrintIndex(bc_index* ind)
 {
 	int i;
 	int sp;
-	for (i = 0; i < ind->index_size; ++i)
+	printf("Printing index for bucket with start: %d\n",ind->start );
+	for (i = 0; i < ind->index_size; i++)
 	{
 		if (ind->bucket[i] != -1)
 		{
@@ -222,7 +278,8 @@ void PrintIndex(bc_index* ind)
 			while( ind->chain[sp] != 0)
 			{
 				printf("chain[%d] = %d\n",ind->bucket[i]-1, ind->chain[ind->bucket[i]-1]);
-				sp = ind->chain[sp]-1;
+				if(sp != 0)sp = (ind->chain[sp]-1);
+				else break;
 			}
 		}
 	}
@@ -272,19 +329,41 @@ uint32_t HashFunction2(int32_t num, uint32_t prime)
 	return num % prime;
 }
 
-int InitIndex(bc_index** ind, int bucket_size)
+int InitIndex(bc_index** ind, int bucket_size, int start)
 {
 	uint32_t hash_size = FindNextPrime(bucket_size);
-	(*ind) = malloc(sizeof(index));
-	(*ind)->bucket = malloc(hash_size*sizeof(int));
-	(*ind)->chain = malloc(bucket_size*sizeof(int));
+	(*ind) = malloc(sizeof(bc_index));
+	CheckMalloc((*ind), "*ind (rhjoin.c)");
+	(*ind)->bucket = malloc(hash_size * sizeof(int32_t));
+	CheckMalloc((*ind)->bucket, "*ind->bucket (rhjoin.c)");
+	(*ind)->chain = (int32_t*) malloc(bucket_size * sizeof(int32_t));
+	CheckMalloc((*ind)->chain, "*ind->chain (rhjoin.c)");
+	(*ind)->start = start;
+	(*ind)->end = start + bucket_size;
 	int i;
 	for (i = 0; i < hash_size; ++i)
 	{
 		(*ind)->bucket[i] = -1;
 	}
 	(*ind)->index_size = hash_size;
+	for (i = 0; i < bucket_size; ++i)
+	{
+		(*ind)->chain[i] = -1;
+	}
 	return 0;
 }
 
-
+int DeleteIndex(bc_index** ind)
+{
+	if ((*ind != NULL) && ((*ind)->bucket != NULL))
+	{
+		free((*ind)->bucket);
+		free((*ind)->chain);
+		free(*ind);
+	}
+	else
+	{
+		printf("Error, ind or ind->bucket = NULL\n");
+		exit(2);
+	}
+}
