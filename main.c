@@ -34,7 +34,6 @@ int main(int argc, char const *argv[])
 
 	array_S->num_tuples = NumOfRows;
 
-	printf("Original array:\n");
 	for (int i = 0; i < NumOfRows; ++i)
 	{
 		array_R->tuples[i].Value = -1;
@@ -43,20 +42,75 @@ int main(int argc, char const *argv[])
 		array_S->tuples[i].RowId = -1;
 		OriginalArray[i] = malloc(NumOfColumns * sizeof(int));
 		CheckMalloc(OriginalArray[i], "OriginalArray[i] (main.c)");
+		for (int j = 0; j < NumOfColumns; ++j) OriginalArray[i][j] = i;//(i*j)/3;
+	}
+	//Transform the original array to row stored array using relation struct
+
+	/****************** Test case 1*******************/
+	/* 
+	 * Both columns have ones
+	 * expected results: numofrows*numofrows
+	 */
+	
+	/*for (int i = 0; i < NumOfRows; ++i)
+	{
+
+		OriginalArray[i][1] = 1;
+		OriginalArray[i][0] = 1;
+	}*/
+	/****************** Test case 1*******************/
+
+	/****************** Test case 2*******************/
+
+	/* 
+	 * The first column has odd nubers the second column has even numbers
+	 * expected results: 0
+	 */
+
+	/*int j=1,k=0;
+	for (int i = 0; i < NumOfRows; ++i)
+	{
+
+		OriginalArray[i][1] = j;
+		OriginalArray[i][0] = k;
+		k += 2;
+		j += 2;
+	}*/
+	/****************** Test case 2*******************/
+
+	/****************** Test case 3*******************/
+	/*
+	 * first half of the first column is equal to the second half of the second column
+	 * expected results : NumOfRows/2 * NumOfRows/2
+	 */
+	
+	/*for (int i = 0; i < NumOfRows/2; ++i)
+	{
+		OriginalArray[i][1] = 2;
+		OriginalArray[i][0] = 1;
+	}
+
+	for (int i = NumOfRows/2; i < NumOfRows; ++i)
+	{
+		OriginalArray[i][1] = 1;
+		OriginalArray[i][0] = 2;
+	}*/
+	/****************** Test case 3*******************/
+	
+	printf("Original array:\n");
+	for (int i = 0; i < NumOfRows; ++i)
+	{
 		for (int j = 0; j < NumOfColumns; ++j)
 		{
 
-			OriginalArray[i][j] = i;//(i*j)/3;
 			printf("%d |", OriginalArray[i][j]);
 		}
 		printf("\n");
 	}
 	printf("-----------------------------------------------\n");
-	//Transform the original array to row stored array using relation struct
-
 
 	array_R = ToRow(OriginalArray, 0, array_R);
-	array_S = ToRow(OriginalArray, 0, array_S);
+	array_S = ToRow(OriginalArray, 1, array_S);
 
 	//Join the 2 row-stored arrays using RHJ
 	RadixHashJoin(array_R, array_S);
