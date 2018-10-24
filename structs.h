@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 
+#define CACHE_SIZE 32768 //L1 cache is 32 KB
 #define RESULT_MAX_BUFFER 1024
 #define N_LSB 5
 

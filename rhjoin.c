@@ -18,6 +18,7 @@ result* RadixHashJoin(relation *relR, relation* relS)
 
 
 	int i;
+	/*
 	for (i = 0; i < relR->num_tuples; ++i)
 	{
 		printf("%2d %2d || %2d %2d\n", relR->tuples[i].Value, relR->tuples[i].RowId, NewR->RelArray->tuples[i].Value, NewR->RelArray->tuples[i].RowId);
@@ -50,7 +51,7 @@ result* RadixHashJoin(relation *relR, relation* relS)
 	{
 		printf("%d %d\n", NewS->Psum[i][0], NewS->Psum[i][1]);
 	}
-
+	*/
 	struct result* results= NULL;
 	uint32_t index_size;
 
@@ -60,7 +61,7 @@ result* RadixHashJoin(relation *relR, relation* relS)
 		//if both relations have elements in this bucket
 		if (NewR->Hist[i][1] != 0 && NewS->Hist[i][1] != 0)
 		{
-			printf("ai ai iai %d\n",i );
+			//printf("ai ai iai %d\n",i );
 			//if R is bigger than S
 			if( NewR->Hist[i][1] >= NewS->Hist[i][1])
 			{
@@ -99,6 +100,7 @@ result* RadixHashJoin(relation *relR, relation* relS)
 		}
 	}
 	PrintResult(results);
+	CheckResult(results);
 	FreeResult(results);
 	//Free NewS
 	if (NewS != NULL)
@@ -270,7 +272,7 @@ int CreateIndex(ReorderedRelation *rel, bc_index** ind,int curr_bucket)
 			(*ind)->chain[i] = 0;
 		}
 	}
-	PrintIndex((*ind));
+	//PrintIndex((*ind));
 	return 0;
 }
 

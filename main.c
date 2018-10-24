@@ -11,8 +11,8 @@
 int main(int argc, char const *argv[])
 {
 	// Malloc and initialize: OriginalArray, array_R ,array_S
-	int NumOfRows = 10;
-	int NumOfColumns = 3;
+	int NumOfRows = 100000;
+	int NumOfColumns = 10;
 
 
 	int **OriginalArray = malloc(NumOfRows * sizeof(int*));
@@ -97,6 +97,7 @@ int main(int argc, char const *argv[])
 	}*/
 	/****************** Test case 3*******************/
 	
+	/*
 	printf("Original array:\n");
 	for (int i = 0; i < NumOfRows; ++i)
 	{
@@ -108,7 +109,7 @@ int main(int argc, char const *argv[])
 		printf("\n");
 	}
 	printf("-----------------------------------------------\n");
-
+*/
 	array_R = ToRow(OriginalArray, 0, array_R);
 	array_S = ToRow(OriginalArray, 1, array_S);
 

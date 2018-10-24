@@ -49,11 +49,11 @@ int InsertResult(struct result **head, result_tuples *res_tuples)
 	}
 }
 
-void PrintResult(struct result* head)
+void PrintResult(result* head)
 {
 	printf("------------------------------\n");
 	printf("Printing results:\n");
-	int temp_curr_load;
+	int temp_curr_load, num_results = 0;
 	void* data;
 	result_tuples res_tuples;
 	while(head!=NULL)
@@ -63,6 +63,7 @@ void PrintResult(struct result* head)
 		while(temp_curr_load > 0)
 		{
 			memcpy(&res_tuples,data,sizeof(result_tuples));
+			num_results++;
 			printf("Rowid R %2d Value R %2d || " ,res_tuples.tuple_R.RowId,res_tuples.tuple_R.Value);
 			printf("Rowid S %2d Value S %2d\n" ,res_tuples.tuple_S.RowId,res_tuples.tuple_S.Value);
 			data += sizeof(result_tuples);
@@ -71,7 +72,35 @@ void PrintResult(struct result* head)
 		head = head->next;
 	}
 	printf("Finished printing results!\n");
+	printf("Number of rows in the result: %d\n",num_results );
 	printf("-------------------------------\n");
+}
+
+void CheckResult(result* head)
+{
+	printf("------------------------------\n");
+	int temp_curr_load;
+	void* data;
+	result_tuples temp_result;
+	while(head != NULL)
+	{
+		data = head->buff;
+		temp_curr_load = head->current_load;
+		while(temp_curr_load > 0)
+		{
+			memcpy(&temp_result, data, sizeof(result_tuples));
+			//Check the results
+			if (temp_result.tuple_S.Value != temp_result.tuple_R.Value)
+			{
+				printf("Error! Failed in result check. R.Value is different from S.Value\n");
+				exit(-2);
+			}
+			temp_curr_load --;
+		}
+		head = head->next;
+	}
+	printf("Result check completed succesfully!\n");
+	printf("------------------------------\n");
 }
 
 void FreeResult(struct result* head)

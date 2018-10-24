@@ -9,4 +9,6 @@ void PrintResult(result*);
 
 void FreeResult(result*);
 
+void CheckResult(result* );
+
 #endif

@@ -74,7 +74,7 @@ void ReorderArray(relation* RelArray, int n_lsb, ReorderedRelation** NewRel)
 		hashed_value = HashFunction1((int32_t) RelArray->tuples[i].Value, n_lsb);
 		(*NewRel)->Hist[hashed_value][1]++;
 	}
-
+	CheckBucketSizes((*NewRel)->Hist, (*NewRel)->Hist_size);
 	//Build the Psum array using the histogram
 	int NewStartingPoint = 0;
 	for (i = 0; i < (*NewRel)->Hist_size; ++i)
@@ -170,4 +170,22 @@ int CheckMalloc(void* ptr, char* txt)
 		exit(-1);
 	}
 	return 0;//if ptr != null return 0
+}
+
+
+void CheckBucketSizes(int** Hist, int hist_size)
+{
+	int i, flag = 0;
+	for (i = 0; i < hist_size; ++i)
+	{
+		if ((Hist[i][1] * sizeof(tuple)) >= CACHE_SIZE)
+		{
+			flag = 1;
+			break;
+		}
+	}
+	if (flag == 1)
+	{
+		printf("Warning! Bucket size exceeds L1 cache size (aprox. 32 KB). Consider increasing the N_LSB for the H1 hash function.\n");
+	}
 }
