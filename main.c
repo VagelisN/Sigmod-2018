@@ -8,10 +8,10 @@
 
 
 
-int main(int argc, char const *argv[])
+int main(void)
 {
 	// Malloc and initialize: OriginalArray, array_R ,array_S
-	int NumOfRows = 100000;
+	int NumOfRows = 100;
 	int NumOfColumns = 10;
 
 
@@ -60,6 +60,7 @@ int main(int argc, char const *argv[])
 	}*/
 	/****************** Test case 1*******************/
 
+
 	/****************** Test case 2*******************/
 
 	/* 
@@ -77,6 +78,7 @@ int main(int argc, char const *argv[])
 		j += 2;
 	}*/
 	/****************** Test case 2*******************/
+
 
 	/****************** Test case 3*******************/
 	/*
@@ -109,7 +111,7 @@ int main(int argc, char const *argv[])
 		printf("\n");
 	}
 	printf("-----------------------------------------------\n");
-*/
+    */
 	array_R = ToRow(OriginalArray, 0, array_R);
 	array_S = ToRow(OriginalArray, 1, array_S);
 

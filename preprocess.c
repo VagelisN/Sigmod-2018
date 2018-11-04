@@ -4,7 +4,6 @@
 #include "rhjoin.h"
 #include "preprocess.h"
 
-// Takes a table and converts it to an array of tuples for faster join access 
 relation* ToRow(int** original_array, int row_to_join, relation* NewRel)
 {
 	for (int i = 0; i < NewRel->num_tuples; ++i)
@@ -16,11 +15,6 @@ relation* ToRow(int** original_array, int row_to_join, relation* NewRel)
 }
 
 
-/*
- * Reorders an row stored array so it is sorted based on the values that belong to the 
- * same bucket. Stores the ordered array , the histogram and the Psum array in a 
- * ReorderedRelation variable.
- */
 void ReorderArray(relation* RelArray, int n_lsb, ReorderedRelation** NewRel)
 {
 	//Check the arguments

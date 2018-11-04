@@ -102,6 +102,7 @@ result* RadixHashJoin(relation *relR, relation* relS)
 	PrintResult(results);
 	CheckResult(results);
 	FreeResult(results);
+
 	//Free NewS
 	if (NewS != NULL)
 	{
@@ -149,29 +150,24 @@ result* RadixHashJoin(relation *relR, relation* relS)
 	}
 }
 
-/**
- * Gets two relations. The first one only has a first layer index and the second one
- * also has a second layer index (ind) for a bucket (curr_bucket). For every element
- * of the first relation's bucket it checks for equalityin the second layer index 
- * of the second relation and returns the results 
-*/
 
 int GetResults(ReorderedRelation* full_relation,ReorderedRelation* indexed_relation,bc_index * ind,struct result ** res,int curr_bucket,int r_s)
 {
 	int i ,j, start_full , end_full, hash_value, sp;
 
-	//the start of the current bucket is in Psum
+	//the start of the non indexed current bucket
 	start_full = full_relation->Psum[curr_bucket][1];
 
-	//the end is at Psum + the number of elements in current bucket
+	//the end of the non indexed current bucket
 	end_full = start_full + full_relation->Hist[curr_bucket][1];
 
-	//for every element of the first relation's bucket
+	//for every element of the non indexed relation's bucket
 	for (i = 0; i < full_relation->Hist[curr_bucket][1]; i++)
 	{
-		//check the second layer of the second relation
+		//check the index of the second relation
 		hash_value = HashFunction2((full_relation->RelArray->tuples[(start_full + i)].Value), ind->index_size);
-		//if there are elements in this second layer's hash value
+
+		//if there are elements in this bucket of the indexed relation
 		if( ind->bucket[hash_value] != -1)
 		{
 			//scan the values following the chain for equality
@@ -179,7 +175,7 @@ int GetResults(ReorderedRelation* full_relation,ReorderedRelation* indexed_relat
 			{
 				result_tuples curr_res;
 
-				//index is on relation S
+				//index is built on relation S
 				if (r_s == 0)
 				{
 					curr_res.tuple_R.RowId = full_relation->RelArray->tuples[start_full + i].RowId;
@@ -188,6 +184,7 @@ int GetResults(ReorderedRelation* full_relation,ReorderedRelation* indexed_relat
 					curr_res.tuple_S.RowId = indexed_relation->RelArray->tuples[(ind->start + (ind->bucket[hash_value])-1)].RowId;
 					curr_res.tuple_S.Value = indexed_relation->RelArray->tuples[(ind->start + (ind->bucket[hash_value])-1)].Value;
 				}
+				//index is built on relation R
 				else 
 				{
 					curr_res.tuple_S.RowId = full_relation->RelArray->tuples[start_full + i].RowId;
@@ -196,9 +193,13 @@ int GetResults(ReorderedRelation* full_relation,ReorderedRelation* indexed_relat
 					curr_res.tuple_R.RowId = indexed_relation->RelArray->tuples[(ind->start + (ind->bucket[hash_value])-1)].RowId;
 					curr_res.tuple_R.Value = indexed_relation->RelArray->tuples[(ind->start + (ind->bucket[hash_value])-1)].Value;
 				}
+
+				//insert the result in the list
 				InsertResult(res,&curr_res);
 			}
-			sp = (ind->bucket[hash_value]-1);
+
+			//follow the chain
+			sp = (ind->bucket[hash_value]-1);			
 			while( ind->chain[sp] != 0)
 			{
 				if(indexed_relation->RelArray->tuples[(ind->start + (ind->chain[sp]-1))].Value == full_relation->RelArray->tuples[start_full + i].Value)
@@ -220,6 +221,7 @@ int GetResults(ReorderedRelation* full_relation,ReorderedRelation* indexed_relat
 						curr_res.tuple_R.RowId = indexed_relation->RelArray->tuples[(ind->start + (ind->chain[sp]-1))].RowId;
 						curr_res.tuple_R.Value = indexed_relation->RelArray->tuples[(ind->start + (ind->chain[sp]-1))].Value;
 					}
+					//insert the result in the list
 					InsertResult(res, &curr_res);
 				}	
 				sp = (ind->chain[sp]-1);
@@ -227,12 +229,6 @@ int GetResults(ReorderedRelation* full_relation,ReorderedRelation* indexed_relat
 		}
 	}
 }
-
-
-/**
- * Creates the second layer index for a bucket of a relation
- * that already has a first layer index
- */
 
 int CreateIndex(ReorderedRelation *rel, bc_index** ind,int curr_bucket)
 {
@@ -243,8 +239,6 @@ int CreateIndex(ReorderedRelation *rel, bc_index** ind,int curr_bucket)
 
 	//the end is at Psum + the number of elements in current bucket
 	end = start + rel->Hist[curr_bucket][1];
-	//create an index
-	//InitIndex(ind, rel->Hist[curr_bucket][1]);
 	
 	//Hash every value of the bucket from last to first with H2 and set up bucket and chain
 	for (i = (rel->Hist[curr_bucket][1]-1); i >= 0; i--)
@@ -276,7 +270,46 @@ int CreateIndex(ReorderedRelation *rel, bc_index** ind,int curr_bucket)
 	return 0;
 }
 
-/** Prints the second layer index of a bucket*/
+
+int InitIndex(bc_index** ind, int bucket_size, int start)
+{
+	//allocate the index 
+	(*ind) = malloc(sizeof(bc_index));
+	CheckMalloc((*ind), "*ind (rhjoin.c)");
+
+	//the size of the bucket array  is the next prime after the size of the bucket
+	uint32_t hash_size = FindNextPrime(bucket_size);
+	(*ind)->bucket = malloc(hash_size * sizeof(int32_t));
+	CheckMalloc((*ind)->bucket, "*ind->bucket (rhjoin.c)");
+
+	//the size of the chain is equal to the number of elements in the bucket
+	(*ind)->chain = (int32_t*) malloc(bucket_size * sizeof(int32_t));
+	CheckMalloc((*ind)->chain, "*ind->chain (rhjoin.c)");
+
+	(*ind)->start = start;
+	(*ind)->end = start + bucket_size;
+
+	int i;
+	(*ind)->index_size = hash_size;
+	for (i = 0; i < hash_size; ++i)(*ind)->bucket[i] = -1;
+	for (i = 0; i < bucket_size; ++i) (*ind)->chain[i] = -1;
+	return 0;
+}
+
+int DeleteIndex(bc_index** ind)
+{
+	if ((*ind != NULL) && ((*ind)->bucket != NULL))
+	{
+		free((*ind)->bucket);
+		free((*ind)->chain);
+		free(*ind);
+	}
+	else
+	{
+		printf("Error, ind or ind->bucket = NULL\n");
+		exit(2);
+	}
+}
 
 void PrintIndex(bc_index* ind)
 {
@@ -301,9 +334,14 @@ void PrintIndex(bc_index* ind)
 
 uint32_t HashFunction1(int32_t num, int n)
 {
+	//mask is 32 ones
 	uint32_t mask = 0b11111111111111111111111111111111;
-	mask = mask<<32-n;
-	mask =mask >> 32-n;
+
+	//keep only n ones on the right   
+	mask = mask << 32-n;
+	mask = mask >> 32-n;
+
+	//num AND mask only keeps the n rightmost bits of num
 	uint32_t hash_value = num & mask;
 
 	return hash_value;
@@ -323,7 +361,7 @@ uint32_t FindNextPrime(uint32_t num)
 	{
     	for (i = 3; i <= next_prime / 2; i += 2)
 	    {
-	        if (next_prime % i == 0)     //found a factor that isn't 1 or n, therefore not prime
+	        if (next_prime % i == 0)
 	        {
 	        	is_prime = 0;
 	        	break;
@@ -342,43 +380,4 @@ uint32_t FindNextPrime(uint32_t num)
 uint32_t HashFunction2(int32_t num, uint32_t prime)
 {
 	return num % prime;
-}
-
-int InitIndex(bc_index** ind, int bucket_size, int start)
-{
-	uint32_t hash_size = FindNextPrime(bucket_size);
-	(*ind) = malloc(sizeof(bc_index));
-	CheckMalloc((*ind), "*ind (rhjoin.c)");
-	(*ind)->bucket = malloc(hash_size * sizeof(int32_t));
-	CheckMalloc((*ind)->bucket, "*ind->bucket (rhjoin.c)");
-	(*ind)->chain = (int32_t*) malloc(bucket_size * sizeof(int32_t));
-	CheckMalloc((*ind)->chain, "*ind->chain (rhjoin.c)");
-	(*ind)->start = start;
-	(*ind)->end = start + bucket_size;
-	int i;
-	for (i = 0; i < hash_size; ++i)
-	{
-		(*ind)->bucket[i] = -1;
-	}
-	(*ind)->index_size = hash_size;
-	for (i = 0; i < bucket_size; ++i)
-	{
-		(*ind)->chain[i] = -1;
-	}
-	return 0;
-}
-
-int DeleteIndex(bc_index** ind)
-{
-	if ((*ind != NULL) && ((*ind)->bucket != NULL))
-	{
-		free((*ind)->bucket);
-		free((*ind)->chain);
-		free(*ind);
-	}
-	else
-	{
-		printf("Error, ind or ind->bucket = NULL\n");
-		exit(2);
-	}
 }

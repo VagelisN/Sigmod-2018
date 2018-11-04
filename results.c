@@ -5,7 +5,7 @@
 #include <string.h>
 
 
-int InsertResult(struct result **head, result_tuples *res_tuples)
+int InsertResult(result **head, result_tuples *res_tuples)
 {
 	//if the list is empty create the first node and insert the first result
 	if( (*head) == NULL )
@@ -23,14 +23,14 @@ int InsertResult(struct result **head, result_tuples *res_tuples)
 	//else find the first node with available space
 	else
 	{
-		struct result *temp = (*head);
+		result *temp = (*head);
 		while( ((temp->current_load*sizeof(result_tuples)) + sizeof(result_tuples)) > RESULT_MAX_BUFFER)
 		{
 			if ( temp->next != NULL) temp = temp->next;
 			//if all nodes are full create a new one
 			else 
 			{
-				temp->next = malloc(sizeof(struct result));
+				temp->next = malloc(sizeof(result));
 				CheckMalloc(temp->next, "temp->next (results.c)");
 				temp->next->buff = malloc(RESULT_MAX_BUFFER * sizeof(char));
 				CheckMalloc(temp->next->buff, "temp->next->buff (results.c)");
@@ -76,6 +76,7 @@ void PrintResult(result* head)
 	printf("-------------------------------\n");
 }
 
+
 void CheckResult(result* head)
 {
 	printf("------------------------------\n");
@@ -103,9 +104,28 @@ void CheckResult(result* head)
 	printf("------------------------------\n");
 }
 
-void FreeResult(struct result* head)
+result_tuples* FindResultTuples(result* head, int num)
 {
-	struct result* temp;
+	int count = 0;
+	result_tuples* res_ptr = NULL;
+	if(num < 0) return NULL;
+	while(head!=NULL)
+	{
+		//result wanted is in this node's buffer
+		if(head->current_load + count > num)
+		{
+			res_ptr = (result_tuples*)(head->buff + ( (num-count)*sizeof(result_tuples)));
+			return res_ptr;
+
+		}
+		count += head->current_load;
+		head = head->next;
+	}
+}
+
+void FreeResult(result* head)
+{
+	result* temp;
 	while(head != NULL)
 	{
 		temp = head;
