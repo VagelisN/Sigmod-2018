@@ -18,17 +18,16 @@ relation* ToRow(int** original_array, int row_to_join, relation* NewRel)
 void ReorderArray(relation* RelArray, int n_lsb, ReorderedRelation** NewRel)
 {
 	//Check the arguments
-	if ((RelArray == NULL) || (RelArray->num_tuples <= 0) || (n_lsb <= 0))
+	if ((RelArray == NULL) || (RelArray->num_tuples == 0) || (n_lsb <= 0))
 	{
 		printf("Error in ReorderArray. Invalid arguments\n");
 		exit(1);
 	}
-	int i = 0, flag = 0;
+	int i = 0;
 	uint32_t hashed_value = 0;
 
 	(*NewRel) = malloc(sizeof(ReorderedRelation));
 	CheckMalloc((*NewRel), "*NewRel (preprocess.c)");
-	(*NewRel)->Hist_size = -1;
 	//Find the size of the Psum and the Hist arrays
 	(*NewRel)->Hist_size = 1;
 	for (i = 0; i < n_lsb; ++i)
@@ -119,8 +118,6 @@ void ReorderArray(relation* RelArray, int n_lsb, ReorderedRelation** NewRel)
 		(*NewRel)->RelArray->tuples[i].RowId = -1;
 	}
 	int InsertPos = 0;
-	int NextActiveBucket = 0;
-	int UpperBound = -1;
 
 	//Traverse through the original array
 	for (i = 0; i < RelArray->num_tuples; ++i)
@@ -153,6 +150,27 @@ void ReorderArray(relation* RelArray, int n_lsb, ReorderedRelation** NewRel)
 		free(TempPsum[i]);
 	}
 	free(TempPsum);
+}
+
+
+void FreeReorderRelation(ReorderedRelation *rel)
+{
+	if (rel->Hist_size > 0)
+	{
+		for (int i = 0; i < rel->Hist_size; ++i)
+		{
+			free(rel->Hist[i]);
+			free(rel->Psum[i]);
+		}
+		free(rel->Psum);
+		free(rel->Hist);
+	}
+	if (rel->RelArray != NULL)
+	{
+		if (rel->RelArray->tuples != NULL)free(rel->RelArray->tuples);
+		free(rel->RelArray);
+	}
+	free(rel);
 }
 
 

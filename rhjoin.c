@@ -7,7 +7,7 @@
 
 result* RadixHashJoin(relation *relR, relation* relS)
 {
-
+	int i;
 	//Create Histogram,Psum,R',S'
 	ReorderedRelation* NewR = NULL;
 	ReorderedRelation* NewS = NULL;
@@ -15,9 +15,6 @@ result* RadixHashJoin(relation *relR, relation* relS)
 	//NewR and NewS both have the first index 
 	ReorderArray(relR, N_LSB, &NewR);
 	ReorderArray(relS, N_LSB, &NewS);
-
-
-	int i;
 	/*
 	for (i = 0; i < relR->num_tuples; ++i)
 	{
@@ -53,7 +50,6 @@ result* RadixHashJoin(relation *relR, relation* relS)
 	}
 	*/
 	struct result* results= NULL;
-	uint32_t index_size;
 
 	//for every bucket
 	for (i = 0; i < NewR->Hist_size; ++i)
@@ -61,7 +57,6 @@ result* RadixHashJoin(relation *relR, relation* relS)
 		//if both relations have elements in this bucket
 		if (NewR->Hist[i][1] != 0 && NewS->Hist[i][1] != 0)
 		{
-			//printf("ai ai iai %d\n",i );
 			//if R is bigger than S
 			if( NewR->Hist[i][1] >= NewS->Hist[i][1])
 			{
@@ -74,16 +69,12 @@ result* RadixHashJoin(relation *relR, relation* relS)
 
 				//Get results
 				GetResults(NewR,NewS,indS,&results,i,0);
-
 				DeleteIndex(&indS);
-				
-
 			}
 			//if S is bigger than R
 			else
 			{
 				bc_index* indR = NULL;
-
 				//Initialize the 2nd layer index
 				InitIndex(&indR, NewR->Hist[i][1], NewR->Psum[i][1]);
 
@@ -103,63 +94,18 @@ result* RadixHashJoin(relation *relR, relation* relS)
 	CheckResult(results);
 	FreeResult(results);
 
-	//Free NewS
-	if (NewS != NULL)
-	{
-		//Free Psum and Hist
-		if (NewS->Hist_size != -1)
-		{
-			for (int i = 0; i < NewS->Hist_size; ++i)
-			{
-				free(NewS->Hist[i]);
-				free(NewS->Psum[i]);
-			}
-			free(NewS->Psum);
-			free(NewS->Hist);
-		}
-		//Free RelArray
-		if (NewS->RelArray != NULL)
-		{
-			if (NewS->RelArray->tuples != NULL)free(NewS->RelArray->tuples);
-			free(NewS->RelArray);
-		}
-		free(NewS);
-	}
-
-	//Free NewR
-	if (NewR != NULL)
-	{
-		//Free Psum and Hist
-		if (NewR->Hist_size != -1)
-		{
-			for (int i = 0; i < NewR->Hist_size; ++i)
-			{
-				free(NewR->Hist[i]);
-				free(NewR->Psum[i]);
-			}
-			free(NewR->Psum);
-			free(NewR->Hist);
-		}
-		//Free RelArray
-		if (NewR->RelArray != NULL)
-		{
-			if (NewR->RelArray->tuples != NULL)free(NewR->RelArray->tuples);
-			free(NewR->RelArray);
-		}
-		free(NewR);
-	}
+	//Free NewS and NewR
+	FreeReorderRelation(NewS);
+	FreeReorderRelation(NewR);
 }
 
 
 int GetResults(ReorderedRelation* full_relation,ReorderedRelation* indexed_relation,bc_index * ind,struct result ** res,int curr_bucket,int r_s)
 {
-	int i ,j, start_full , end_full, hash_value, sp;
+	int i, start_full, hash_value, sp;
 
 	//the start of the non indexed current bucket
 	start_full = full_relation->Psum[curr_bucket][1];
-
-	//the end of the non indexed current bucket
-	end_full = start_full + full_relation->Hist[curr_bucket][1];
 
 	//for every element of the non indexed relation's bucket
 	for (i = 0; i < full_relation->Hist[curr_bucket][1]; i++)
@@ -232,13 +178,10 @@ int GetResults(ReorderedRelation* full_relation,ReorderedRelation* indexed_relat
 
 int CreateIndex(ReorderedRelation *rel, bc_index** ind,int curr_bucket)
 {
-	int start,end,i,hash_value;
+	int start, i, hash_value;
 
 	//the start of the current bucket is in Psum
 	start = rel->Psum[curr_bucket][1];
-
-	//the end is at Psum + the number of elements in current bucket
-	end = start + rel->Hist[curr_bucket][1];
 	
 	//Hash every value of the bucket from last to first with H2 and set up bucket and chain
 	for (i = (rel->Hist[curr_bucket][1]-1); i >= 0; i--)
