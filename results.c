@@ -64,8 +64,8 @@ void PrintResult(result* head)
 		{
 			memcpy(&res_tuples,data,sizeof(result_tuples));
 			num_results++;
-			printf("Rowid R %2d Value R %2d || " ,res_tuples.tuple_R.RowId,res_tuples.tuple_R.Value);
-			printf("Rowid S %2d Value S %2d\n" ,res_tuples.tuple_S.RowId,res_tuples.tuple_S.Value);
+			printf("row_id R %2d value R %2d || " ,res_tuples.tuple_R.row_id,res_tuples.tuple_R.value);
+			printf("row_id S %2d value S %2d\n" ,res_tuples.tuple_S.row_id,res_tuples.tuple_S.value);
 			data += sizeof(result_tuples);
 			temp_curr_load --;
 		}
@@ -91,9 +91,9 @@ void CheckResult(result* head)
 		{
 			memcpy(&temp_result, data, sizeof(result_tuples));
 			//Check the results
-			if (temp_result.tuple_S.Value != temp_result.tuple_R.Value)
+			if (temp_result.tuple_S.value != temp_result.tuple_R.value)
 			{
-				printf("Error! Failed in result check. R.Value is different from S.Value\n");
+				printf("Error! Failed in result check. R.value is different from S.value\n");
 				exit(-2);
 			}
 			temp_curr_load --;

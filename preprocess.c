@@ -4,21 +4,21 @@
 #include "rhjoin.h"
 #include "preprocess.h"
 
-relation* ToRow(int** original_array, int row_to_join, relation* NewRel)
+relation* ToRow(int** original_array, int row_to_join, relation* new_rel)
 {
-	for (int i = 0; i < NewRel->num_tuples; ++i)
+	for (int i = 0; i < new_rel->num_tuples; ++i)
 	{
-		NewRel->tuples[i].Value = original_array[i][row_to_join];
-		NewRel->tuples[i].RowId = i;
+		new_rel->tuples[i].value = original_array[i][row_to_join];
+		new_rel->tuples[i].row_id = i;
 	}
-	return NewRel;
+	return new_rel;
 }
 
 
-void ReorderArray(relation* RelArray, int n_lsb, ReorderedRelation** NewRel)
+void ReorderArray(relation* rel_array, int n_lsb, reordered_relation** new_rel)
 {
 	//Check the arguments
-	if ((RelArray == NULL) || (RelArray->num_tuples == 0) || (n_lsb <= 0))
+	if ((rel_array == NULL) || (rel_array->num_tuples == 0) || (n_lsb <= 0))
 	{
 		printf("Error in ReorderArray. Invalid arguments\n");
 		exit(1);
@@ -26,149 +26,149 @@ void ReorderArray(relation* RelArray, int n_lsb, ReorderedRelation** NewRel)
 	int i = 0;
 	uint32_t hashed_value = 0;
 
-	(*NewRel) = malloc(sizeof(ReorderedRelation));
-	CheckMalloc((*NewRel), "*NewRel (preprocess.c)");
-	//Find the size of the Psum and the Hist arrays
-	(*NewRel)->Hist_size = 1;
+	(*new_rel) = malloc(sizeof(reordered_relation));
+	CheckMalloc((*new_rel), "*new_rel (preprocess.c)");
+	//Find the size of the psum and the hist arrays
+	(*new_rel)->hist_size = 1;
 	for (i = 0; i < n_lsb; ++i)
 	{
-		(*NewRel)->Hist_size *= 2;
+		(*new_rel)->hist_size *= 2;
 	}
 	
-	// Allocate space for the Hist and Psum arrays
-	(*NewRel)->Psum = malloc((*NewRel)->Hist_size * sizeof(int*));
-	CheckMalloc((*NewRel)->Psum, "*NewRel->Psum (preprocess.c)");
-	(*NewRel)->Hist = malloc((*NewRel)->Hist_size * sizeof(int*));
-	CheckMalloc((*NewRel)->Hist, "*NewRel->Hist (preprocess.c)");
+	// Allocate space for the hist and psum arrays
+	(*new_rel)->psum = malloc((*new_rel)->hist_size * sizeof(int*));
+	CheckMalloc((*new_rel)->psum, "*new_rel->psum (preprocess.c)");
+	(*new_rel)->hist = malloc((*new_rel)->hist_size * sizeof(int*));
+	CheckMalloc((*new_rel)->hist, "*new_rel->hist (preprocess.c)");
 	
-	//TempPsum array is used only in this function for faster reordering of the array
-	int** TempPsum = malloc((*NewRel)->Hist_size * sizeof(int*));
-	CheckMalloc(TempPsum, "*TempPsum (preprocess.c)");
-	for (i = 0; i < (*NewRel)->Hist_size; ++i)
+	//temp_sum array is used only in this function for faster reordering of the array
+	int** temp_sum = malloc((*new_rel)->hist_size * sizeof(int*));
+	CheckMalloc(temp_sum, "*temp_sum (preprocess.c)");
+	for (i = 0; i < (*new_rel)->hist_size; ++i)
 	{
-		TempPsum[i] = malloc(2 * sizeof(int));
-		CheckMalloc(TempPsum[i], "*TempPsum[i] (preprocess.c)");
-		(*NewRel)->Psum[i] = malloc(2 * sizeof(int));
-		CheckMalloc((*NewRel)->Psum[i], "*NewRel->Psum[i] (preprocess.c)");
-		(*NewRel)->Psum[i][0] = i; //Bucket number
-		(*NewRel)->Psum[i][1] = -1; //Initialize the starting point of each bucket in the reordered array to -1
-		TempPsum[i][0] = i;
-		TempPsum[i][1] = -1;
+		temp_sum[i] = malloc(2 * sizeof(int));
+		CheckMalloc(temp_sum[i], "*temp_sum[i] (preprocess.c)");
+		(*new_rel)->psum[i] = malloc(2 * sizeof(int));
+		CheckMalloc((*new_rel)->psum[i], "*new_rel->psum[i] (preprocess.c)");
+		(*new_rel)->psum[i][0] = i; //Bucket number
+		(*new_rel)->psum[i][1] = -1; //Initialize the starting point of each bucket in the reordered array to -1
+		temp_sum[i][0] = i;
+		temp_sum[i][1] = -1;
 
-		(*NewRel)->Hist[i] = malloc(2 * sizeof(int));
-		CheckMalloc((*NewRel)->Hist[i], "*NewRel->Hist[i] (preprocess.c)");
-		(*NewRel)->Hist[i][0] = i; // Bucket number
-		(*NewRel)->Hist[i][1] = 0; // Each bucket starts with 0 allocated values
+		(*new_rel)->hist[i] = malloc(2 * sizeof(int));
+		CheckMalloc((*new_rel)->hist[i], "*new_rel->hist[i] (preprocess.c)");
+		(*new_rel)->hist[i][0] = i; // Bucket number
+		(*new_rel)->hist[i][1] = 0; // Each bucket starts with 0 allocated values
 	}
 
-	//Run RelArray with the hash function and build the histogram
-	for (i = 0; i < RelArray->num_tuples; ++i)
+	//Run rel_array with the hash function and build the histogram
+	for (i = 0; i < rel_array->num_tuples; ++i)
 	{
-		hashed_value = HashFunction1((int32_t) RelArray->tuples[i].Value, n_lsb);
-		(*NewRel)->Hist[hashed_value][1]++;
+		hashed_value = HashFunction1((int32_t) rel_array->tuples[i].value, n_lsb);
+		(*new_rel)->hist[hashed_value][1]++;
 	}
-	CheckBucketSizes((*NewRel)->Hist, (*NewRel)->Hist_size);
-	//Build the Psum array using the histogram
-	int NewStartingPoint = 0;
-	for (i = 0; i < (*NewRel)->Hist_size; ++i)
+	CheckBucketSizes((*new_rel)->hist, (*new_rel)->hist_size);
+	//Build the psum array using the histogram
+	int new_starting_point = 0;
+	for (i = 0; i < (*new_rel)->hist_size; ++i)
 	{
-		if ((*NewRel)->Psum[i][1] != -1)
+		if ((*new_rel)->psum[i][1] != -1)
 		{
-			printf("Error in initialization of Psum\n");
+			printf("Error in initialization of psum\n");
 			exit(1);
 		}
 		/*
 		 *If the current bucket has 0 values allocated to it then leave 
-		 *Psum[CurrentBucket][1] to -1.
+		 *psum[CurrentBucket][1] to -1.
 		*/
-		if ((*NewRel)->Hist[i][1] > 0)
+		if ((*new_rel)->hist[i][1] > 0)
 		{
-			(*NewRel)->Psum[i][1] = NewStartingPoint;
-			TempPsum[i][1] = NewStartingPoint;
-			NewStartingPoint += (*NewRel)->Hist[i][1];
+			(*new_rel)->psum[i][1] = new_starting_point;
+			temp_sum[i][1] = new_starting_point;
+			new_starting_point += (*new_rel)->hist[i][1];
 		}
 	}
 	/*
-	printf("Hist:\n");
-	for (i = 0; i < (*NewRel)->Hist_size; ++i)
+	printf("hist:\n");
+	for (i = 0; i < (*new_rel)->hist_size; ++i)
 	{
-		printf("%d %d\n", (*NewRel)->Hist[i][0], (*NewRel)->Hist[i][1]);
+		printf("%d %d\n", (*new_rel)->hist[i][0], (*new_rel)->hist[i][1]);
 	}
 	printf("--------------------------------------\n");
-	printf("Psum:\n");
-	for (i = 0; i < (*NewRel)->Hist_size; ++i)
+	printf("psum:\n");
+	for (i = 0; i < (*new_rel)->hist_size; ++i)
 	{
-		printf("%d %d\n", (*NewRel)->Psum[i][0], (*NewRel)->Psum[i][1]);
+		printf("%d %d\n", (*new_rel)->psum[i][0], (*new_rel)->psum[i][1]);
 	}
 	*/
 
 	/*--------------------Build the reordered array----------------------*/
 
-	//Allocate space for the ordered array in NewRel variable
-	(*NewRel)->RelArray = malloc(sizeof(relation));
-	CheckMalloc((*NewRel)->RelArray, "*NewRel->RelArray (preprocess.c)");
-	(*NewRel)->RelArray->num_tuples = RelArray->num_tuples;
-	(*NewRel)->RelArray->tuples = malloc(RelArray->num_tuples * sizeof(tuple));
-	CheckMalloc((*NewRel)->RelArray->tuples, "*NewRel->RelArray->tuples (preprocess.c)");
+	//Allocate space for the ordered array in new_rel variable
+	(*new_rel)->rel_array = malloc(sizeof(relation));
+	CheckMalloc((*new_rel)->rel_array, "*new_rel->rel_array (preprocess.c)");
+	(*new_rel)->rel_array->num_tuples = rel_array->num_tuples;
+	(*new_rel)->rel_array->tuples = malloc(rel_array->num_tuples * sizeof(tuple));
+	CheckMalloc((*new_rel)->rel_array->tuples, "*new_rel->rel_array->tuples (preprocess.c)");
 
 	//Initialize the array
-	for (i = 0; i < RelArray->num_tuples; ++i)
+	for (i = 0; i < rel_array->num_tuples; ++i)
 	{
-		(*NewRel)->RelArray->tuples[i].Value = -1;
-		(*NewRel)->RelArray->tuples[i].RowId = -1;
+		(*new_rel)->rel_array->tuples[i].value = -1;
+		(*new_rel)->rel_array->tuples[i].row_id = -1;
 	}
-	int InsertPos = 0;
+	int insert_pos = 0;
 
 	//Traverse through the original array
-	for (i = 0; i < RelArray->num_tuples; ++i)
+	for (i = 0; i < rel_array->num_tuples; ++i)
 	{
 		//Find the hash value of the current tuple
-		hashed_value = HashFunction1((int32_t) RelArray->tuples[i].Value, n_lsb);
-		//Using the hash value find the insert position using the TempPsum
-		InsertPos = TempPsum[hashed_value][1];
-		if (InsertPos < 0 || InsertPos > RelArray->num_tuples)
+		hashed_value = HashFunction1((int32_t) rel_array->tuples[i].value, n_lsb);
+		//Using the hash value find the insert position using the temp_sum
+		insert_pos = temp_sum[hashed_value][1];
+		if (insert_pos < 0 || insert_pos > rel_array->num_tuples)
 		{
 			printf("Error, hash value is outside of array borders!\n");
 			exit(1);
 		}
 
-		if ((*NewRel)->RelArray->tuples[InsertPos].Value == -1)
+		if ((*new_rel)->rel_array->tuples[insert_pos].value == -1)
 		{
-			(*NewRel)->RelArray->tuples[InsertPos].Value = RelArray->tuples[i].Value;
-			(*NewRel)->RelArray->tuples[InsertPos].RowId = RelArray->tuples[i].RowId;
+			(*new_rel)->rel_array->tuples[insert_pos].value = rel_array->tuples[i].value;
+			(*new_rel)->rel_array->tuples[insert_pos].row_id = rel_array->tuples[i].row_id;
 		}
 		else
 		{
-			printf("Error, InsertPos has already an assigned value\n");
+			printf("Error, insert_pos has already an assigned value\n");
 			exit(1);
 		}
-		TempPsum[hashed_value][1] ++;//The InsertPos for the same bucket goes up 1 position
+		temp_sum[hashed_value][1] ++;//The insert_pos for the same bucket goes up 1 position
 	}
-	//Free TempPsum array
-	for (i = 0; i < (*NewRel)->Hist_size; ++i)
+	//Free temp_sum array
+	for (i = 0; i < (*new_rel)->hist_size; ++i)
 	{
-		free(TempPsum[i]);
+		free(temp_sum[i]);
 	}
-	free(TempPsum);
+	free(temp_sum);
 }
 
 
-void FreeReorderRelation(ReorderedRelation *rel)
+void FreeReorderRelation(reordered_relation *rel)
 {
-	if (rel->Hist_size > 0)
+	if (rel->hist_size > 0)
 	{
-		for (int i = 0; i < rel->Hist_size; ++i)
+		for (int i = 0; i < rel->hist_size; ++i)
 		{
-			free(rel->Hist[i]);
-			free(rel->Psum[i]);
+			free(rel->hist[i]);
+			free(rel->psum[i]);
 		}
-		free(rel->Psum);
-		free(rel->Hist);
+		free(rel->psum);
+		free(rel->hist);
 	}
-	if (rel->RelArray != NULL)
+	if (rel->rel_array != NULL)
 	{
-		if (rel->RelArray->tuples != NULL)free(rel->RelArray->tuples);
-		free(rel->RelArray);
+		if (rel->rel_array->tuples != NULL)free(rel->rel_array->tuples);
+		free(rel->rel_array);
 	}
 	free(rel);
 }
@@ -185,12 +185,12 @@ int CheckMalloc(void* ptr, char* txt)
 }
 
 
-void CheckBucketSizes(int** Hist, int hist_size)
+void CheckBucketSizes(int** hist, int hist_size)
 {
 	int i, flag = 0;
 	for (i = 0; i < hist_size; ++i)
 	{
-		if ((Hist[i][1] * sizeof(tuple)) >= CACHE_SIZE)
+		if ((hist[i][1] * sizeof(tuple)) >= CACHE_SIZE)
 		{
 			flag = 1;
 			break;

@@ -4,7 +4,7 @@
 #include "structs.h"
 
 /** Radix Hash Join */
-result* RadixHashJoin(relation* relR, relation* relS);
+result* RadixHashJoin(relation*, relation*);
 
 /** Hash function that returns the n last bits of a given number */
 uint32_t HashFunction1(int32_t, int);
@@ -32,8 +32,7 @@ int DeleteIndex(bc_index**);
  * Creates the second layer index for a bucket of a relation
  * that already has a first layer index
  */
-
-int CreateIndex(ReorderedRelation*, bc_index**, int);
+int CreateIndex(reordered_relation*, bc_index**, int);
 
 /** Prints the second layer H2 index of a bucket*/
 void PrintIndex(bc_index* ind);
@@ -44,6 +43,6 @@ void PrintIndex(bc_index* ind);
  * of the first relation's bucket it checks for equalityin the second layer index 
  * of the second relation and returns the results 
 */
-int GetResults(ReorderedRelation*, ReorderedRelation* , bc_index *, struct result**, int, int);
+int GetResults(reordered_relation*, reordered_relation* , bc_index *, struct result**, int, int);
 
 #endif

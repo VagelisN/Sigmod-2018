@@ -10,8 +10,8 @@
 /** Type definition for a tuple */
 typedef struct tuple
 {
-	int32_t Value;
-	int32_t RowId;
+	int32_t value;
+	int32_t row_id;
 }tuple;
 
 /*
@@ -45,14 +45,20 @@ typedef struct result_tuples
 	tuple tuple_S;
 }result_tuples;
 
+/*
+ * reordered relation is a relation that has been hashed with 
+ * HashFunction1 (rel_array). It also contains the histogram
+ * (number of records in each bucket) and the psum 
+ * (where is the start of each bucket) 
+ */
 
-typedef struct ReorderRelation 
+typedef struct reordered_relation 
 {
-	int Hist_size;
-	int **Psum;
-	int **Hist;
-	relation* RelArray;
-} ReorderedRelation;
+	int hist_size;
+	int **psum;
+	int **hist;
+	relation* rel_array;
+} reordered_relation;
 
 /*
  * THe index that uses H2 as the hash function
