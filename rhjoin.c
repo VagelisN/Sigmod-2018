@@ -103,7 +103,21 @@ result* RadixHashJoin(relation *relR, relation* relS)
 int GetResults(reordered_relation* full_relation,reordered_relation* indexed_relation,bc_index * ind,struct result ** res,int curr_bucket,int r_s)
 {
 	int i, start_full, hash_value, sp;
+	tuples* full_tuples, *indexed_tuples;
 
+	//just renaming to make code easier
+	full_tuples = full_relation->rel_array->tuples;
+	indexed_tuples = indexed_relation->rel_array->tuple;
+	//set the pointers depending on which relation is indexed
+	result_tuples curr_res;
+	tuple* first, *second;
+	first = &curr_res.tuple_R;
+	second = &curr_res.tuple_S;
+	if (r_s==1);
+	{
+		first = &curr_res.tuple_S;
+		second = &curr_res.tuple_R;
+	}
 	//the start of the non indexed current bucket
 	start_full = full_relation->psum[curr_bucket];
 
@@ -111,62 +125,35 @@ int GetResults(reordered_relation* full_relation,reordered_relation* indexed_rel
 	for (i = 0; i < full_relation->hist[curr_bucket]; i++)
 	{
 		//check the index of the second relation
-		hash_value = HashFunction2((full_relation->rel_array->tuples[(start_full + i)].value), ind->index_size);
+		hash_value = HashFunction2((full_tuples[(start_full + i)].value), ind->index_size);
 
 		//if there are elements in this bucket of the indexed relation
 		if( ind->bucket[hash_value] != -1)
 		{
 			//scan the values following the chain for equality
-			if(indexed_relation->rel_array->tuples[(ind->start + (ind->bucket[hash_value])-1)].value == full_relation->rel_array->tuples[(start_full + i)].value)
+			if(indexed_tuples[(ind->start + (ind->bucket[hash_value])-1)].value == full_tuples[(start_full + i)].value)
 			{
-				result_tuples curr_res;
+				first->row_id = full_tuples[start_full + i].row_id;
+				first->value = full_tuples[start_full + i].value;
 
-				//index is built on relation S
-				if (r_s == 0)
-				{
-					curr_res.tuple_R.row_id = full_relation->rel_array->tuples[start_full + i].row_id;
-					curr_res.tuple_R.value = full_relation->rel_array->tuples[start_full + i].value;
-
-					curr_res.tuple_S.row_id = indexed_relation->rel_array->tuples[(ind->start + (ind->bucket[hash_value])-1)].row_id;
-					curr_res.tuple_S.value = indexed_relation->rel_array->tuples[(ind->start + (ind->bucket[hash_value])-1)].value;
-				}
-				//index is built on relation R
-				else
-				{
-					curr_res.tuple_S.row_id = full_relation->rel_array->tuples[start_full + i].row_id;
-					curr_res.tuple_S.value = full_relation->rel_array->tuples[start_full + i].value;
-
-					curr_res.tuple_R.row_id = indexed_relation->rel_array->tuples[(ind->start + (ind->bucket[hash_value])-1)].row_id;
-					curr_res.tuple_R.value = indexed_relation->rel_array->tuples[(ind->start + (ind->bucket[hash_value])-1)].value;
-				}
-
+				second->row_id = indexed_tuples[(ind->start + (ind->bucket[hash_value])-1)].row_id;
+				second->value = indexed_tuples[(ind->start + (ind->bucket[hash_value])-1)].value;
+				
 				//insert the result in the list
 				InsertResult(res,&curr_res);
 			}
-
 			//follow the chain
 			sp = (ind->bucket[hash_value]-1);
 			while( ind->chain[sp] != 0)
 			{
-				if(indexed_relation->rel_array->tuples[(ind->start + (ind->chain[sp]-1))].value == full_relation->rel_array->tuples[start_full + i].value)
+				if(indexed_tuples[(ind->start + (ind->chain[sp]-1))].value == full_tuples[start_full + i].value)
 				{
-					result_tuples curr_res;
-					if (r_s == 0)
-					{
-						curr_res.tuple_R.row_id = full_relation->rel_array->tuples[start_full + i].row_id;
-						curr_res.tuple_R.value = full_relation->rel_array->tuples[start_full + i].value;
+					first->row_id = full_tuples[start_full + i].row_id;
+					first->value = full_tuples[start_full + i].value;
 
-						curr_res.tuple_S.row_id = indexed_relation->rel_array->tuples[(ind->start + (ind->chain[sp]-1))].row_id;
-						curr_res.tuple_S.value = indexed_relation->rel_array->tuples[(ind->start + (ind->chain[sp]-1))].value;
-					}
-					else
-					{
-						curr_res.tuple_S.row_id = full_relation->rel_array->tuples[start_full + i].row_id;
-						curr_res.tuple_S.value = full_relation->rel_array->tuples[start_full + i].value;
+					second->row_id = indexed_tuples[(ind->start + (ind->chain[sp]-1))].row_id;
+					second->value = indexed_tuples[(ind->start + (ind->chain[sp]-1))].value;
 
-						curr_res.tuple_R.row_id = indexed_relation->rel_array->tuples[(ind->start + (ind->chain[sp]-1))].row_id;
-						curr_res.tuple_R.value = indexed_relation->rel_array->tuples[(ind->start + (ind->chain[sp]-1))].value;
-					}
 					//insert the result in the list
 					InsertResult(res, &curr_res);
 				}
