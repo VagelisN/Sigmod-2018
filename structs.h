@@ -45,26 +45,20 @@ typedef struct result_tuples
 	tuple tuple_S;
 }result_tuples;
 
-/*
- * reordered relation is a relation that has been hashed with 
- * HashFunction1 (rel_array). It also contains the histogram
- * (number of records in each bucket) and the psum 
- * (where is the start of each bucket) 
- */
 
-typedef struct reordered_relation 
+typedef struct ReorderRelation
 {
 	int hist_size;
-	int **psum;
-	int **hist;
+	int *psum;
+	int *hist;
 	relation* rel_array;
 } reordered_relation;
 
 /*
  * THe index that uses H2 as the hash function
  * Contains:
- * -the size of the index in buckets 
- * -the start and end are pointers to the full array's start and end 
+ * -the size of the index in buckets
+ * -the start and end are pointers to the full array's start and end
  * of the bucket on which the index is created
  * -the index and chain arrays
  */

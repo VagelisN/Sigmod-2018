@@ -34,73 +34,48 @@ void ReorderArray(relation* rel_array, int n_lsb, reordered_relation** new_rel)
 	{
 		(*new_rel)->hist_size *= 2;
 	}
-	
+
 	// Allocate space for the hist and psum arrays
-	(*new_rel)->psum = malloc((*new_rel)->hist_size * sizeof(int*));
+	(*new_rel)->psum = malloc((*new_rel)->hist_size * sizeof(int));
 	CheckMalloc((*new_rel)->psum, "*new_rel->psum (preprocess.c)");
-	(*new_rel)->hist = malloc((*new_rel)->hist_size * sizeof(int*));
+	(*new_rel)->hist = malloc((*new_rel)->hist_size * sizeof(int));
 	CheckMalloc((*new_rel)->hist, "*new_rel->hist (preprocess.c)");
-	
-	//temp_sum array is used only in this function for faster reordering of the array
-	int** temp_sum = malloc((*new_rel)->hist_size * sizeof(int*));
-	CheckMalloc(temp_sum, "*temp_sum (preprocess.c)");
+
+	//temp_psum array is used only in this function for faster reordering of the array
+	int* temp_psum = malloc((*new_rel)->hist_size * sizeof(int));
+	CheckMalloc(temp_psum, "*temp_psum (preprocess.c)");
+
 	for (i = 0; i < (*new_rel)->hist_size; ++i)
 	{
-		temp_sum[i] = malloc(2 * sizeof(int));
-		CheckMalloc(temp_sum[i], "*temp_sum[i] (preprocess.c)");
-		(*new_rel)->psum[i] = malloc(2 * sizeof(int));
-		CheckMalloc((*new_rel)->psum[i], "*new_rel->psum[i] (preprocess.c)");
-		(*new_rel)->psum[i][0] = i; //Bucket number
-		(*new_rel)->psum[i][1] = -1; //Initialize the starting point of each bucket in the reordered array to -1
-		temp_sum[i][0] = i;
-		temp_sum[i][1] = -1;
-
-		(*new_rel)->hist[i] = malloc(2 * sizeof(int));
-		CheckMalloc((*new_rel)->hist[i], "*new_rel->hist[i] (preprocess.c)");
-		(*new_rel)->hist[i][0] = i; // Bucket number
-		(*new_rel)->hist[i][1] = 0; // Each bucket starts with 0 allocated values
+		(*new_rel)->psum[i] = -1; //Initialize the starting point of each bucket in the reordered array to -1
+		(*new_rel)->hist[i] = 0; // Each bucket starts with 0 allocated values
+		temp_psum[i] = -1;
 	}
 
 	//Run rel_array with the hash function and build the histogram
 	for (i = 0; i < rel_array->num_tuples; ++i)
 	{
 		hashed_value = HashFunction1((int32_t) rel_array->tuples[i].value, n_lsb);
-		(*new_rel)->hist[hashed_value][1]++;
+		(*new_rel)->hist[hashed_value]++;
 	}
-	CheckBucketSizes((*new_rel)->hist, (*new_rel)->hist_size);
+
+	//CheckBucketSizes((*new_rel)->hist, (*new_rel)->hist_size);
+
 	//Build the psum array using the histogram
-	int new_starting_point = 0;
+	int NewStartingPoint = 0;
 	for (i = 0; i < (*new_rel)->hist_size; ++i)
 	{
-		if ((*new_rel)->psum[i][1] != -1)
-		{
-			printf("Error in initialization of psum\n");
-			exit(1);
-		}
 		/*
-		 *If the current bucket has 0 values allocated to it then leave 
+		 *If the current bucket has 0 values allocated to it then leave
 		 *psum[CurrentBucket][1] to -1.
 		*/
-		if ((*new_rel)->hist[i][1] > 0)
+		if ((*new_rel)->hist[i] > 0)
 		{
-			(*new_rel)->psum[i][1] = new_starting_point;
-			temp_sum[i][1] = new_starting_point;
-			new_starting_point += (*new_rel)->hist[i][1];
+			(*new_rel)->psum[i] = NewStartingPoint;
+			temp_psum[i] = NewStartingPoint;
+			NewStartingPoint += (*new_rel)->hist[i];
 		}
 	}
-	/*
-	printf("hist:\n");
-	for (i = 0; i < (*new_rel)->hist_size; ++i)
-	{
-		printf("%d %d\n", (*new_rel)->hist[i][0], (*new_rel)->hist[i][1]);
-	}
-	printf("--------------------------------------\n");
-	printf("psum:\n");
-	for (i = 0; i < (*new_rel)->hist_size; ++i)
-	{
-		printf("%d %d\n", (*new_rel)->psum[i][0], (*new_rel)->psum[i][1]);
-	}
-	*/
 
 	/*--------------------Build the reordered array----------------------*/
 
@@ -117,39 +92,21 @@ void ReorderArray(relation* rel_array, int n_lsb, reordered_relation** new_rel)
 		(*new_rel)->rel_array->tuples[i].value = -1;
 		(*new_rel)->rel_array->tuples[i].row_id = -1;
 	}
-	int insert_pos = 0;
+	int InsertPos = 0;
 
 	//Traverse through the original array
 	for (i = 0; i < rel_array->num_tuples; ++i)
 	{
 		//Find the hash value of the current tuple
 		hashed_value = HashFunction1((int32_t) rel_array->tuples[i].value, n_lsb);
-		//Using the hash value find the insert position using the temp_sum
-		insert_pos = temp_sum[hashed_value][1];
-		if (insert_pos < 0 || insert_pos > rel_array->num_tuples)
-		{
-			printf("Error, hash value is outside of array borders!\n");
-			exit(1);
-		}
-
-		if ((*new_rel)->rel_array->tuples[insert_pos].value == -1)
-		{
-			(*new_rel)->rel_array->tuples[insert_pos].value = rel_array->tuples[i].value;
-			(*new_rel)->rel_array->tuples[insert_pos].row_id = rel_array->tuples[i].row_id;
-		}
-		else
-		{
-			printf("Error, insert_pos has already an assigned value\n");
-			exit(1);
-		}
-		temp_sum[hashed_value][1] ++;//The insert_pos for the same bucket goes up 1 position
+		//Using the hash value find the insert position using the temp_psum
+		InsertPos = temp_psum[hashed_value];
+		(*new_rel)->rel_array->tuples[InsertPos].value = rel_array->tuples[i].value;
+		(*new_rel)->rel_array->tuples[InsertPos].row_id = rel_array->tuples[i].row_id;
+		temp_psum[hashed_value]++;//The InsertPos for the same bucket goes up 1 position
 	}
-	//Free temp_sum array
-	for (i = 0; i < (*new_rel)->hist_size; ++i)
-	{
-		free(temp_sum[i]);
-	}
-	free(temp_sum);
+	//Free temp_psum array
+	free(temp_psum);
 }
 
 
@@ -157,11 +114,6 @@ void FreeReorderRelation(reordered_relation *rel)
 {
 	if (rel->hist_size > 0)
 	{
-		for (int i = 0; i < rel->hist_size; ++i)
-		{
-			free(rel->hist[i]);
-			free(rel->psum[i]);
-		}
 		free(rel->psum);
 		free(rel->hist);
 	}
@@ -185,12 +137,12 @@ int CheckMalloc(void* ptr, char* txt)
 }
 
 
-void CheckBucketSizes(int** hist, int hist_size)
+void CheckBucketSizes(int* hist, int hist_size)
 {
 	int i, flag = 0;
 	for (i = 0; i < hist_size; ++i)
 	{
-		if ((hist[i][1] * sizeof(tuple)) >= CACHE_SIZE)
+		if ((hist[i] * sizeof(tuple)) >= CACHE_SIZE)
 		{
 			flag = 1;
 			break;
