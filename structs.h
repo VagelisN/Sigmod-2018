@@ -77,5 +77,28 @@ typedef struct bc_index
 	int* chain;
 }bc_index;
 
+/* list that holds the names of the files containing the relations
+ * and their respective file descriptors
+ */
+
+typedef struct relation_listnode
+{
+	char* filename;
+	int fd;
+	struct relation_listnode *next;
+}relation_listnode;
+
+
+/* struct that holds the relations after being mapped
+ * from the relation files given. it contains 
+ * the number of rows, the number of comuns 
+ * and an array that has pointers to the start of each column
+ */
+typedef struct relation_map
+{
+	uint64_t num_tuples;
+	uint64_t num_columns;
+	void **columns;
+}relation_map;
 
 #endif
