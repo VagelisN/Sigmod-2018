@@ -99,15 +99,14 @@ result* RadixHashJoin(relation *relR, relation* relS)
 	FreeReorderRelation(NewR);
 }
 
-
 int GetResults(reordered_relation* full_relation,reordered_relation* indexed_relation,bc_index * ind,struct result ** res,int curr_bucket,int r_s)
 {
 	int i, start_full, hash_value, sp;
-	tuples* full_tuples, *indexed_tuples;
+	tuple *full_tuples, *indexed_tuples;
 
 	//just renaming to make code easier
 	full_tuples = full_relation->rel_array->tuples;
-	indexed_tuples = indexed_relation->rel_array->tuple;
+	indexed_tuples = indexed_relation->rel_array->tuples;
 	//set the pointers depending on which relation is indexed
 	result_tuples curr_res;
 	tuple* first, *second;

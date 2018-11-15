@@ -46,7 +46,7 @@ typedef struct result_tuples
 }result_tuples;
 
 
-typedef struct ReorderRelation
+typedef struct reorder_relation
 {
 	int hist_size;
 	int *psum;
