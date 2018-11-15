@@ -28,7 +28,7 @@ int InsertResult(result **head, result_tuples *res_tuples)
 		{
 			if ( temp->next != NULL) temp = temp->next;
 			//if all nodes are full create a new one
-			else 
+			else
 			{
 				temp->next = malloc(sizeof(result));
 				CheckMalloc(temp->next, "temp->next (results.c)");
