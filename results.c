@@ -49,6 +49,33 @@ int InsertResult(result **head, result_tuples *res_tuples)
 	}
 }
 
+int FindResultRowId(result *res, int num)
+{
+  int pos,total_load = 0;
+  tuple *temp;
+  /* Find the right bucket */
+  while( (res != NULL) &&  ((total_load + res->current_load) < num))
+  {
+    total_load += res->current_load;
+    res = res->next;
+  }
+  pos = num - total_load;
+  //Find the right tuple
+  temp = (tuple *) (res->buff + pos * sizeof(tuple));
+  return temp->row_id;
+}
+
+int GetResultNum(result *res)
+{
+  int num_of_results = 0;
+  while(res != NULL)
+  {
+    num_of_results += res->current_load;
+    res = res->next;
+  }
+  return num_of_results;
+}
+
 void PrintResult(result* head)
 {
 	printf("------------------------------\n");

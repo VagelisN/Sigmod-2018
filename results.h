@@ -6,6 +6,12 @@
 /** Inserts a result_tuples in the result list */
 int InsertResult(result **, result_tuples*);
 
+/* Returns the number of the results in the result list. */
+int GetResultNum(result *);
+
+/* Returns the num-th RowID in the list. */
+int FindResultRowId(result *res, int num);
+
 /** Prints the result list */
 void PrintResult(result*);
 
