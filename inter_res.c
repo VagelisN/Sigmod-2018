@@ -126,7 +126,7 @@ relation* ScanInterResults(int given_rel,int column, inter_res* inter, relation_
 	int i;
 	for (i = 0; i < inter->data->num_tuples; ++i)
 	{
-		new_rel->tuples[i].row_id = inter->data->table[given_rel][i];
+		new_rel->tuples[i].row_id = i;
 		new_rel->tuples[i].value = *(col + inter->data->table[given_rel][i] * sizeof(int64_t));
 	}
 	return new_rel;
