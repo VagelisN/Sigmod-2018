@@ -23,14 +23,14 @@ void FreeInterData(inter_data *head, int num_of_relations)
 	free(head);
 }
 
-int InitInterResults(inter_res** head, int num_of_relations)
+int InitInterResults(inter_res** head, int num_of_rel)
 {
-	(*head) == malloc(sizeof(inter_res));
-	(*head)->num_of_relations = num_of_relations;
-	(*head)->active_relations = malloc(num_of_relations * sizeof(int));
-	for (size_t i = 0; i < num_of_relations; i++)
+	(*head) = malloc(sizeof(inter_res));
+	(*head)->num_of_relations = num_of_rel;
+	(*head)->active_relations = malloc(num_of_rel * sizeof(int));
+	for (size_t i = 0; i < num_of_rel; i++)
 		(*head)->active_relations[i] = -1;
-	InitInterData(&(*head)->data, num_of_relations, 0);
+	InitInterData(&(*head)->data, num_of_rel, 0);
 }
 
 int InsertJoinToInterResults(inter_res** head, int ex_rel_num, int new_rel_num, result* res)

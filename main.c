@@ -4,7 +4,7 @@
 #include "rhjoin.h"
 #include "results.h"
 #include "preprocess.h"
-
+#include "inter_res.h"
 
 
 
@@ -117,6 +117,21 @@ int main(void)
 	//Join the 2 row-stored arrays using RHJ
 	RadixHashJoin(array_R, array_S);
 
+	/* RadixHashJoin must return the result* so we can access it accordingly */
+	inter_res* intermediate = NULL;
+	InitInterResults(&intermediate, 8);
+	printf("Created intermediate results!\n");
+
+	/*
+	 take the results and insert them in the inter_res variable.
+	 then update the functionality of the main function so it acts like a handler
+	 which takes the queries , sets up the relations in the main memory , does a 
+	 basic querry optimization and then executes them in order while storing the results
+	 the intermediate result variable. Debug everything that occurs.
+
+	*/
+	FreeInterResults(intermediate);
+	return 0;
 
 	/*-------------------------Free allocated space-------------------------*/
 	//Free Original array R
