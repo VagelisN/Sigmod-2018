@@ -114,8 +114,12 @@ int main(void)
 	array_R = ToRow(original_array_R, 0, array_R);
 	array_S = ToRow(original_array_S, 1, array_S);
 
+	result* results;
+
 	//Join the 2 row-stored arrays using RHJ
-	RadixHashJoin(array_R, array_S);
+	results = RadixHashJoin(array_R, array_S);
+	PrintResult(results);
+	FreeResult(results);
 
 	/* RadixHashJoin must return the result* so we can access it accordingly */
 	inter_res* intermediate = NULL;
@@ -131,7 +135,6 @@ int main(void)
 
 	*/
 	FreeInterResults(intermediate);
-	return 0;
 
 	/*-------------------------Free allocated space-------------------------*/
 	//Free Original array R

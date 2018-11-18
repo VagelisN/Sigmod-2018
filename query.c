@@ -7,11 +7,14 @@
 int InitialiseQueryString(query_string_array** my_var, int elements, char* str, char* delimeter)
 {
   char *temp;
+
   (*my_var) = malloc(sizeof(query_string_array));
   (*my_var)->num_of_elements = elements;
   if ((*my_var) == NULL) return -1;
+
   (*my_var)->data = malloc(elements * sizeof(char*));
   if ((*my_var)->data == NULL) return -1;
+  
   int i = 0;
   while( (temp = strtok_r(str, delimeter, &str)) != NULL )
   {

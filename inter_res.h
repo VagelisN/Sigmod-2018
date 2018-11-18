@@ -33,4 +33,11 @@ void FreeInterResults(inter_res* var);
  * when the inter_res is empty.*/
 int InsertJoinToInterResults(inter_res** head, int ex_rel_num, int new_rel_num, result* res);
 
+/* Given the number of a relations place in the map, it checks
+ * if this relation is in the intermediate results and returns
+ * a struct relation* that contains only the rowids of the given column 
+ * that take part in the intermediate result 
+ */
+relation* ScanInterResults(int,int, inter_res*,relation_map* );
+
 #endif

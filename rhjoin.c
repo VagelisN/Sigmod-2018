@@ -8,95 +8,47 @@
 result* RadixHashJoin(relation *relR, relation* relS)
 {
 	int i;
-	//Create histogram,psum,R',S'
-	reordered_relation* NewR = NULL;
-	reordered_relation* NewS = NULL;
+	reordered_relation *NewR, *NewS, *bigger, *smaller;
+	result* results = NULL;
+	bc_index* ind;
 
-	//NewR and NewS both have the first index
+	// NewR and NewS both have the first index
 	ReorderArray(relR, N_LSB, &NewR);
 	ReorderArray(relS, N_LSB, &NewS);
-	/*
-	for (i = 0; i < relR->num_tuples; ++i)
-	{
-		printf("%2d %2d || %2d %2d\n", relR->tuples[i].value, relR->tuples[i].row_id, NewR->rel_array->tuples[i].value, NewR->rel_array->tuples[i].row_id);
-	}
-	printf("\n");
-	for (i = 0; i < relS->num_tuples; ++i)
-	{
-		printf("%2d %2d || %2d %2d\n", relS->tuples[i].value, relS->tuples[i].row_id, NewS->rel_array->tuples[i].value, NewS->rel_array->tuples[i].row_id);
-	}
 
-	printf("hist:\n");
+	// for every bucket
 	for (i = 0; i < NewR->hist_size; ++i)
 	{
-		printf("%d %d\n", NewR->hist[i][0], NewR->hist[i][1]);
-	}
-	printf("--------------------------------------\n");
-	printf("psum:\n");
-	for (i = 0; i < NewR->hist_size; ++i)
-	{
-		printf("%d %d\n", NewR->psum[i][0], NewR->psum[i][1]);
-	}
-		printf("hist:\n");
-	for (i = 0; i < NewS->hist_size; ++i)
-	{
-		printf("%d %d\n", NewS->hist[i][0], NewS->hist[i][1]);
-	}
-	printf("--------------------------------------\n");
-	printf("psum:\n");
-	for (i = 0; i < NewS->hist_size; ++i)
-	{
-		printf("%d %d\n", NewS->psum[i][0], NewS->psum[i][1]);
-	}
-	*/
-	struct result* results= NULL;
-
-	//for every bucket
-	for (i = 0; i < NewR->hist_size; ++i)
-	{
-		//if both relations have elements in this bucket
+		// if both relations have elements in this bucket
 		if (NewR->hist[i] != 0 && NewS->hist[i] != 0)
 		{
-			//if R is bigger than S
+			// if S is bigger than R
+			bigger = NewS;
+			smaller = NewR;
+
+			// if R is bigger than S
 			if( NewR->hist[i] >= NewS->hist[i])
 			{
-				bc_index* indS = NULL;
-				//Create a second layer index for the respective bucket of S
-
-				InitIndex(&indS, NewS->hist[i], NewS->psum[i]);
-
-				CreateIndex(NewS,&indS,i);
-
-				//Get results
-				GetResults(NewR,NewS,indS,&results,i,0);
-				DeleteIndex(&indS);
+				bigger = NewR;
+				smaller = NewS;
 			}
-			//if S is bigger than R
-			else
-			{
-				bc_index* indR = NULL;
-				//Initialize the 2nd layer index
-				InitIndex(&indR, NewR->hist[i], NewR->psum[i]);
 
-				//Create a second layer index for the respective bucket of R
-				CreateIndex(NewR,&indR,i);
+			// Create a second layer index for the respective bucket
+			InitIndex(&ind, smaller->hist[i], smaller->psum[i]);
+			CreateIndex(smaller,&ind,i);
 
-				//GetResults
-				GetResults(NewS,NewR,indR,&results,i,1);
+			// Get results
+			GetResults(bigger,smaller,ind,&results,i,0);
 
-				//Delete the 2nd layer index
-				DeleteIndex(&indR);
-
-			}
+			// Delete the index
+			DeleteIndex(&ind);
 		}
 	}
-	PrintResult(results);
-	CheckResult(results);
-	FreeResult(results);
-
-	//Free NewS and NewR
-	FreeReorderRelation(NewS);
+	// Free NewS and NewR
 	FreeReorderRelation(NewR);
+	FreeReorderRelation(NewS);
+
+	return results;
 }
 
 int GetResults(reordered_relation* full_relation,reordered_relation* indexed_relation,bc_index * ind,struct result ** res,int curr_bucket,int r_s)

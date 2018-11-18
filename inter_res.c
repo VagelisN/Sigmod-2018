@@ -105,3 +105,29 @@ void FreeInterResults(inter_res* var)
 	free(var->active_relations);
 	free(var);
 }
+
+relation* ScanInterResults(int given_rel,int column, inter_res* inter, relation_map* map)
+{
+	if (inter->num_of_relations >= given_rel || given_rel < 0 )
+	{
+		fprintf(stderr, "given_rel out of bounds\n");
+		exit(2);
+	}
+	if (inter->active_relations[given_rel] == -1) return NULL;
+
+	// Allocate a new struct relation
+	relation* new_rel = malloc(sizeof(relation));
+	new_rel->num_tuples = inter->data->num_tuples;
+	new_rel->tuples = malloc(new_rel->num_tuples * sizeof(tuple));
+
+	//Get a pointer to the correct column of the mapped relation
+	int64_t* col = map->columns[column];
+
+	int i;
+	for (i = 0; i < inter->data->num_tuples; ++i)
+	{
+		new_rel->tuples[i].row_id = inter->data->table[given_rel][i];
+		new_rel->tuples[i].value = *(col + inter->data->table[given_rel][i] * sizeof(int64_t));
+	}
+	return new_rel;
+} 
