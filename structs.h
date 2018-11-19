@@ -45,7 +45,6 @@ typedef struct result_tuples
 	tuple tuple_S;
 }result_tuples;
 
-
 typedef struct reorder_relation
 {
 	int hist_size;

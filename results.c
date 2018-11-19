@@ -49,6 +49,7 @@ int InsertResult(result **head, result_tuples *res_tuples)
 	}
 }
 
+
 int FindResultRowId(result *res, int num)
 {
   int pos,total_load = 0;

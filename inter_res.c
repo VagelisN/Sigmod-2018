@@ -116,7 +116,7 @@ relation* ScanInterResults(int given_rel,int column, inter_res* inter, relation_
 	if (inter->active_relations[given_rel] == -1) return NULL;
 
 	// Allocate a new struct relation
-	relation* new_rel = malloc(sizeof(relation));
+	relation *new_rel = malloc(sizeof(relation));
 	new_rel->num_tuples = inter->data->num_tuples;
 	new_rel->tuples = malloc(new_rel->num_tuples * sizeof(tuple));
 
@@ -131,3 +131,29 @@ relation* ScanInterResults(int given_rel,int column, inter_res* inter, relation_
 	}
 	return new_rel;
 } 
+
+relation* GetRelation(int given_rel, int column, inter_res* inter, relation_map* map)
+{
+	relation *new_rel = NULL;
+	int i;
+	// If the relation is in the intermediate results 
+	if ( (new_rel = ScanInterResults(given_rel, column, inter, map)) != NULL)
+		return new_rel;
+
+	// If the relation is only in the map
+	else 
+	{
+		relation* new_rel = malloc(sizeof(relation));
+		new_rel->num_tuples = map[given_rel].num_tuples;
+		new_rel->tuples = malloc(new_rel->num_tuples * sizeof(tuple));
+
+		int64_t* col = map->columns[column];
+		for (i = 0; i < new_rel->num_tuples; ++i)
+		{
+			new_rel->tuples[i].row_id = i;
+			new_rel->tuples[i].value = *(col + (i * sizeof(int64_t)));
+		}
+		return new_rel;
+	}
+}
+
