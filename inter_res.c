@@ -48,7 +48,7 @@ int InsertJoinToInterResults(inter_res** head, int ex_rel_num, int new_rel_num, 
 		{
 			result_tuples *temp = FindResultTuples(res, i);
 			(*head)->data->table[ex_rel_num][i] = temp->tuple_R.row_id;
-			(*head)->data->table[ex_rel_num][i] = temp->tuple_S.row_id;
+			(*head)->data->table[new_rel_num][i] = temp->tuple_S.row_id;
 		}
 	}
 	else
@@ -108,7 +108,7 @@ void FreeInterResults(inter_res* var)
 
 relation* ScanInterResults(int given_rel,int column, inter_res* inter, relation_map* map)
 {
-	if (inter->num_of_relations >= given_rel || given_rel < 0 )
+	if (inter->num_of_relations <= given_rel || given_rel < 0 )
 	{
 		fprintf(stderr, "given_rel out of bounds\n");
 		exit(2);
@@ -130,18 +130,18 @@ relation* ScanInterResults(int given_rel,int column, inter_res* inter, relation_
 		new_rel->tuples[i].value = *(col + inter->data->table[given_rel][i] * sizeof(int64_t));
 	}
 	return new_rel;
-} 
+}
 
 relation* GetRelation(int given_rel, int column, inter_res* inter, relation_map* map)
 {
 	relation *new_rel = NULL;
 	int i;
-	// If the relation is in the intermediate results 
+	// If the relation is in the intermediate results
 	if ( (new_rel = ScanInterResults(given_rel, column, inter, map)) != NULL)
 		return new_rel;
 
 	// If the relation is only in the map
-	else 
+	else
 	{
 		relation* new_rel = malloc(sizeof(relation));
 		new_rel->num_tuples = map[given_rel].num_tuples;
@@ -156,4 +156,3 @@ relation* GetRelation(int given_rel, int column, inter_res* inter, relation_map*
 		return new_rel;
 	}
 }
-

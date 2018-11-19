@@ -69,27 +69,27 @@ int InsertFilterToInterResult(inter_res** head, int relation_num, result* res)
   {
   	/* If the bucket is already active then remove the tuples that dont fulfil the filter */
   	//Allocate and initialise the new inter_data variable.
-	inter_data *temp_array = malloc(sizeof(inter_data));
-	temp_array->num_tuples = GetResultNum(res);
-	temp_array->table = malloc((*head)->num_of_relations * sizeof(int64_t*));
-	for (size_t i = 0; i < (*head)->num_of_relations; i++)
-	{
-		/* Allocate memory for all the active relations */
-		if((*head)->active_relations[i] == 1)
-			temp_array->table[i] = malloc((*head)->data->num_tuples * sizeof(int64_t));
-		else temp_array->table[i] = NULL;
-	}
-	//Insert the results.
-	for (size_t i = 0; i < (*head)->data->num_tuples; i++)
-	{
-		//Insert the results that are stored in the res variable.
-		int64_t temp = FindResultRowId(res, i);
-		/* temp is a rowId which refers to the current result's row_id in the inter_res data table.*/
-		temp_array->table[relation_num][i] = (*head)->data->table[relation_num][temp];
-		for (size_t j = 0; j < (*head)->num_of_relations; j++)
-			if ((relation_num != j) && (*head)->active_relations[j] == 1)
-				temp_array->table[j][i] = (*head)->data->table[j][temp];
-	}
+  	inter_data *temp_array = malloc(sizeof(inter_data));
+  	temp_array->num_tuples = GetResultNum(res);
+  	temp_array->table = malloc((*head)->num_of_relations * sizeof(int64_t*));
+  	for (size_t i = 0; i < (*head)->num_of_relations; i++)
+  	{
+  		/* Allocate memory for all the active relations */
+  		if((*head)->active_relations[i] == 1)
+  			temp_array->table[i] = malloc((*head)->data->num_tuples * sizeof(int64_t));
+  		else temp_array->table[i] = NULL;
+  	}
+  	//Insert the results.
+  	for (size_t i = 0; i < (*head)->data->num_tuples; i++)
+  	{
+  		//Insert the results that are stored in the res variable.
+  		int64_t temp = FindResultRowId(res, i);
+  		/* temp is a rowId which refers to the current result's row_id in the inter_res data table.*/
+  		temp_array->table[relation_num][i] = (*head)->data->table[relation_num][temp];
+  		for (size_t j = 0; j < (*head)->num_of_relations; j++)
+  			if ((relation_num != j) && (*head)->active_relations[j] == 1)
+  				temp_array->table[j][i] = (*head)->data->table[j][temp];
+  	}
   }
 }
 
@@ -98,7 +98,7 @@ int Filter(inter_res** head, int relation_num, relation* rel, char comperator, i
 {
 	result *filter_res = NULL;
 	int i;
-	switch(constant)
+	switch(comperator)
 	{
 		case '>':
       /* For every tuple in the relation, if it satisfies the comperator

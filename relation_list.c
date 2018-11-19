@@ -33,7 +33,7 @@ int RelationListInsert(relation_listnode** head,char* relation_text)
 		relation_listnode *temp = (*head);
 		while(temp->next != NULL)temp=temp->next;
 
-		temp->next = malloc(sizeof(relation_listnode)); 	
+		temp->next = malloc(sizeof(relation_listnode));
 		//CheckMalloc(temp->next, "temp->next (relation_list.c)");
 
 		temp->next->filename = malloc(strlen(relation_text) + 1);
@@ -56,7 +56,7 @@ void FreeRelationList(relation_listnode* head)
 		close(temp->fd);
 		head=head->next;
 		free(temp);
-		
+
 	}
 }
 

@@ -10,8 +10,8 @@
 /** Type definition for a tuple */
 typedef struct tuple
 {
-	int32_t value;
-	int32_t row_id;
+	int64_t value;
+	int64_t row_id;
 }tuple;
 
 /*
@@ -21,7 +21,7 @@ typedef struct tuple
 typedef struct relation
 {
 	tuple* tuples;
-	uint32_t num_tuples;
+	int64_t num_tuples;
 }relation;
 
 /*
@@ -83,8 +83,8 @@ typedef struct relation_listnode
 
 
 /* struct that holds the relations after being mapped
- * from the relation files given. it contains 
- * the number of rows, the number of comuns 
+ * from the relation files given. it contains
+ * the number of rows, the number of comuns
  * and an array that has pointers to the start of each column
  */
 typedef struct relation_map

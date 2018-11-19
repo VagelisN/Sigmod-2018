@@ -26,9 +26,9 @@ int InitRelationMap(relation_listnode *head,relation_map *rel_map)
   		if (fstat(head->fd , &sb) == -1) return 1;
 		length = sb.st_size;
 
-		//map the file 
+		//map the file
 		map = mmap(NULL,length,PROT_READ,MAP_PRIVATE,head->fd,0);
-		if (map==MAP_FAILED) 
+		if (map==MAP_FAILED)
 		{
 			printf("map failed \n");
 			return 1;
@@ -78,4 +78,4 @@ void PrintRelationMap(relation_map *rel_map , int map_size)
 			}
 		}
 	}
-}	
+}
