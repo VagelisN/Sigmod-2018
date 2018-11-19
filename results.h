@@ -23,4 +23,6 @@ result_tuples* FindResultTuples(result*, int);
 
 void CheckResult(result* );
 
+int InsertSelfResult(result **, uint64_t *);
+
 #endif

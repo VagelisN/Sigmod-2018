@@ -50,6 +50,7 @@ relation* GetRelation(int, int , inter_res*, relation_map*);
  */
 relation* ScanInterResults(int,int, inter_res*,relation_map* );
 
+result* SelfJoin(int , int , int ,inter_res* , relation_map* );
 
 
 #endif

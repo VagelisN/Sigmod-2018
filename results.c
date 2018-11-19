@@ -162,3 +162,46 @@ void FreeResult(result* head)
 		free(temp);
 	}
 }
+
+int InsertSelfResult(result **head, uint64_t *row_id)
+{
+	//if the list is empty create the first node and insert the first result
+	if( (*head) == NULL )
+	{
+		(*head)=malloc(sizeof(result));
+		CheckMalloc((*head), "*head (results.c)");
+		(*head)->buff = malloc(RESULT_MAX_BUFFER * sizeof(char));
+		CheckMalloc((*head)->buff, "*head->buff (results.c)");
+		(*head)->current_load = 1;
+		(*head)->next = NULL;
+
+		memcpy((*head)->buff,row_id,sizeof(int64_t));
+	}
+	//else find the first node with available space
+	else
+	{
+		result *temp = (*head);
+		while( ((temp->current_load*sizeof(int64_t)) + sizeof(int64_t)) > RESULT_MAX_BUFFER)
+		{
+			if ( temp->next != NULL) temp = temp->next;
+			//if all nodes are full create a new one
+			else
+			{
+				temp->next = malloc(sizeof(result));
+				CheckMalloc(temp->next, "temp->next (results.c)");
+				temp->next->buff = malloc(RESULT_MAX_BUFFER * sizeof(char));
+				CheckMalloc(temp->next->buff, "temp->next->buff (results.c)");
+				temp->next->current_load = 1;
+				temp->next->next = NULL;
+				memcpy(temp->next->buff,row_id,sizeof(int64_t));
+				return 0;
+			}
+		}
+		//found the last, make the insertion
+		void* data = temp->buff;
+		data += (temp->current_load*sizeof(int64_t));
+		memcpy(data, row_id, sizeof(int64_t));
+		temp->current_load ++;
+		return 0;
+	}
+}
