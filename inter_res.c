@@ -4,6 +4,9 @@
 #include "results.h"
 #include "inter_res.h"
 
+#define __STDC_FORMAT_MACROS
+#include <stdint.h>
+
 int InitInterData(inter_data** head, int num_of_relations, int num_tuples)
 {
 	(*head) = malloc(sizeof(struct inter_data));
@@ -56,13 +59,22 @@ int InsertJoinToInterResults(inter_res** head, int ex_rel_num, int new_rel_num, 
 	else
 	{
 		//Allocate and initialise the new inter_data variable.
+		int new_num_tuples = GetResultNum(res);
 		inter_data *temp_array = NULL;
-		InitInterData(&temp_array, (*head)->num_of_relations, GetResultNum(res));
+		InitInterData(&temp_array, (*head)->num_of_relations, new_num_tuples);
 		for (size_t i = 0; i < (*head)->num_of_relations; i++)
 			if((*head)->active_relations[i] == 1)
-				temp_array->table[i] = malloc(((*head)->data->num_tuples) * sizeof(uint64_t));
+				temp_array->table[i] = malloc(new_num_tuples * sizeof(uint64_t));
 		// [new_rel_num] is still inactive , so we have to manually alocate it
-		temp_array->table[new_rel_num] = malloc((*head)->data->num_tuples * sizeof(uint64_t));
+		temp_array->table[new_rel_num] = malloc(new_num_tuples * sizeof(uint64_t));
+
+		(*head)->data->num_tuples = new_num_tuples;
+
+		printf("temp_array: \n");
+		for (size_t i = 0; i < (*head)->num_of_relations; i++) {
+			printf("%p | ", temp_array->table[i]);
+		}
+		printf("\n-----------------------------------------\n" );
 
 		//Insert the results.
 		result_tuples *temp;
@@ -96,8 +108,8 @@ void PrintInterResults(inter_res *head)
 	for (size_t i = 0; i < head->data->num_tuples; i++) {
 		printf("Tuple: %2lu|||", i);
 		for (size_t j = 0; j < head->num_of_relations; j++) {
-			if (head->active_relations[j] == 1)
-				printf("%4lu |", (unsigned long) head->data->table[j][i]);
+			if (head->data->table[j] != NULL)
+				printf(" %4lu |", head->data->table[j][i]);
 			else printf(" NULL |");
 		}
 		printf("\n");

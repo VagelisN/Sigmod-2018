@@ -60,7 +60,7 @@ int InsertFilterToInterResult(inter_res** head, int relation_num, result* res)
     /* If the relation is inactive insert all results to the inter_res */
     (*head)->active_relations[relation_num] = 1;
     (*head)->data->num_tuples = num_of_results;
-    (*head)->data->table[relation_num] = malloc(num_of_results * sizeof(int64_t));
+    (*head)->data->table[relation_num] = malloc(num_of_results * sizeof(uint64_t));
     // Insert results one by one
     for (size_t i = 0; i < num_of_results; i++)
       (*head)->data->table[relation_num][i] = FindResultRowId(res, i);
@@ -103,12 +103,12 @@ int Filter(inter_res** head, int relation_num, relation* rel, char comperator, i
 		case '>':
       /* For every tuple in the relation, if it satisfies the comperator
        * insert it to the filter_res */
-			for (i = 0; i < rel->num_tuples; ++i)
+			for (i = 0; i < rel->num_tuples; i++)
 				if (rel->tuples[i].value > constant)
           InsertFilterRes(&filter_res, &(rel->tuples[i]));
 			break;
 		case '<':
-			for (i = 0; i < rel->num_tuples; ++i)
+			for (i = 0; i < rel->num_tuples; i++)
 				if (rel->tuples[i].value < constant)
           InsertFilterRes(&filter_res, &(rel->tuples[i]));
 			break;

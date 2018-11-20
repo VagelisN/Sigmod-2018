@@ -34,11 +34,11 @@ int main(void)
 	//PrintRelationMap(rel_map,relations_count);
 
 	inter_res* intermediate = NULL;
-	InitInterResults(&intermediate, 2);
+	InitInterResults(&intermediate, 5);
 
 	// Filter relation's 0 column 0 with values lower of 500
 	relation *rel1 = GetRelation(0, 0, intermediate, rel_map);
-	Filter(&intermediate, 0, rel1, '<', 100);
+	Filter(&intermediate, 0, rel1, '<', 800);
 	free(rel1->tuples);
 	free(rel1);
 

@@ -10,8 +10,8 @@
 /** Type definition for a tuple */
 typedef struct tuple
 {
-	int64_t value;
-	int64_t row_id;
+	uint64_t value;
+	uint64_t row_id;
 }tuple;
 
 /*
@@ -21,7 +21,7 @@ typedef struct tuple
 typedef struct relation
 {
 	tuple* tuples;
-	int64_t num_tuples;
+	uint64_t num_tuples;
 }relation;
 
 /*
@@ -34,7 +34,7 @@ typedef struct result
 {
 	char *buff;
 	struct result* next;
-	int current_load;
+	uint64_t current_load;
 
 }result;
 
