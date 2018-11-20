@@ -59,17 +59,14 @@ int InsertJoinToInterResults(inter_res** head, int ex_rel_num, int new_rel_num, 
 	else
 	{
 		//Allocate and initialise the new inter_data variable.
-		int new_num_tuples = GetResultNum(res);
+		(*head)->data->num_tuples = GetResultNum(res);
 		inter_data *temp_array = NULL;
-		InitInterData(&temp_array, (*head)->num_of_relations, new_num_tuples);
+		InitInterData(&temp_array, (*head)->num_of_relations, (*head)->data->num_tuples);
 		for (size_t i = 0; i < (*head)->num_of_relations; i++)
 			if((*head)->active_relations[i] == 1)
-				temp_array->table[i] = malloc(new_num_tuples * sizeof(uint64_t));
+				temp_array->table[i] = malloc(((*head)->data->num_tuples) * sizeof(uint64_t));
 		// [new_rel_num] is still inactive , so we have to manually alocate it
-		temp_array->table[new_rel_num] = malloc(new_num_tuples * sizeof(uint64_t));
-
-		(*head)->data->num_tuples = new_num_tuples;
-
+		temp_array->table[new_rel_num] = malloc((*head)->data->num_tuples * sizeof(uint64_t));
 		printf("temp_array: \n");
 		for (size_t i = 0; i < (*head)->num_of_relations; i++) {
 			printf("%p | ", temp_array->table[i]);
