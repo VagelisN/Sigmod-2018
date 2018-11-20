@@ -7,8 +7,8 @@
 int InitInterData(inter_data** head, int num_of_relations, int num_tuples)
 {
 	(*head) = malloc(sizeof(struct inter_data));
-	(*head)->num_tuples = 0;
-	(*head)->table = malloc(num_of_relations * sizeof(int *));
+	(*head)->num_tuples = num_tuples;
+	(*head)->table = malloc(num_of_relations * sizeof(uint64_t *));
 	for (int i = 0; i < num_of_relations; ++i)
 		(*head)->table[i] = NULL;
 }
@@ -44,8 +44,8 @@ int InsertJoinToInterResults(inter_res** head, int ex_rel_num, int new_rel_num, 
 		(*head)->data->num_tuples = GetResultNum(res);
 		(*head)->active_relations[ex_rel_num] = 1;
 		(*head)->active_relations[new_rel_num] = 1;
-		(*head)->data->table[ex_rel_num] = malloc((*head)->data->num_tuples * sizeof(int64_t));
-		(*head)->data->table[new_rel_num] = malloc((*head)->data->num_tuples * sizeof(int64_t));
+		(*head)->data->table[ex_rel_num] = malloc((*head)->data->num_tuples * sizeof(uint64_t));
+		(*head)->data->table[new_rel_num] = malloc((*head)->data->num_tuples * sizeof(uint64_t));
 		for (size_t i = 0; i < (*head)->data->num_tuples; i++)
 		{
 			result_tuples *temp = FindResultTuples(res, i);
@@ -56,15 +56,13 @@ int InsertJoinToInterResults(inter_res** head, int ex_rel_num, int new_rel_num, 
 	else
 	{
 		//Allocate and initialise the new inter_data variable.
-		inter_data *temp_array = malloc(sizeof(inter_data));
-		temp_array->num_tuples = GetResultNum(res);
-		temp_array->table = malloc((*head)->num_of_relations * sizeof(int64_t*));
+		inter_data *temp_array = NULL;
+		InitInterData(&temp_array, (*head)->num_of_relations, GetResultNum(res));
 		for (size_t i = 0; i < (*head)->num_of_relations; i++)
-		{
 			if((*head)->active_relations[i] == 1)
-				temp_array->table[i] = malloc((*head)->data->num_tuples * sizeof(int64_t));
-			else temp_array->table[i] = NULL;
-		}
+				temp_array->table[i] = malloc(((*head)->data->num_tuples) * sizeof(uint64_t));
+		// [new_rel_num] is still inactive , so we have to manually alocate it
+		temp_array->table[new_rel_num] = malloc((*head)->data->num_tuples * sizeof(uint64_t));
 
 		//Insert the results.
 		result_tuples *temp;
@@ -74,16 +72,13 @@ int InsertJoinToInterResults(inter_res** head, int ex_rel_num, int new_rel_num, 
 			//Insert the results that are stored in the res variable.
 			temp = FindResultTuples(res, i);
 			/* Old_pos refers to the current result's row_id in the inter_res data table.*/
+
 			old_pos = temp->tuple_R.row_id;
 			temp_array->table[ex_rel_num][i] = (*head)->data->table[ex_rel_num][old_pos];
 			temp_array->table[new_rel_num][i] = temp->tuple_S.row_id;
 			for (size_t j = 0; j < (*head)->num_of_relations; j++)
-			{
 				if ((ex_rel_num != j) && (*head)->active_relations[j] == 1)
-				{
 					temp_array->table[j][i] = (*head)->data->table[j][old_pos];
-				}
-			}
 		}
 		/* Set the newly added relation as active. And set the new instance of
 		 * the inter_res variable, after deallocating the memory of the
@@ -95,6 +90,20 @@ int InsertJoinToInterResults(inter_res** head, int ex_rel_num, int new_rel_num, 
 	return 0;
 }
 
+void PrintInterResults(inter_res *head)
+{
+	printf("Intermediate results: \n");
+	for (size_t i = 0; i < head->data->num_tuples; i++) {
+		printf("Tuple: %2lu|||", i);
+		for (size_t j = 0; j < head->num_of_relations; j++) {
+			if (head->active_relations[j] == 1)
+				printf("%4lu |", (unsigned long) head->data->table[j][i]);
+			else printf(" NULL |");
+		}
+		printf("\n");
+	}
+	printf("-----------------------------------------------\n" );
+}
 
 void FreeInterResults(inter_res* var)
 {
@@ -168,7 +177,7 @@ relation* GetRelation(int given_rel, int column, inter_res* inter, relation_map*
 result* SelfJoin(int given_rel, int column1, int column2,inter_res* inter, relation_map* map)
 {
 	result *res = NULL;
-	int i;
+	uint64_t i;
 	void* col1 = map->columns[column1];
 	void* col2 = map->columns[column2];
 	//the relation is not in the intermediate result
@@ -179,7 +188,7 @@ result* SelfJoin(int given_rel, int column1, int column2,inter_res* inter, relat
 			if( *(uint64_t*)col1 == *(uint64_t*)col2) InsertSelfResult(&res, &i);
 		}
 	}
-	else 
+	else
 	{
 		for (i = 0; i < inter->data->num_tuples; ++i)
 		{

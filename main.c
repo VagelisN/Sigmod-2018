@@ -38,7 +38,7 @@ int main(void)
 
 	// Filter relation's 0 column 0 with values lower of 500
 	relation *rel1 = GetRelation(0, 0, intermediate, rel_map);
-	Filter(&intermediate, 0, rel1, '<', 500);
+	Filter(&intermediate, 0, rel1, '<', 100);
 	free(rel1->tuples);
 	free(rel1);
 
@@ -47,6 +47,13 @@ int main(void)
 	relation *rel2 = GetRelation(1, 0, intermediate, rel_map);
 	result *res = RadixHashJoin(rel1, rel2);
 	InsertJoinToInterResults(&intermediate, 0, 1, res);
+	free(rel1->tuples);
+	free(rel1);
+	free(rel2->tuples);
+	free(rel2);
+	FreeResult(res);
+
+	PrintInterResults(intermediate);
 
 	FreeInterResults(intermediate);
 	FreeRelationMap(rel_map,relations_count);

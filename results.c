@@ -92,8 +92,8 @@ void PrintResult(result* head)
 		{
 			memcpy(&res_tuples,data,sizeof(result_tuples));
 			num_results++;
-			printf("row_id R %2d value R %2d || " ,res_tuples.tuple_R.row_id,res_tuples.tuple_R.value);
-			printf("row_id S %2d value S %2d\n" ,res_tuples.tuple_S.row_id,res_tuples.tuple_S.value);
+			printf("row_id R %2ld value R %2ld || " ,(long int)res_tuples.tuple_R.row_id, (long int)res_tuples.tuple_R.value);
+			printf("row_id S %2ld value S %2ld\n" ,(long int)res_tuples.tuple_S.row_id, (long int)res_tuples.tuple_S.value);
 			data += sizeof(result_tuples);
 			temp_curr_load --;
 		}
