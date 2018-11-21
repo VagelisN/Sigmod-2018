@@ -91,7 +91,7 @@ typedef struct relation_map
 {
 	uint64_t num_tuples;
 	uint64_t num_columns;
-	void **columns;
+	uint64_t **columns;
 }relation_map;
 
 #endif

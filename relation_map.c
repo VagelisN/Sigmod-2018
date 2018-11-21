@@ -14,7 +14,7 @@ int InitRelationMap(relation_listnode *head,relation_map *rel_map)
 {
 	int i =0, length;
 	struct stat sb;
-	void *map;
+	uint64_t *map;
 
 	//for every relation text given
 	while(head != NULL)
@@ -35,18 +35,18 @@ int InitRelationMap(relation_listnode *head,relation_map *rel_map)
 		}
 
 		//the first two ints are the number of tuples and the number of columns
-		rel_map[i].num_tuples = *(uint64_t*)map;
-		rel_map[i].num_columns = *(uint64_t*)(map+sizeof(uint64_t));
+		rel_map[i].num_tuples = map[0];
+		rel_map[i].num_columns = map[1];
 
 		//alocate num_columns pointers
 		rel_map[i].columns = malloc (rel_map[i].num_columns * sizeof(uint64_t*));
 
 		//make every column pointer point to the right column
-		map = (map + 2*sizeof(uint64_t));
+		map = map + 2;
 		for (int j = 0; j < rel_map[i].num_columns; ++j)
 		{
 			rel_map[i].columns[j] = map;
-			map += (rel_map[i].num_tuples * sizeof(uint64_t));
+			map += rel_map[i].num_tuples;
 		}
 
 		head = head->next;
@@ -74,7 +74,7 @@ void PrintRelationMap(relation_map *rel_map , int map_size)
 			printf("Printing Column: %d\n",j );
 			for (int k = 0; k < rel_map[i].num_tuples; ++k)
 			{
-				printf(" %ld\n",*(uint64_t*)(rel_map[i].columns[j]+k*sizeof(uint64_t)));
+				printf(" %ld\n",rel_map[i].columns[j][k]);
 			}
 		}
 	}

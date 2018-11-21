@@ -142,14 +142,14 @@ relation* ScanInterResults(int given_rel,int column, inter_res* inter, relation_
 	new_rel->tuples = malloc(new_rel->num_tuples * sizeof(tuple));
 
 	//Get a pointer to the correct column of the mapped relation
-	void* col = map->columns[column];
+	uint64_t* col = map->columns[column];
 
 	int i;
 	for (i = 0; i < inter->data->num_tuples; ++i)
 	{
 
 		new_rel->tuples[i].row_id = i;
-		new_rel->tuples[i].value = *(uint64_t*)(col + inter->data->table[given_rel][i] * sizeof(int64_t));
+		new_rel->tuples[i].value = col[inter->data->table[given_rel][i]];
 	}
 	return new_rel;
 }
@@ -172,11 +172,11 @@ relation* GetRelation(int given_rel, int column, inter_res* inter, relation_map*
 		new_rel->num_tuples = map[given_rel].num_tuples;
 		new_rel->tuples = malloc(new_rel->num_tuples * sizeof(tuple));
 
-		void* col = map->columns[column];
+		uint64_t* col = map->columns[column];
 		for (i = 0; i < new_rel->num_tuples; ++i)
 		{
 			new_rel->tuples[i].row_id = i;
-			new_rel->tuples[i].value = *(uint64_t*)(col + (i * sizeof(uint64_t)));
+			new_rel->tuples[i].value = col[i];
 		}
 		return new_rel;
 	}
@@ -187,21 +187,21 @@ result* SelfJoin(int given_rel, int column1, int column2,inter_res* inter, relat
 {
 	result *res = NULL;
 	uint64_t i;
-	void* col1 = map->columns[column1];
-	void* col2 = map->columns[column2];
+	uint64_t* col1 = map->columns[column1];
+	uint64_t* col2 = map->columns[column2];
 	//the relation is not in the intermediate result
 	if (inter->active_relations[given_rel] == -1)
 	{
 		for (i = 0; i < map->num_tuples; ++i)
 		{
-			if( *(uint64_t*)col1 == *(uint64_t*)col2) InsertSelfResult(&res, &i);
+			if( col1[i] == col2[i]) InsertSelfResult(&res, &i);
 		}
 	}
 	else
 	{
 		for (i = 0; i < inter->data->num_tuples; ++i)
 		{
-			if ( *(uint64_t*)(col1 + inter->data->table[given_rel][i]) == *(uint64_t*)(col2 + inter->data->table[given_rel][i]))
+			if ( col1[inter->data->table[given_rel][i]] == col2[inter->data->table[given_rel][i]])
 				InsertSelfResult(&res, inter->data->table[i]);
 		}
 	}
