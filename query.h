@@ -35,12 +35,19 @@ typedef struct join_pred
 	int column2;
 }join_pred;
 
-typedef struct query_listnode
+typedef struct predicates_listnode
 {
 	filter_pred *filter_p;
 	join_pred *join_p;
-	struct query_listnode *next;
-}query_listnode;
+	struct predicates_listnode *next;
+}predicates_listnode;
+
+typedef struct query_batch_listnode
+{
+	predicates_listnode * predicate_list;
+	query_string_array *views;
+	struct query_batch_listnode *next;
+}batch_listnode;
 
 /* Function that takes a string and constructs the query struct needed.
  */
@@ -52,9 +59,14 @@ int InitialiseQueryString(query_string_array** my_var, int elements, char* str, 
 
 void FreeQueryString(query_string_array* my_var);
 
-int InsertPredicate(query_listnode**,char*);
+int InsertPredicate(predicates_listnode**,char*);
 
 void TokenizeFilterPredicate(char* predicate, filter_pred **filter_p,char c);
+
 void TokenizeJoinPredicate(char* predicate, join_pred **join_p);
+
+int InsertToQueryBatch(batch_listnode** batch, char* query);
+
+void FreeBatch(batch_listnode* batch);
 
 #endif

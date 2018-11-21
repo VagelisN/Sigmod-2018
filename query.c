@@ -91,7 +91,7 @@ void FreeQuery(query *my_query)
   free(my_query);
 }
 
-int InsertPredicate(query_listnode **head,char* predicate)
+int InsertPredicate(predicates_listnode **head,char* predicate)
 {
   char *c = predicate;
   join_pred *join_p;
@@ -106,7 +106,7 @@ int InsertPredicate(query_listnode **head,char* predicate)
 
   if( (*head) == NULL )
   {
-    (*head) = malloc(sizeof(query_listnode));
+    (*head) = malloc(sizeof(predicates_listnode));
     if (*c == '=')
     {
       (*head)->join_p =join_p;
@@ -124,7 +124,7 @@ int InsertPredicate(query_listnode **head,char* predicate)
     // if filter -> insert at beginning
     if (*c != '=')
     {
-      query_listnode *new_head = malloc(sizeof(query_listnode));
+      predicates_listnode *new_head = malloc(sizeof(predicates_listnode));
       new_head->filter_p = filter_p;
       new_head->join_p = NULL;
       new_head->next = (*head);
@@ -134,17 +134,28 @@ int InsertPredicate(query_listnode **head,char* predicate)
     else
     {
 
-      query_listnode *temp = (*head);
+      predicates_listnode *temp = (*head);
       while(temp->next != NULL)
         temp = temp->next;
 
-      temp->next = malloc(sizeof(query_listnode));
+      temp->next = malloc(sizeof(predicates_listnode));
       temp->filter_p = NULL;
       temp->join_p = join_p;
       temp->next->next = NULL;
     }
   }
   return 0;
+}
+
+void FreePredicateList(predicates_listnode* head)
+{
+	predicates_listnode *temp = head;
+	while(head!=NULL)
+	{
+		temp = head;
+		head = head->next;
+		free(temp);
+	}
 }
 
 void TokenizeJoinPredicate(char* predicate, join_pred **join_p)
@@ -184,4 +195,51 @@ void TokenizeFilterPredicate(char* predicate, filter_pred **filter_p,char c)
   (*filter_p)->value = atoi(buffer);
 
   printf("%d %d %c %d\n",(*filter_p)->relation, (*filter_p)->column, (*filter_p)->comperator, (*filter_p)->value );
+}
+
+int InsertToQueryBatch(batch_listnode** batch, char* query_str)
+{
+	query *curr_query = NULL;
+	if (ReadQuery(&curr_query, query_str) != 0)
+	{
+		fprintf(stderr, "Read Querry error\n");
+		exit(1);
+	}
+	else
+	{
+		predicates_listnode *predicate_list = NULL;
+		for (int i = 0; i < curr_query->predicates->num_of_elements; ++i)
+			InsertPredicate(&predicate_list, curr_query->predicates->data[i]);
+
+		if( (*batch) == NULL )
+		{
+			(*batch)=malloc(sizeof(batch_listnode));
+			(*batch)->predicate_list = predicate_list;
+			(*batch)->views = curr_query->views;
+			(*batch)->next = NULL;
+		}
+		else
+		{
+			batch_listnode *temp = (*batch);
+			while(temp->next != NULL) temp = temp->next;
+
+			temp->next = malloc(sizeof(batch_listnode));
+			temp->predicate_list = predicate_list;
+			temp->views = curr_query->views;
+			temp->next = NULL;
+		}
+	}
+	return 0;
+}
+
+void FreeBatch(batch_listnode* batch)
+{
+	batch_listnode* temp;
+	while(batch != NULL)
+	{
+		temp = batch;
+		batch = batch->next;
+		FreePredicateList(temp->predicate_list);
+		free(temp);
+	}
 }

@@ -24,7 +24,6 @@ int main(void)
 		if (scanf("%s",buff) == EOF)
 		{
 			freopen("/dev/tty", "r", stdin);
-
         	scanf("%s",buff);
 		}
 		else
@@ -45,33 +44,22 @@ int main(void)
 	// Start getting batches of querries
 	printf("Give queries:\n");
 	freopen("/dev/tty", "r", stdin);
+	batch_listnode* batch = NULL;
 	while ( fgets(buff,250,stdin) != NULL )
 	{
-		printf("buff %s\n",buff );
 		// If F is given the end of the current batch is reached
-		if (strcmp(buff,"F") == 0)
+		if (strcmp(buff,"F\n") == 0)
+		{
 			printf("End of the current batch\n");
+			//EXECUTE THE PREDICATES
+
+			FreeBatch(batch);
+			batch = NULL;
+		}
 
 		// Else we are still on the same batch
 		else
-		{
-			//buff now has a querry
-			query *curr_query = NULL;
-			printf("%s\n",buff );
-			if (ReadQuery(&curr_query, buff) != 0)
-			{
-				fprintf(stderr, "Read Querry error\n");
-				exit(1);
-			}
-			else
-			{
-				query_listnode *query_list = NULL;
-				for (int i = 0; i < curr_query->predicates->num_of_elements; ++i)
-				{	
-					InsertPredicate(&query_list,curr_query->predicates->data[i]);
-				}
-			}
-		}
+			InsertToQueryBatch(&batch,buff);
 	}
 	return 0;
 }
