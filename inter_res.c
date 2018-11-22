@@ -1,11 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "structs.h"
+#include "query.h"
 #include "results.h"
 #include "inter_res.h"
-
-#define __STDC_FORMAT_MACROS
-#include <stdint.h>
 
 int InitInterData(inter_data** head, int num_of_relations, int num_tuples)
 {
@@ -68,7 +67,7 @@ int InsertJoinToInterResults(inter_res** head, int ex_rel_num, int new_rel_num, 
 
 		// [new_rel_num] is still inactive , so we have to manually alocate it
 		temp_array->table[new_rel_num] = malloc((*head)->data->num_tuples * sizeof(uint64_t));
-		
+
 		/*printf("temp_array: \n");
 		for (size_t i = 0; i < (*head)->num_of_relations; i++) {
 			printf("%p | ", temp_array->table[i]);
@@ -163,10 +162,7 @@ relation* GetRelation(int given_rel, int column, inter_res* inter, relation_map*
 
 	// If the relation is in the intermediate results
 	if ( (new_rel = ScanInterResults(given_rel, column, inter, map)) != NULL)
-	{
-
 		return new_rel;
-	}
 	// If the relation is only in the map
 	else
 	{
@@ -193,20 +189,28 @@ result* SelfJoin(int given_rel, int column1, int column2,inter_res* inter, relat
 	uint64_t* col2 = map->columns[column2];
 	//the relation is not in the intermediate result
 	if (inter->active_relations[given_rel] == -1)
-	{
 		for (i = 0; i < map->num_tuples; ++i)
-		{
 			if( col1[i] == col2[i]) InsertSelfResult(&res, &i);
-		}
-	}
 	else
-	{
 		for (i = 0; i < inter->data->num_tuples; ++i)
-		{
 			if ( col1[inter->data->table[given_rel][i]] == col2[inter->data->table[given_rel][i]])
 				InsertSelfResult(&res, inter->data->table[i]);
-		}
-	}
 	return res;
 
+}
+
+void CalculateQueryResults(inter_res *inter, relation_map *map, query_string_array *views)
+{
+	//Need another for loop for every column that needs to be displayed
+	for (size_t j = 0; j < views->num_of_elements; j++)
+	{
+		int temp_rel = views->data[j][0] - '0';
+		int temp_col = views->data[j][2] - '0';
+		int temp_sum = 0;
+		for (size_t i = 0; i < inter->data->num_tuples; i++)
+			temp_sum += map[temp_rel].columns[temp_col][ (inter->data->table[temp_rel][i]) ];
+		if (temp_sum == 0)printf("NULL ");
+		else printf("%d ", temp_sum);
+	}
+	printf("\n");
 }

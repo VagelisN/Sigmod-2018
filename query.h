@@ -49,10 +49,10 @@ typedef struct query_batch_listnode
 	struct query_batch_listnode *next;
 }batch_listnode;
 
-/* Function that takes a string and constructs the query struct needed.
- */
+/* Function that takes a string and constructs the query struct needed.*/
 int ReadQuery(query **my_query, char* buffer);
 
+/* Free's the allocated memory used by the query variable.*/
 void FreeQuery(query *my_query);
 
 int InitialiseQueryString(query_string_array** my_var, int elements, char* str, char* delimeter);

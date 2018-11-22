@@ -53,7 +53,12 @@ relation* GetRelation(int, int , inter_res*, relation_map*);
  */
 relation* ScanInterResults(int,int, inter_res*,relation_map* );
 
+/* Handles the case of joining 2 different rows of the same relation. */
 result* SelfJoin(int , int , int ,inter_res* , relation_map* );
+
+/* Takes the views defined by the query, the intermediate results data structure
+ * and the relation_map and prints the query results. */
+void CalculateQueryResults(inter_res *inter, relation_map *map, query_string_array *views);
 
 
 #endif

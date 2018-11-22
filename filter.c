@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "query.h"
 #include "structs.h"
 #include "inter_res.h"
 #include "filter.h"

@@ -3,12 +3,12 @@
 #include <string.h>
 #include <unistd.h>
 //#include "handler.h"
+#include "query.h"
 #include "structs.h"
 #include "inter_res.h"
 #include "filter.h"
 #include "relation_map.h"
 #include "relation_list.h"
-#include "query.h"
 
 int main(void)
 {
@@ -31,7 +31,7 @@ int main(void)
 			if ( !RelationListInsert(&relation_list,buff) ) relations_count ++;
 			else fprintf(stderr, "RelationListInsert Error \n");
 		}
-		
+
 	}
 	PrintRelationList(relation_list);
 

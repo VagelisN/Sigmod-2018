@@ -4,6 +4,7 @@
 #include "structs.h"
 #include "query.h"
 
+
 int InitialiseQueryString(query_string_array** my_var, int elements, char* str, char* delimeter)
 {
   char *temp;
@@ -14,7 +15,7 @@ int InitialiseQueryString(query_string_array** my_var, int elements, char* str, 
 
   (*my_var)->data = malloc(elements * sizeof(char*));
   if ((*my_var)->data == NULL) return -1;
-  
+
   int i = 0;
   while( (temp = strtok_r(str, delimeter, &str)) != NULL )
   {
@@ -98,7 +99,7 @@ int InsertPredicate(predicates_listnode **head,char* predicate)
   filter_pred *filter_p;
   while( *c != '=' && *c != '<' && *c != '>')
     c++;
- 
+
   if (*c == '=')
     TokenizeJoinPredicate(predicate,&join_p);
   else
@@ -113,13 +114,13 @@ int InsertPredicate(predicates_listnode **head,char* predicate)
       (*head)->filter_p = NULL;
     }
     else
-    {      
+    {
       (*head)->filter_p = filter_p;
       (*head)->join_p = NULL;
     }
     (*head)->next = NULL;
   }
-  else 
+  else
   {
     // if filter -> insert at beginning
     if (*c != '=')
