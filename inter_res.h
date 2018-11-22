@@ -15,6 +15,7 @@ typedef struct intermediate_result
 	struct inter_data *data;
 	int *active_relations;
 	int num_of_relations;
+	struct intermediate_result *next;
 }inter_res;
 
 int InitInterData(inter_data** head, int num_of_relations, int num_tuples);

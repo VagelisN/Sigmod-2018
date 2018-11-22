@@ -17,10 +17,9 @@ int InitInterData(inter_data** head, int num_of_relations, int num_tuples)
 
 void FreeInterData(inter_data *head, int num_of_relations)
 {
-	for (size_t i = 0; i < num_of_relations; i++) {
+	for (size_t i = 0; i < num_of_relations; i++)
 		if (head->table[i] != NULL)
 			free(head->table[i]);
-	}
 	free(head->table);
 	free(head);
 }
@@ -28,6 +27,7 @@ void FreeInterData(inter_data *head, int num_of_relations)
 int InitInterResults(inter_res** head, int num_of_rel)
 {
 	(*head) = malloc(sizeof(inter_res));
+	(*head)->next = NULL;
 	(*head)->num_of_relations = num_of_rel;
 	(*head)->active_relations = malloc(num_of_rel * sizeof(int));
 	for (size_t i = 0; i < num_of_rel; i++)
@@ -37,66 +37,79 @@ int InitInterResults(inter_res** head, int num_of_rel)
 
 int InsertJoinToInterResults(inter_res** head, int ex_rel_num, int new_rel_num, result* res)
 {
-
-	//If this is the first instance of the inter_res
-	if ((*head)->data->num_tuples == 0)
+	while(1)
 	{
-
-		//Insert everything from the result to the inter_res
-		(*head)->data->num_tuples = GetResultNum(res);
-		(*head)->active_relations[ex_rel_num] = 1;
-		(*head)->active_relations[new_rel_num] = 1;
-		(*head)->data->table[ex_rel_num] = malloc((*head)->data->num_tuples * sizeof(uint64_t));
-		(*head)->data->table[new_rel_num] = malloc((*head)->data->num_tuples * sizeof(uint64_t));
-		for (size_t i = 0; i < (*head)->data->num_tuples; i++)
+		//If this is the first instance of the inter_res node
+		if ((*head)->data->num_tuples == 0)
 		{
-			result_tuples *temp = FindResultTuples(res, i);
-			(*head)->data->table[ex_rel_num][i] = temp->tuple_R.row_id;
-			(*head)->data->table[new_rel_num][i] = temp->tuple_S.row_id;
+
+			//Insert everything from the result to the inter_res
+			(*head)->data->num_tuples = GetResultNum(res);
+			(*head)->active_relations[ex_rel_num] = 1;
+			(*head)->active_relations[new_rel_num] = 1;
+			(*head)->data->table[ex_rel_num] = malloc((*head)->data->num_tuples * sizeof(uint64_t));
+			(*head)->data->table[new_rel_num] = malloc((*head)->data->num_tuples * sizeof(uint64_t));
+			for (size_t i = 0; i < (*head)->data->num_tuples; i++)
+			{
+				result_tuples *temp = FindResultTuples(res, i);
+				(*head)->data->table[ex_rel_num][i] = temp->tuple_R.row_id;
+				(*head)->data->table[new_rel_num][i] = temp->tuple_S.row_id;
+			}
+			return 1;
 		}
-	}
-	else
-	{
-		//Allocate and initialise the new inter_data variable.
-		(*head)->data->num_tuples = GetResultNum(res);
-		inter_data *temp_array = NULL;
-		InitInterData(&temp_array, (*head)->num_of_relations, (*head)->data->num_tuples);
-		for (size_t i = 0; i < (*head)->num_of_relations; i++)
-			if((*head)->active_relations[i] == 1)
-				temp_array->table[i] = malloc(((*head)->data->num_tuples) * sizeof(uint64_t));
-
-		// [new_rel_num] is still inactive , so we have to manually alocate it
-		temp_array->table[new_rel_num] = malloc((*head)->data->num_tuples * sizeof(uint64_t));
-
-		/*printf("temp_array: \n");
-		for (size_t i = 0; i < (*head)->num_of_relations; i++) {
-			printf("%p | ", temp_array->table[i]);
-		}
-		printf("\n-----------------------------------------\n" );*/
-
-		//Insert the results.
-		result_tuples *temp;
-		int old_pos;
-		for (size_t i = 0; i < (*head)->data->num_tuples; i++)
+		// Might need to change the following if from OR to XOR so we can seperate :
+		// 1. The case that only one of the two are in the inter_res
+		// 2. The case that both are in the inter_res
+		else if((*head)->active_relations[ex_rel_num] == 1 || (*head)->active_relations[new_rel_num] == 1)
 		{
-			//Insert the results that are stored in the res variable.
-			temp = FindResultTuples(res, i);
-			/* Old_pos refers to the current result's row_id in the inter_res data table.*/
+			//Allocate and initialise the new inter_data variable.
+			(*head)->data->num_tuples = GetResultNum(res);
+			inter_data *temp_array = NULL;
+			InitInterData(&temp_array, (*head)->num_of_relations, (*head)->data->num_tuples);
+			for (size_t i = 0; i < (*head)->num_of_relations; i++)
+				if((*head)->active_relations[i] == 1)
+					temp_array->table[i] = malloc(((*head)->data->num_tuples) * sizeof(uint64_t));
 
-			old_pos = temp->tuple_R.row_id;
-			temp_array->table[ex_rel_num][i] = (*head)->data->table[ex_rel_num][old_pos];
-			temp_array->table[new_rel_num][i] = temp->tuple_S.row_id;
-			for (size_t j = 0; j < (*head)->num_of_relations; j++)
-				if ((ex_rel_num != j) && (*head)->active_relations[j] == 1)
-					temp_array->table[j][i] = (*head)->data->table[j][old_pos];
+			// [new_rel_num] is still inactive , so we have to manually alocate it
+			temp_array->table[new_rel_num] = malloc((*head)->data->num_tuples * sizeof(uint64_t));
+
+			/*printf("temp_array: \n");
+			for (size_t i = 0; i < (*head)->num_of_relations; i++) {
+				printf("%p | ", temp_array->table[i]);
+			}
+			printf("\n-----------------------------------------\n" );*/
+
+			//Insert the results.
+			result_tuples *temp;
+			int old_pos;
+			for (size_t i = 0; i < (*head)->data->num_tuples; i++)
+			{
+				//Insert the results that are stored in the res variable.
+				temp = FindResultTuples(res, i);
+				/* Old_pos refers to the current result's row_id in the inter_res data table.*/
+
+				old_pos = temp->tuple_R.row_id;
+				temp_array->table[ex_rel_num][i] = (*head)->data->table[ex_rel_num][old_pos];
+				temp_array->table[new_rel_num][i] = temp->tuple_S.row_id;
+				for (size_t j = 0; j < (*head)->num_of_relations; j++)
+					if ((ex_rel_num != j) && (*head)->active_relations[j] == 1)
+						temp_array->table[j][i] = (*head)->data->table[j][old_pos];
+			}
+			/* Set the newly added relation as active. And set the new instance of
+			 * the inter_res variable, after deallocating the memory of the
+			 * previous instance. */
+			(*head)->active_relations[new_rel_num] = 1;
+			FreeInterData((*head)->data, (*head)->num_of_relations);
+			(*head)->data = temp_array;
+			return 1;
 		}
-		/* Set the newly added relation as active. And set the new instance of
-		 * the inter_res variable, after deallocating the memory of the
-		 * previous instance. */
-		(*head)->active_relations[new_rel_num] = 1;
-		FreeInterData((*head)->data, (*head)->num_of_relations);
-		(*head)->data = temp_array;
+		if((*head)->next == NULL)break;
+		(*head) = (*head)->next;
 	}
+	//Allocate a new inter_res node
+  InitInterResults(&(*head)->next, (*head)->num_of_relations);
+  //Insert the results to the new node
+  InsertJoinToInterResults(&(*head)->next, ex_rel_num, new_rel_num, res);
 	return 0;
 }
 

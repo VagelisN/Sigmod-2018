@@ -54,45 +54,55 @@ int InsertFilterToInterResult(inter_res** head, int relation_num, result* res)
 {
   // Find the number of the results in res
   int i, j, num_of_results = GetResultNum(res);
-
-  if ((*head)->active_relations[relation_num] == -1)
+  while(1)
   {
-    /* If the relation is inactive insert all results to the inter_res */
-    (*head)->active_relations[relation_num] = 1;
-    (*head)->data->num_tuples = num_of_results;
-    (*head)->data->table[relation_num] = malloc(num_of_results * sizeof(uint64_t));
-    // Insert results one by one
-    for (size_t i = 0; i < num_of_results; i++)
-      (*head)->data->table[relation_num][i] = FindResultRowId(res, i);
+    // If its the first instance of the inter_res node
+    if ((*head)->data->num_tuples == 0)
+    {
+      /* Insert all results to the inter_res */
+      (*head)->active_relations[relation_num] = 1;
+      (*head)->data->num_tuples = num_of_results;
+      (*head)->data->table[relation_num] = malloc(num_of_results * sizeof(uint64_t));
+      // Insert results one by one
+      for (size_t i = 0; i < num_of_results; i++)
+        (*head)->data->table[relation_num][i] = FindResultRowId(res, i);
+      return 1;
+    }
+    else if((*head)->active_relations[relation_num] == 1)
+    {
+    	/* If the bucket is already active then remove the tuples that dont fulfil the filter */
+    	//Allocate and initialise the new inter_data variable.
+        inter_data *temp_array = NULL;
+      (*head)->data->num_tuples = GetResultNum(res);
+      InitInterData(&temp_array, (*head)->num_of_relations, (*head)->data->num_tuples);
+    	for (size_t i = 0; i < (*head)->num_of_relations; i++)
+    	{
+    		/* Allocate memory for all the active relations */
+    		if((*head)->active_relations[i] == 1)
+    			temp_array->table[i] = malloc((*head)->data->num_tuples * sizeof(uint64_t));
+    	}
+    	//Insert the results.
+    	for (size_t i = 0; i < (*head)->data->num_tuples; i++)
+    	{
+    		//Insert the results that are stored in the res variable.
+    		uint64_t temp = FindResultRowId(res, i);
+    		/* temp is a rowId which refers to the current result's row_id in the inter_res data table.*/
+    		temp_array->table[relation_num][i] = (*head)->data->table[relation_num][temp];
+    		for (size_t j = 0; j < (*head)->num_of_relations; j++)
+    			if ((relation_num != j) && (*head)->active_relations[j] == 1)
+    				temp_array->table[j][i] = (*head)->data->table[j][temp];
+    	}
+      FreeInterData((*head)->data, (*head)->num_of_relations);
+      (*head)->data = temp_array;
+      return 1;
+    }
+    if ((*head)->next == NULL) break;
+    (*head) = (*head)->next;
   }
-  else
-  {
-  	/* If the bucket is already active then remove the tuples that dont fulfil the filter */
-  	//Allocate and initialise the new inter_data variable.
-
-    inter_data *temp_array = NULL;
-    (*head)->data->num_tuples = GetResultNum(res);
-    InitInterData(&temp_array, (*head)->num_of_relations, (*head)->data->num_tuples);
-  	for (size_t i = 0; i < (*head)->num_of_relations; i++)
-  	{
-  		/* Allocate memory for all the active relations */
-  		if((*head)->active_relations[i] == 1)
-  			temp_array->table[i] = malloc((*head)->data->num_tuples * sizeof(uint64_t));
-  	}
-  	//Insert the results.
-  	for (size_t i = 0; i < (*head)->data->num_tuples; i++)
-  	{
-  		//Insert the results that are stored in the res variable.
-  		uint64_t temp = FindResultRowId(res, i);
-  		/* temp is a rowId which refers to the current result's row_id in the inter_res data table.*/
-  		temp_array->table[relation_num][i] = (*head)->data->table[relation_num][temp];
-  		for (size_t j = 0; j < (*head)->num_of_relations; j++)
-  			if ((relation_num != j) && (*head)->active_relations[j] == 1)
-  				temp_array->table[j][i] = (*head)->data->table[j][temp];
-  	}
-    FreeInterData((*head)->data, (*head)->num_of_relations);
-    (*head)->data = temp_array;
-  }
+  //Allocate a new inter_res node
+  InitInterResults(&(*head)->next, (*head)->num_of_relations);
+  //Insert the results to the new node
+  InsertFilterToInterResult(&(*head)->next, relation_num, res);
 }
 
 
