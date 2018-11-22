@@ -44,15 +44,20 @@ int main(void)
 	// Start getting batches of querries
 	printf("Give queries:\n");
 	freopen("/dev/tty", "r", stdin);
-	batch_listnode* batch = NULL;
+	batch_listnode *batch = NULL, *batch_temp = NULL;
 	while ( fgets(buff,250,stdin) != NULL )
 	{
 		// If F is given the end of the current batch is reached
 		if (strcmp(buff,"F\n") == 0)
 		{
 			printf("End of the current batch\n");
-			//EXECUTE THE PREDICATES
-
+			//EXECUTE THE QUERIES
+			batch_temp = batch;
+			while(batch_temp!=NULL)
+			{
+				ExecuteQuery(batch_temp);
+				batch_temp = batch_temp->next;
+			}
 			FreeBatch(batch);
 			batch = NULL;
 		}

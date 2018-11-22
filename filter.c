@@ -17,7 +17,6 @@ int InsertFilterRes(result** res, tuple* tup)
 		CheckMalloc((*res)->buff, "*head->buff (results.c)");
 		(*res)->current_load = 1;
 		(*res)->next = NULL;
-
 		memcpy((*res)->buff, tup, sizeof(tuple));
 
 	}

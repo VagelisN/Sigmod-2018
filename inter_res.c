@@ -65,13 +65,15 @@ int InsertJoinToInterResults(inter_res** head, int ex_rel_num, int new_rel_num, 
 		for (size_t i = 0; i < (*head)->num_of_relations; i++)
 			if((*head)->active_relations[i] == 1)
 				temp_array->table[i] = malloc(((*head)->data->num_tuples) * sizeof(uint64_t));
+
 		// [new_rel_num] is still inactive , so we have to manually alocate it
 		temp_array->table[new_rel_num] = malloc((*head)->data->num_tuples * sizeof(uint64_t));
-		printf("temp_array: \n");
+		
+		/*printf("temp_array: \n");
 		for (size_t i = 0; i < (*head)->num_of_relations; i++) {
 			printf("%p | ", temp_array->table[i]);
 		}
-		printf("\n-----------------------------------------\n" );
+		printf("\n-----------------------------------------\n" );*/
 
 		//Insert the results.
 		result_tuples *temp;

@@ -69,4 +69,6 @@ int InsertToQueryBatch(batch_listnode** batch, char* query);
 
 void FreeBatch(batch_listnode* batch);
 
+void ExecuteQuery(batch_listnode *batch_temp);
+
 #endif
