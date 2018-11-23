@@ -60,6 +60,8 @@ int InsertFilterToInterResult(inter_res** head, int relation_num, result* res)
     if ((*head)->data->num_tuples == 0)
     {
       /* Insert all results to the inter_res */
+      printf("Relation num: %d\n",relation_num );
+      printf("Head->active_relations: %p\n", (*head)->active_relations);
       (*head)->active_relations[relation_num] = 1;
       (*head)->data->num_tuples = num_of_results;
       (*head)->data->table[relation_num] = malloc(num_of_results * sizeof(uint64_t));

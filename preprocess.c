@@ -125,6 +125,12 @@ void FreeReorderRelation(reordered_relation *rel)
 	free(rel);
 }
 
+void FreeRelation(relation *rel)
+{
+	if (rel == NULL) return;
+	free(rel->tuples);
+	free(rel);
+}
 
 int CheckMalloc(void* ptr, char* txt)
 {

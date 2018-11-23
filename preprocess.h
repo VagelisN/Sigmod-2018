@@ -18,6 +18,9 @@ void ReorderArray(relation* RelArray, int n_lsb, reordered_relation** NewRel);
 /* Free the allocated memory used for ReorderedRelation variables */
 void FreeReorderRelation(reordered_relation *rel);
 
+/* Free the allocated memory used for relation variables. */
+void FreeRelation(relation *rel);
+
 /* Checks if the return value of a malloc is NULL */
 int CheckMalloc(void* ptr, char* txt);
 

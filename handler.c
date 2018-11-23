@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-//#include "handler.h"
 #include "query.h"
 #include "structs.h"
 #include "inter_res.h"
@@ -18,7 +17,7 @@ int main(void)
 
 	// The list that holds the names of the relation files
 	relation_listnode *relation_list = NULL;
-
+	printf("If you've completed adding relation, type Done .\n");
 	while ( strcmp(buff,"Done") != 0 )
 	{
 		if (scanf("%s",buff) == EOF)
@@ -31,7 +30,6 @@ int main(void)
 			if ( !RelationListInsert(&relation_list,buff) ) relations_count ++;
 			else fprintf(stderr, "RelationListInsert Error \n");
 		}
-
 	}
 	PrintRelationList(relation_list);
 
@@ -48,6 +46,7 @@ int main(void)
 	batch_listnode *batch = NULL, *batch_temp = NULL;
 	while ( fgets(buff,250,stdin) != NULL )
 	{
+		if (strcmp(buff, "Exit\n") == 0) break;
 		// If F is given the end of the current batch is reached
 		if (strcmp(buff,"F\n") == 0)
 		{
@@ -68,7 +67,7 @@ int main(void)
 
 			FreeBatch(batch);
 			batch = NULL;
-			printf("Give queries:\n");
+			printf("Give queries: (or type Exit to quit)\n");
 		}
 		// Else we are still on the same batch
 		else

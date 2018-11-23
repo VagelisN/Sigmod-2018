@@ -115,21 +115,28 @@ int InsertJoinToInterResults(inter_res** head, int ex_rel_num, int new_rel_num, 
 
 void PrintInterResults(inter_res *head)
 {
-	printf("Intermediate results: \n");
-	for (size_t i = 0; i < head->data->num_tuples; i++) {
-		printf("Tuple: %2lu|||", i);
-		for (size_t j = 0; j < head->num_of_relations; j++) {
-			if (head->data->table[j] != NULL)
-				printf(" %4lu |", head->data->table[j][i]);
-			else printf(" NULL |");
+	int i = 0;
+	while(head != NULL)
+	{
+		printf("Intermediate results node[%d]: \n", i);
+		for (size_t i = 0; i < head->data->num_tuples; i++) {
+			printf("Tuple: %2lu|||", i);
+			for (size_t j = 0; j < head->num_of_relations; j++) {
+				if (head->data->table[j] != NULL)
+					printf(" %4lu |", head->data->table[j][i]);
+				else printf(" NULL |");
+			}
+			printf("\n");
 		}
-		printf("\n");
+		printf("-----------------------------------------------\n" );
+		head = head->next;
+		i++;
 	}
-	printf("-----------------------------------------------\n" );
 }
 
 void FreeInterResults(inter_res* var)
 {
+	if (var->next != NULL) FreeInterResults(var->next);
 	if (var->data->num_tuples > 0)
 		for (int i = 0; i < var->num_of_relations; ++i)
 			if(var->data->table[i] != NULL)

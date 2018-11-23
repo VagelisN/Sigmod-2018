@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "structs.h"
+#include "preprocess.h"
 #include "query.h"
 #include "inter_res.h"
 #include "filter.h"
@@ -81,7 +82,7 @@ int ReadQuery(batch_listnode** curr_query, char* buffer)
   InitialiseQueryString(&temp_array, elements, pred, "&");
 
   for (i = 0; i < temp_array->num_of_elements; ++i)
-  { 
+  {
       InsertPredicate(&(*curr_query)->predicate_list, temp_array->data[i]);
   }
 
@@ -166,7 +167,7 @@ void FreePredicateList(predicates_listnode* head)
 		head = head->next;
     if (temp->filter_p != NULL)
       free(temp->filter_p);
-    else 
+    else
       free(temp->join_p);
 		free(temp);
 	}
@@ -218,7 +219,7 @@ int InsertToQueryBatch(batch_listnode** batch, char* query_str)
 	else
 	{
 		batch_listnode *temp = (*batch);
-		while(temp->next != NULL) 
+		while(temp->next != NULL)
       temp = temp->next;
 
     ReadQuery(&temp->next,query_str);
@@ -277,13 +278,13 @@ void PrintBatch(batch_listnode* batch)
 
 predicates_listnode* FreePredListNode(predicates_listnode *current, predicates_listnode* prev)
 {
-  // This node is the head of the list 
+  // This node is the head of the list
   if (prev == current)
   {
     current=current->next;
     if (prev->filter_p != NULL)
       free(prev->filter_p);
-    else 
+    else
       free(prev->join_p);
     free(prev);
     return current;
@@ -293,7 +294,7 @@ predicates_listnode* FreePredListNode(predicates_listnode *current, predicates_l
     prev->next = current->next;
     if (current->filter_p != NULL)
       free(current->filter_p);
-    else 
+    else
       free(current->join_p);
     free(current);
     return NULL;
@@ -305,13 +306,13 @@ void ExecuteQuery(batch_listnode* curr_query,relation_map* rel_map)
 
   // Initialize an intermediate result
   inter_res* intermediate_result = NULL;
-  InitInterResults(&intermediate_result,curr_query->num_of_relations);
+  InitInterResults(&intermediate_result, curr_query->num_of_relations);
 
   // Execute the predicates
   while(curr_query->predicate_list != NULL)
   {
     printf("peos\n");
-    // First execute all filters 
+    // First execute all filters
     // All filters are int the beginning of the list
 
     predicates_listnode* current = curr_query->predicate_list;
@@ -321,14 +322,16 @@ void ExecuteQuery(batch_listnode* curr_query,relation_map* rel_map)
     {
       relation* rel = NULL;
       rel = GetRelation(current->filter_p->relation,current->filter_p->column ,intermediate_result,rel_map);
-      Filter(&intermediate_result, curr_query->num_of_relations,rel,current->filter_p->comperator,current->filter_p->value);
-
+      Filter(&intermediate_result, current->filter_p->relation, rel,current->filter_p->comperator, current->filter_p->value);
       // Filters are always the head of the list
       curr_query->predicate_list = FreePredListNode(current,prev);
+      FreeRelation(rel);
     }
     else
     {
       //Execute Join
     }
+    PrintInterResults(intermediate_result);
   }
+  FreeInterResults(intermediate_result);
 }
