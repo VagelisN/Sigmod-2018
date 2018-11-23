@@ -3,6 +3,8 @@
 #include <string.h>
 #include "structs.h"
 #include "query.h"
+#include "inter_res.h"
+#include "filter.h"
 
 
 int InitialiseQueryString(query_string_array** my_var, int elements, char* str, char* delimeter)
@@ -34,9 +36,10 @@ void FreeQueryString(query_string_array* my_var)
   free(my_var);
 }
 
-int ReadQuery(query **my_query, char* buffer)
+int ReadQuery(batch_listnode** curr_query, char* buffer)
 {
-  if ((*my_query) == NULL) (*my_query) = malloc(sizeof(query));
+  if ((*curr_query) == NULL) (*curr_query) = malloc(sizeof(batch_listnode));
+  (*curr_query)->predicate_list = NULL;
 
   char *rel, *pred, *views_temp, *temp;
   int i;
@@ -48,6 +51,7 @@ int ReadQuery(query **my_query, char* buffer)
   if (rel == NULL || pred == NULL || views_temp == NULL)
   {
     perror("strtok() failed\n");
+    printf("%s\n",rel );
     return -1;
   }
 
@@ -55,60 +59,66 @@ int ReadQuery(query **my_query, char* buffer)
    *for easier access. Find the number of relations first, before
    * allocating space.*/
   int elements = 1;
-  (*my_query)->relations = NULL;
+  (*curr_query)->relations = NULL;
   for (i = 0; i < strlen(rel); i++)
     if (rel[i] == ' ')elements++;
 
-  (*my_query)->relations = malloc(elements * sizeof(int));
+  (*curr_query)->relations = malloc(elements * sizeof(int));
   i = 0;
   while( (temp = strtok_r(rel, " ", &rel)) != NULL )
   {
-    (*my_query)->relations[i] = atoi(temp);
+    (*curr_query)->relations[i] = atoi(temp);
     i++;
   }
 
+  (*curr_query)->num_of_relations = elements;
+
   /*Save all the predicates in a ch_listnode for easier access.*/
-  (*my_query)->predicates = NULL;
+  query_string_array *temp_array = NULL;
   elements = 1;
   for (i = 0; i < strlen(pred); i++)
     if (pred[i] == '&')elements++;
-  InitialiseQueryString(&(*my_query)->predicates, elements, pred, "&");
+  InitialiseQueryString(&temp_array, elements, pred, "&");
+
+  for (i = 0; i < temp_array->num_of_elements; ++i)
+  { 
+      InsertPredicate(&(*curr_query)->predicate_list, temp_array->data[i]);
+  }
+
+  FreeQueryString(temp_array);
+  temp_array = NULL;
 
   /*Save all the views in a ch_listnode. */
-  (*my_query)->views = NULL;
   elements = 1;
   for (i = 0; i < strlen(views_temp); i++)
     if (views_temp[i] == ' ')elements++;
-  InitialiseQueryString(&(*my_query)->views, elements, views_temp, " ");
+  InitialiseQueryString(&temp_array, elements, views_temp, " ");
 
+  (*curr_query)->views = temp_array;
+
+  (*curr_query)->next = NULL;
   return 0;
-}
-
-void FreeQuery(query *my_query)
-{
-  free(my_query->relations);
-  FreeQueryString(my_query->predicates);
-  FreeQueryString(my_query->views);
-  free(my_query);
 }
 
 int InsertPredicate(predicates_listnode **head,char* predicate)
 {
   char *c = predicate;
+  char tempc;
   join_pred *join_p;
   filter_pred *filter_p;
   while( *c != '=' && *c != '<' && *c != '>')
     c++;
+  tempc = (*c);
 
-  if (*c == '=')
+  if (tempc == '=')
     TokenizeJoinPredicate(predicate,&join_p);
   else
-    TokenizeFilterPredicate(predicate,&filter_p,*c);
+    TokenizeFilterPredicate(predicate,&filter_p,tempc);
 
-  if( (*head) == NULL )
+  if((*head) == NULL )
   {
     (*head) = malloc(sizeof(predicates_listnode));
-    if (*c == '=')
+    if (tempc == '=')
     {
       (*head)->join_p =join_p;
       (*head)->filter_p = NULL;
@@ -123,7 +133,7 @@ int InsertPredicate(predicates_listnode **head,char* predicate)
   else
   {
     // if filter -> insert at beginning
-    if (*c != '=')
+    if (tempc != '=')
     {
       predicates_listnode *new_head = malloc(sizeof(predicates_listnode));
       new_head->filter_p = filter_p;
@@ -134,14 +144,13 @@ int InsertPredicate(predicates_listnode **head,char* predicate)
     // if join insert at end
     else
     {
-
       predicates_listnode *temp = (*head);
       while(temp->next != NULL)
         temp = temp->next;
 
       temp->next = malloc(sizeof(predicates_listnode));
-      temp->filter_p = NULL;
-      temp->join_p = join_p;
+      temp->next->filter_p = NULL;
+      temp->next->join_p = join_p;
       temp->next->next = NULL;
     }
   }
@@ -155,6 +164,10 @@ void FreePredicateList(predicates_listnode* head)
 	{
 		temp = head;
 		head = head->next;
+    if (temp->filter_p != NULL)
+      free(temp->filter_p);
+    else 
+      free(temp->join_p);
 		free(temp);
 	}
 }
@@ -195,40 +208,20 @@ void TokenizeFilterPredicate(char* predicate, filter_pred **filter_p,char c)
   buffer = strtok_r(NULL, "", &temp);
   (*filter_p)->value = atoi(buffer);
 
-  //printf("%d %d %c %d\n",(*filter_p)->relation, (*filter_p)->column, (*filter_p)->comperator, (*filter_p)->value );
+  //printf(%d %d %c %d\n",(*filter_p)->relation, (*filter_p)->column, (*filter_p)->comperator, (*filter_p)->value );
 }
 
 int InsertToQueryBatch(batch_listnode** batch, char* query_str)
 {
-	query *curr_query = NULL;
-	if (ReadQuery(&curr_query, query_str) != 0)
-	{
-		fprintf(stderr, "Read Querry error\n");
-		exit(1);
-	}
+	if( (*batch) == NULL )
+    ReadQuery(&(*batch),query_str);
 	else
 	{
-		predicates_listnode *predicate_list = NULL;
-		for (int i = 0; i < curr_query->predicates->num_of_elements; ++i)
-			InsertPredicate(&predicate_list, curr_query->predicates->data[i]);
+		batch_listnode *temp = (*batch);
+		while(temp->next != NULL) 
+      temp = temp->next;
 
-		if( (*batch) == NULL )
-		{
-			(*batch)=malloc(sizeof(batch_listnode));
-			(*batch)->predicate_list = predicate_list;
-			(*batch)->views = curr_query->views;
-			(*batch)->next = NULL;
-		}
-		else
-		{
-			batch_listnode *temp = (*batch);
-			while(temp->next != NULL) temp = temp->next;
-
-			temp->next = malloc(sizeof(batch_listnode));
-			temp->predicate_list = predicate_list;
-			temp->views = curr_query->views;
-			temp->next = NULL;
-		}
+    ReadQuery(&temp->next,query_str);
 	}
 	return 0;
 }
@@ -241,11 +234,101 @@ void FreeBatch(batch_listnode* batch)
 		temp = batch;
 		batch = batch->next;
 		FreePredicateList(temp->predicate_list);
+    FreeQueryString(temp->views);
+    free(temp->relations);
 		free(temp);
 	}
 }
 
-void ExecuteQuery(batch_listnode* curr_query)
+void PrintPredList(predicates_listnode* head)
+{
+  while(head!= NULL)
+  {
+    if(head->filter_p != NULL)
+    {
+      printf("    filter:\n");
+      printf("     %d %d %c %d\n",head->filter_p->relation ,head->filter_p->column,head->filter_p->comperator ,head->filter_p->value );
+    }
+    else
+    {
+      printf("    join:\n");
+      printf("     %d %d %d %d \n",head->join_p->relation1, head->join_p->relation2, head->join_p->column1, head->join_p->column2 );
+    }
+    head = head->next;
+  }
+}
+
+void PrintBatch(batch_listnode* batch)
+{
+  int i = 0;
+  while(batch!=NULL)
+  {
+    printf("\nPrinting query :%d\n",i);
+    printf("  num_of_relations: %d\n   ",batch->num_of_relations);
+    for (int j = 0; j < batch->num_of_relations; ++j)
+      printf("%d ",batch->relations[j]);
+    printf("\n\n");
+    printf("  predicates:\n");
+    PrintPredList(batch->predicate_list);
+    i++;
+    batch = batch->next;
+  }
+}
+
+predicates_listnode* FreePredListNode(predicates_listnode *current, predicates_listnode* prev)
+{
+  // This node is the head of the list 
+  if (prev == current)
+  {
+    current=current->next;
+    if (prev->filter_p != NULL)
+      free(prev->filter_p);
+    else 
+      free(prev->join_p);
+    free(prev);
+    return current;
+  }
+  else
+  {
+    prev->next = current->next;
+    if (current->filter_p != NULL)
+      free(current->filter_p);
+    else 
+      free(current->join_p);
+    free(current);
+    return NULL;
+  }
+}
+
+void ExecuteQuery(batch_listnode* curr_query,relation_map* rel_map)
 {
 
+  // Initialize an intermediate result
+  inter_res* intermediate_result = NULL;
+  InitInterResults(&intermediate_result,curr_query->num_of_relations);
+
+  // Execute the predicates
+  while(curr_query->predicate_list != NULL)
+  {
+    printf("peos\n");
+    // First execute all filters 
+    // All filters are int the beginning of the list
+
+    predicates_listnode* current = curr_query->predicate_list;
+    predicates_listnode* prev = curr_query->predicate_list;
+    // Found a filter
+    if(current->filter_p != NULL)
+    {
+      relation* rel = NULL;
+      rel = GetRelation(current->filter_p->relation,current->filter_p->column ,intermediate_result,rel_map);
+      Filter(&intermediate_result, curr_query->num_of_relations,rel,current->filter_p->comperator,current->filter_p->value);
+
+      // Filters are always the head of the list
+      curr_query->predicate_list = FreePredListNode(current,prev);
+    }
+    else
+    {
+      //Execute Join
+    }
+  }
 }

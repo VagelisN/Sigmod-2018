@@ -38,6 +38,7 @@ int main(void)
 	// From the relations given create a relation map
 	relation_map *rel_map = malloc(relations_count * sizeof(relation_map));
 	InitRelationMap(relation_list,rel_map);
+	FreeRelationList(relation_list);
 
 	sleep(1);
 
@@ -51,20 +52,29 @@ int main(void)
 		if (strcmp(buff,"F\n") == 0)
 		{
 			printf("End of the current batch\n");
-			//EXECUTE THE QUERIES
+
+			// EXECUTE THE QUERIES
 			batch_temp = batch;
+			PrintBatch(batch);
+
+
 			while(batch_temp!=NULL)
 			{
-				ExecuteQuery(batch_temp);
+				ExecuteQuery(batch_temp,rel_map);
 				batch_temp = batch_temp->next;
 			}
+
+
+
 			FreeBatch(batch);
 			batch = NULL;
+			printf("Give queries:\n");
 		}
-
 		// Else we are still on the same batch
 		else
 			InsertToQueryBatch(&batch,buff);
 	}
+	FreeRelationMap(rel_map, relations_count);
+	printf("EXIT\n");
 	return 0;
 }

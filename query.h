@@ -1,23 +1,12 @@
 #ifndef QUERY_H
 #define QUERY_H
 
+#include "structs.h"
 typedef struct query_string_array
 {
   char **data;
   int num_of_elements;
 }query_string_array;
-
-
-/*
- * We save the relations as an int array without a variable to define
- * its size, because we take for granted that the queries that we read
- * will be correct.
- */
-typedef struct query
-{
-  int *relations;
-  query_string_array *predicates, *views;
-}query;
 
 typedef struct filter_pred
 {
@@ -44,16 +33,15 @@ typedef struct predicates_listnode
 
 typedef struct query_batch_listnode
 {
+	int num_of_relations;
+	int *relations;
 	predicates_listnode * predicate_list;
 	query_string_array *views;
 	struct query_batch_listnode *next;
 }batch_listnode;
 
 /* Function that takes a string and constructs the query struct needed.*/
-int ReadQuery(query **my_query, char* buffer);
-
-/* Free's the allocated memory used by the query variable.*/
-void FreeQuery(query *my_query);
+int ReadQuery(batch_listnode **, char* );
 
 int InitialiseQueryString(query_string_array** my_var, int elements, char* str, char* delimeter);
 
@@ -69,6 +57,8 @@ int InsertToQueryBatch(batch_listnode** batch, char* query);
 
 void FreeBatch(batch_listnode* batch);
 
-void ExecuteQuery(batch_listnode *batch_temp);
+void PrintBatch(batch_listnode* batch);
+
+void ExecuteQuery(batch_listnode* curr_query,relation_map* rel_map);
 
 #endif
