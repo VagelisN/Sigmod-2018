@@ -1,7 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include "structs.h"
+#include "results.h"
 #include "preprocess.h"
 #include "query.h"
 #include "inter_res.h"
@@ -82,9 +84,7 @@ int ReadQuery(batch_listnode** curr_query, char* buffer)
   InitialiseQueryString(&temp_array, elements, pred, "&");
 
   for (i = 0; i < temp_array->num_of_elements; ++i)
-  {
       InsertPredicate(&(*curr_query)->predicate_list, temp_array->data[i]);
-  }
 
   FreeQueryString(temp_array);
   temp_array = NULL;
@@ -108,7 +108,7 @@ int InsertPredicate(predicates_listnode **head,char* predicate)
   char tempc;
   join_pred *join_p;
   filter_pred *filter_p;
-  int fullstop_count = 0; 
+  int fullstop_count = 0;
   while( *c != '\0')
   {
     if (*c =='.') fullstop_count++;
@@ -360,7 +360,6 @@ void ExecuteQuery(batch_listnode* curr_query,relation_map* rel_map)
       {
         int relation1 = curr_query->relations[current->join_p->relation1];
         int relation2 = curr_query->relations[current->join_p->relation2];
-        printf("%d %d\n",relation1,relation2 );
         if(current->next==NULL ||
            intermediate_result->active_relations[relation1] != -1 ||
            intermediate_result->active_relations[relation2] != -1
@@ -372,17 +371,19 @@ void ExecuteQuery(batch_listnode* curr_query,relation_map* rel_map)
           relation* relS = GetRelation(current->join_p->relation2,
                                        current->join_p->column2,
                                        intermediate_result, rel_map);
+          printf("Joining rel: %d and rel: %d \n", relation1, relation2 );
           result* curr_res = RadixHashJoin(relR,relS);
           InsertJoinToInterResults(&intermediate_result,
                                    current->join_p->relation1,
                                    current->join_p->relation2, curr_res);
+          FreeRelation(relR);
+          FreeRelation(relS);
+          FreeResult(curr_res);
           predicates_listnode* temp = FreePredListNode(current,prev);
           //if there is a new head for the list
           if (temp != NULL)
-          {
             curr_query->predicate_list = temp;
-          }
-          if (temp== NULL)
+          else
             curr_query->predicate_list = NULL;
           break;
         }
@@ -396,4 +397,7 @@ void ExecuteQuery(batch_listnode* curr_query,relation_map* rel_map)
       }
     }
   }
+  sleep(7);
+  PrintInterResults(intermediate_result);
+  FreeInterResults(intermediate_result);
 }

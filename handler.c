@@ -41,7 +41,7 @@ int main(void)
 	sleep(1);
 
 	// Start getting batches of querries
-	printf("Give queries:\n");
+	printf("Give queries (or type Exit to quit):\n");
 	freopen("/dev/tty", "r", stdin);
 	batch_listnode *batch = NULL, *batch_temp = NULL;
 	while ( fgets(buff,250,stdin) != NULL )
@@ -69,7 +69,8 @@ int main(void)
 		}
 		// Else we are still on the same batch
 		else
-			InsertToQueryBatch(&batch,buff);
+			InsertToQueryBatch(&batch, buff);
+		printf("Give queries (or type Exit to quit):\n");
 	}
 	FreeRelationMap(rel_map, relations_count);
 	printf("EXIT\n");
