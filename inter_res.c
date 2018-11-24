@@ -155,7 +155,14 @@ relation* ScanInterResults(int given_rel,int column, inter_res* inter, relation_
 		fprintf(stderr, "given_rel out of bounds\n");
 		exit(2);
 	}
-	if (inter->active_relations[given_rel] == -1) return NULL;
+
+	int found_flag = 1;
+	while(found_flag == 1 && inter!=NULL)
+	{
+		if (inter->active_relations[given_rel] != -1) found_flag = 0;
+		else inter = inter->next;
+	}
+	if (found_flag == 1) return NULL;
 
 	// Allocate a new struct relation
 	relation *new_rel = malloc(sizeof(relation));
@@ -207,16 +214,27 @@ result* SelfJoin(int given_rel, int column1, int column2,inter_res* inter, relat
 	uint64_t i;
 	uint64_t* col1 = map->columns[column1];
 	uint64_t* col2 = map->columns[column2];
+
+	int found_flag = 1;
+	while(found_flag == 1 && inter!=NULL)
+	{
+		if (inter->active_relations[given_rel] != -1) found_flag = 0;
+		else inter = inter->next;
+	}
+	
 	//the relation is not in the intermediate result
-	if (inter->active_relations[given_rel] == -1)
+	if (found_flag == 1)
+	{	
 		for (i = 0; i < map->num_tuples; ++i)
-			if( col1[i] == col2[i]) InsertSelfResult(&res, &i);
+		if( col1[i] == col2[i]) InsertSelfResult(&res, &i);
+	}
 	else
+	{
 		for (i = 0; i < inter->data->num_tuples; ++i)
 			if ( col1[inter->data->table[given_rel][i]] == col2[inter->data->table[given_rel][i]])
 				InsertSelfResult(&res, inter->data->table[i]);
+	}
 	return res;
-
 }
 
 void CalculateQueryResults(inter_res *inter, relation_map *map, query_string_array *views)

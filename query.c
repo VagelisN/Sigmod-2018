@@ -6,7 +6,7 @@
 #include "query.h"
 #include "inter_res.h"
 #include "filter.h"
-
+#include "rhjoin.h"
 
 int InitialiseQueryString(query_string_array** my_var, int elements, char* str, char* delimeter)
 {
@@ -337,10 +337,11 @@ void ExecuteQuery(batch_listnode* curr_query,relation_map* rel_map)
           intermediate_result->active_relations[relation1] != -1 || 
           intermediate_result->active_relations[relation2] != -1)
         {
-          // Last predicate or one of the relations is in the intermediate results
           relation* relR = GetRelation(current->join_p->relation1,current->join_p->column1 ,intermediate_result,rel_map);
           relation* relS = GetRelation(current->join_p->relation2,current->join_p->column2 ,intermediate_result,rel_map);
-          printf("EXECUTE join %d %d \n",relation1,relation2);
+          result* curr_res = RadixHashJoin(relR,relS);
+
+          //INSERT RESULT TO INTER HERE
           curr_query->predicate_list = FreePredListNode(current,prev);
           break;
         }
