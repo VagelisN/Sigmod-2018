@@ -303,16 +303,14 @@ predicates_listnode* FreePredListNode(predicates_listnode *current, predicates_l
 
 void ExecuteQuery(batch_listnode* curr_query,relation_map* rel_map)
 {
-
   // Initialize an intermediate result
   inter_res* intermediate_result = NULL;
-  InitInterResults(&intermediate_result, curr_query->num_of_relations);
+  InitInterResults(&intermediate_result,curr_query->num_of_relations);
 
   // Execute the predicates
   while(curr_query->predicate_list != NULL)
   {
-    printf("peos\n");
-    // First execute all filters
+    // First execute all filters 
     // All filters are int the beginning of the list
 
     predicates_listnode* current = curr_query->predicate_list;
@@ -322,16 +320,38 @@ void ExecuteQuery(batch_listnode* curr_query,relation_map* rel_map)
     {
       relation* rel = NULL;
       rel = GetRelation(current->filter_p->relation,current->filter_p->column ,intermediate_result,rel_map);
-      Filter(&intermediate_result, current->filter_p->relation, rel,current->filter_p->comperator, current->filter_p->value);
+      Filter(&intermediate_result, curr_query->num_of_relations,rel,current->filter_p->comperator,current->filter_p->value);
+
       // Filters are always the head of the list
       curr_query->predicate_list = FreePredListNode(current,prev);
-      FreeRelation(rel);
     }
     else
     {
       //Execute Join
+      //if either of the relations is in the intermediate result or we reached the end
+      while(1)
+      {
+        int relation1 = curr_query->relations[current->join_p->relation1];
+        int relation2 = curr_query->relations[current->join_p->relation2];
+        if(current->next==NULL || 
+          intermediate_result->active_relations[relation1] != -1 || 
+          intermediate_result->active_relations[relation2] != -1)
+        {
+          // Last predicate or one of the relations is in the intermediate results
+          relation* relR = GetRelation(current->join_p->relation1,current->join_p->column1 ,intermediate_result,rel_map);
+          relation* relS = GetRelation(current->join_p->relation2,current->join_p->column2 ,intermediate_result,rel_map);
+          printf("EXECUTE join %d %d \n",relation1,relation2);
+          curr_query->predicate_list = FreePredListNode(current,prev);
+          break;
+        }
+        else
+        {
+          //check if a relation is in the intermediate result
+          prev=current;
+          current = current->next;
+        }
+
+      }
     }
-    PrintInterResults(intermediate_result);
   }
-  FreeInterResults(intermediate_result);
 }
