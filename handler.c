@@ -63,8 +63,6 @@ int main(void)
 				batch_temp = batch_temp->next;
 			}
 
-
-
 			FreeBatch(batch);
 			batch = NULL;
 			printf("Give queries: (or type Exit to quit)\n");

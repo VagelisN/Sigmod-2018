@@ -154,7 +154,7 @@ void FreeInterResults(inter_res* var)
 
 relation* ScanInterResults(int given_rel,int column, inter_res* inter, relation_map* map)
 {
-
+	printf("GIVEN REL%d\n",given_rel );
 	if (inter->num_of_relations <= given_rel || given_rel < 0 )
 	{
 		fprintf(stderr, "given_rel out of bounds\n");

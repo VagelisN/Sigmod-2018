@@ -103,6 +103,7 @@ int ReadQuery(batch_listnode** curr_query, char* buffer)
 
 int InsertPredicate(predicates_listnode **head,char* predicate)
 {
+  printf("predicate %s\n",predicate );
   char *c = predicate;
   char tempc;
   join_pred *join_p;
@@ -111,6 +112,7 @@ int InsertPredicate(predicates_listnode **head,char* predicate)
   while( *c != '\0')
   {
     if (*c =='.') fullstop_count++;
+    c++;
   }
 
   if (fullstop_count == 2)
@@ -214,6 +216,7 @@ void TokenizeFilterPredicate(char* predicate, filter_pred **filter_p)
     }
     if (*c == '<'||*c == '>'||*c == '=')
       comperator = *c;
+    c++;
   }
 
   if(found_fullstop == 1)
@@ -368,6 +371,7 @@ void ExecuteQuery(batch_listnode* curr_query,relation_map* rel_map)
           relation* relS = GetRelation(current->join_p->relation2,
                                        current->join_p->column2,
                                        intermediate_result, rel_map);
+          printf("edw ginontai ola komple\n");
           result* curr_res = RadixHashJoin(relR,relS);
           InsertJoinToInterResults(&intermediate_result,
                                    current->join_p->relation1,
