@@ -360,6 +360,7 @@ void ExecuteQuery(batch_listnode* curr_query,relation_map* rel_map)
       {
         int relation1 = curr_query->relations[current->join_p->relation1];
         int relation2 = curr_query->relations[current->join_p->relation2];
+        printf("%d %d\n",relation1,relation2 );
         if(current->next==NULL ||
            intermediate_result->active_relations[relation1] != -1 ||
            intermediate_result->active_relations[relation2] != -1
@@ -371,7 +372,6 @@ void ExecuteQuery(batch_listnode* curr_query,relation_map* rel_map)
           relation* relS = GetRelation(current->join_p->relation2,
                                        current->join_p->column2,
                                        intermediate_result, rel_map);
-          printf("edw ginontai ola komple\n");
           result* curr_res = RadixHashJoin(relR,relS);
           InsertJoinToInterResults(&intermediate_result,
                                    current->join_p->relation1,
@@ -379,7 +379,11 @@ void ExecuteQuery(batch_listnode* curr_query,relation_map* rel_map)
           predicates_listnode* temp = FreePredListNode(current,prev);
           //if there is a new head for the list
           if (temp != NULL)
+          {
             curr_query->predicate_list = temp;
+          }
+          if (temp== NULL)
+            curr_query->predicate_list = NULL;
           break;
         }
         else

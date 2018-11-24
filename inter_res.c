@@ -154,7 +154,6 @@ void FreeInterResults(inter_res* var)
 
 relation* ScanInterResults(int given_rel,int column, inter_res* inter, relation_map* map)
 {
-	printf("GIVEN REL%d\n",given_rel );
 	if (inter->num_of_relations <= given_rel || given_rel < 0 )
 	{
 		fprintf(stderr, "given_rel out of bounds\n");
@@ -175,7 +174,7 @@ relation* ScanInterResults(int given_rel,int column, inter_res* inter, relation_
 	new_rel->tuples = malloc(new_rel->num_tuples * sizeof(tuple));
 
 	//Get a pointer to the correct column of the mapped relation
-	uint64_t* col = map->columns[column];
+	uint64_t* col = map[given_rel].columns[column];
 
 	int i;
 	for (i = 0; i < inter->data->num_tuples; ++i)
@@ -202,14 +201,16 @@ relation* GetRelation(int given_rel, int column, inter_res* inter, relation_map*
 		new_rel->num_tuples = map[given_rel].num_tuples;
 		new_rel->tuples = malloc(new_rel->num_tuples * sizeof(tuple));
 
-		uint64_t* col = map->columns[column];
+		uint64_t *col = map[given_rel].columns[column];
 		for (i = 0; i < new_rel->num_tuples; ++i)
 		{
 			new_rel->tuples[i].row_id = i;
 			new_rel->tuples[i].value = col[i];
+			//printf("%d %ld \n",i , col[i] );
 		}
 		return new_rel;
 	}
+
 }
 
 
@@ -217,8 +218,8 @@ result* SelfJoin(int given_rel, int column1, int column2,inter_res* inter, relat
 {
 	result *res = NULL;
 	uint64_t i;
-	uint64_t* col1 = map->columns[column1];
-	uint64_t* col2 = map->columns[column2];
+	uint64_t* col1 = map[given_rel].columns[column1];
+	uint64_t* col2 = map[given_rel].columns[column2];
 
 	int found_flag = 1;
 	while(found_flag == 1 && inter!=NULL)
@@ -230,7 +231,7 @@ result* SelfJoin(int given_rel, int column1, int column2,inter_res* inter, relat
 	//the relation is not in the intermediate result
 	if (found_flag == 1)
 	{
-		for (i = 0; i < map->num_tuples; ++i)
+		for (i = 0; i < map[given_rel].num_tuples; ++i)
 		if( col1[i] == col2[i]) InsertSelfResult(&res, &i);
 	}
 	else
