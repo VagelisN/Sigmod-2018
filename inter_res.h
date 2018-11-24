@@ -57,6 +57,11 @@ relation* ScanInterResults(int,int, inter_res*,relation_map* );
 /* Handles the case of joining 2 different rows of the same relation. */
 result* SelfJoin(int , int , int ,inter_res* , relation_map* );
 
+
+void MergeInterNodes(inter_res **inter);
+
+void Merge(inter_res **head, inter_res **node, int rel_num);
+
 /* Takes the views defined by the query, the intermediate results data structure
  * and the relation_map and prints the query results. */
 void CalculateQueryResults(inter_res *inter, relation_map *map, query_string_array *views);

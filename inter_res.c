@@ -39,6 +39,7 @@ int InsertJoinToInterResults(inter_res** head, int ex_rel_num, int new_rel_num, 
 {
 	while(1)
 	{
+		int flag = 0;
 		//If this is the first instance of the inter_res node
 		if ((*head)->data->num_tuples == 0)
 		{
@@ -57,10 +58,20 @@ int InsertJoinToInterResults(inter_res** head, int ex_rel_num, int new_rel_num, 
 			}
 			return 1;
 		}
-		// Might need to change the following if from OR to XOR so we can seperate :
-		// 1. The case that only one of the two are in the inter_res
-		// 2. The case that both are in the inter_res
-		else if((*head)->active_relations[ex_rel_num] == 1 || (*head)->active_relations[new_rel_num] == 1)
+		/* Switch ex_rel_num with new_rel_num depending on which is the one in the
+		 * inter_res. */
+		// If ex_rel_num is the one active in the intermediate results.
+		if((*head)->active_relations[ex_rel_num] == 1 )
+			flag = 1;
+		// If new_rel_num is the one active in the intermediate results.
+		else if ((*head)->active_relations[new_rel_num] == 1)
+		{
+			flag = 1;
+			int temp_rel = ex_rel_num;
+			ex_rel_num = new_rel_num;
+			new_rel_num = temp_rel;
+		}
+		if(flag == 1)
 		{
 			//Allocate and initialise the new inter_data variable.
 			(*head)->data->num_tuples = GetResultNum(res);
@@ -73,12 +84,6 @@ int InsertJoinToInterResults(inter_res** head, int ex_rel_num, int new_rel_num, 
 			// [new_rel_num] is still inactive , so we have to manually alocate it
 			temp_array->table[new_rel_num] = malloc((*head)->data->num_tuples * sizeof(uint64_t));
 
-			/*printf("temp_array: \n");
-			for (size_t i = 0; i < (*head)->num_of_relations; i++) {
-				printf("%p | ", temp_array->table[i]);
-			}
-			printf("\n-----------------------------------------\n" );*/
-
 			//Insert the results.
 			result_tuples *temp;
 			int old_pos;
@@ -86,8 +91,8 @@ int InsertJoinToInterResults(inter_res** head, int ex_rel_num, int new_rel_num, 
 			{
 				//Insert the results that are stored in the res variable.
 				temp = FindResultTuples(res, i);
-				/* Old_pos refers to the current result's row_id in the inter_res data table.*/
 
+				/* Old_pos refers to the current result's row_id in the inter_res data table.*/
 				old_pos = temp->tuple_R.row_id;
 				temp_array->table[ex_rel_num][i] = (*head)->data->table[ex_rel_num][old_pos];
 				temp_array->table[new_rel_num][i] = temp->tuple_S.row_id;
@@ -107,9 +112,9 @@ int InsertJoinToInterResults(inter_res** head, int ex_rel_num, int new_rel_num, 
 		(*head) = (*head)->next;
 	}
 	//Allocate a new inter_res node
-  InitInterResults(&(*head)->next, (*head)->num_of_relations);
-  //Insert the results to the new node
-  InsertJoinToInterResults(&(*head)->next, ex_rel_num, new_rel_num, res);
+	InitInterResults(&(*head)->next, (*head)->num_of_relations);
+	//Insert the results to the new node
+	InsertJoinToInterResults(&(*head)->next, ex_rel_num, new_rel_num, res);
 	return 0;
 }
 
@@ -221,10 +226,10 @@ result* SelfJoin(int given_rel, int column1, int column2,inter_res* inter, relat
 		if (inter->active_relations[given_rel] != -1) found_flag = 0;
 		else inter = inter->next;
 	}
-	
+
 	//the relation is not in the intermediate result
 	if (found_flag == 1)
-	{	
+	{
 		for (i = 0; i < map->num_tuples; ++i)
 		if( col1[i] == col2[i]) InsertSelfResult(&res, &i);
 	}
@@ -235,6 +240,65 @@ result* SelfJoin(int given_rel, int column1, int column2,inter_res* inter, relat
 				InsertSelfResult(&res, inter->data->table[i]);
 	}
 	return res;
+}
+
+void MergeInterNodes(inter_res **inter)
+{
+	// for each relation
+	inter_res **temp = inter;
+	for (size_t i = 0; i < (*inter)->num_of_relations; i++)
+	{
+		// Check if it's active in multiple nodes
+		if( (*inter)->data->table[i] == NULL )continue;
+		while((*temp)->next != NULL)
+		{
+			if ((*temp)->data->table[i] != NULL)
+			{
+				//If relation i is active on both inter_res nodes, merge them
+				Merge(inter, &(*temp)->next, i);
+			}
+			(*temp) = (*temp)->next;
+		}
+	}
+	if( (*inter)->next != NULL )MergeInterNodes(&(*inter)->next);
+}
+
+
+void Merge(inter_res **head, inter_res **node, int rel_num)
+{
+	/* Node refers to the previous node of the one we want to use. That way
+	 * we can easily free the node we just merged while updating the inter_res list.
+	 */
+	//First allocate space in head for each active relation in node.
+	for (size_t i = 0; i < (*head)->num_of_relations; i++)
+	{
+		if ((*node)->next->data->table != NULL)
+		{
+			if((*head)->data->table != NULL)
+			{
+				printf("Error, a relation is active on 2 nodes.\n");
+				exit(-2);
+			}
+			(*head)->data->table[i] = malloc( (*head)->data->num_tuples * sizeof(uint64_t) );
+		}
+	}
+
+	/* (*head)->data->table[rel_num] values are row_ids pointing to tuples of
+	 * (*node)->data->table . So for each tuple in (*head) insert all relations
+	 * from (*node) that are active.
+	 */
+	for (size_t i = 0; i < (*head)->data->num_tuples; i++)
+	{
+		//Position is the (*node)'s row_id corresponding to the i-th element in (*head)
+		int position = (*head)->data->table[rel_num][i];
+		for (size_t j = 0; j < (*head)->num_of_relations; j++)
+		{
+				if((*node)->next->data->table[j] == NULL) continue;
+				(*head)->data->table[j][i] = (*node)->next->data->table[j][position];
+		}
+	}
+	(*node)->next = (*node)->next->next;
+	FreeInterResults((*node)->next);
 }
 
 void CalculateQueryResults(inter_res *inter, relation_map *map, query_string_array *views)

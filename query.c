@@ -310,7 +310,7 @@ void ExecuteQuery(batch_listnode* curr_query,relation_map* rel_map)
   // Execute the predicates
   while(curr_query->predicate_list != NULL)
   {
-    // First execute all filters 
+    // First execute all filters
     // All filters are int the beginning of the list
 
     predicates_listnode* current = curr_query->predicate_list;
@@ -333,16 +333,25 @@ void ExecuteQuery(batch_listnode* curr_query,relation_map* rel_map)
       {
         int relation1 = curr_query->relations[current->join_p->relation1];
         int relation2 = curr_query->relations[current->join_p->relation2];
-        if(current->next==NULL || 
-          intermediate_result->active_relations[relation1] != -1 || 
-          intermediate_result->active_relations[relation2] != -1)
+        if(current->next==NULL ||
+           intermediate_result->active_relations[relation1] != -1 ||
+           intermediate_result->active_relations[relation2] != -1
+          )
         {
-          relation* relR = GetRelation(current->join_p->relation1,current->join_p->column1 ,intermediate_result,rel_map);
-          relation* relS = GetRelation(current->join_p->relation2,current->join_p->column2 ,intermediate_result,rel_map);
+          relation* relR = GetRelation(current->join_p->relation1,
+                                       current->join_p->column1 ,
+                                       intermediate_result,rel_map);
+          relation* relS = GetRelation(current->join_p->relation2,
+                                       current->join_p->column2,
+                                       intermediate_result, rel_map);
           result* curr_res = RadixHashJoin(relR,relS);
-
-          //INSERT RESULT TO INTER HERE
-          curr_query->predicate_list = FreePredListNode(current,prev);
+          InsertJoinToInterResults(&intermediate_result,
+                                   current->join_p->relation1,
+                                   current->join_p->relation2, curr_res);
+          predicates_listnode* temp = FreePredListNode(current,prev);
+          //if there is a new head for the list
+          if (temp != NULL)
+            curr_query->predicate_list = temp;
           break;
         }
         else
