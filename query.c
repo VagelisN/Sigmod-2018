@@ -107,19 +107,21 @@ int InsertPredicate(predicates_listnode **head,char* predicate)
   char tempc;
   join_pred *join_p;
   filter_pred *filter_p;
-  while( *c != '=' && *c != '<' && *c != '>')
-    c++;
-  tempc = (*c);
+  int fullstop_count = 0; 
+  while( *c != '\0')
+  {
+    if (*c =='.') fullstop_count++;
+  }
 
-  if (tempc == '=')
+  if (fullstop_count == 2)
     TokenizeJoinPredicate(predicate,&join_p);
   else
-    TokenizeFilterPredicate(predicate,&filter_p,tempc);
+    TokenizeFilterPredicate(predicate,&filter_p);
 
   if((*head) == NULL )
   {
     (*head) = malloc(sizeof(predicates_listnode));
-    if (tempc == '=')
+    if (fullstop_count == 2)
     {
       (*head)->join_p =join_p;
       (*head)->filter_p = NULL;
@@ -134,7 +136,7 @@ int InsertPredicate(predicates_listnode **head,char* predicate)
   else
   {
     // if filter -> insert at beginning
-    if (tempc != '=')
+    if (fullstop_count == 1)
     {
       predicates_listnode *new_head = malloc(sizeof(predicates_listnode));
       new_head->filter_p = filter_p;
@@ -193,22 +195,44 @@ void TokenizeJoinPredicate(char* predicate, join_pred **join_p)
   //printf("%d %d %d %d \n",(*join_p)->relation1, (*join_p)->relation2, (*join_p)->column1, (*join_p)->column2 );
 }
 
-void TokenizeFilterPredicate(char* predicate, filter_pred **filter_p,char c)
+void TokenizeFilterPredicate(char* predicate, filter_pred **filter_p)
 {
   (*filter_p) = malloc(sizeof(filter_pred));
-  char *buffer,*temp;
+  char *buffer, *left_operand,*right_operand,*temp;
 
-  buffer = strtok_r(predicate, ".", &temp);
-  (*filter_p)->relation = atoi(buffer);
+  left_operand = strtok_r(predicate, "<>=", &temp);
+  right_operand = strtok_r(NULL, " ", &temp);
 
-  buffer = strtok_r(NULL, "<>",&temp);
-  (*filter_p)->column = atoi(buffer);
+  char comperator;
+  char *c =left_operand;
+  int found_fullstop = 0;
+  while( *c != '\0')
+  {
+    if (*c =='.')
+    {
+      found_fullstop =1;
+    }
+    if (*c == '<'||*c == '>'||*c == '=')
+      comperator = *c;
+  }
 
-  (*filter_p)->comperator = c;
-
-  buffer = strtok_r(NULL, "", &temp);
-  (*filter_p)->value = atoi(buffer);
-
+  if(found_fullstop == 1)
+  {
+    buffer = strtok_r(left_operand, ".", &temp);
+    (*filter_p)->relation = atoi(buffer);
+    buffer = strtok_r(left_operand, " ", &temp);
+    (*filter_p)->column = atoi(buffer);
+    (*filter_p)->value = atoi(right_operand);
+  }
+  else
+  {
+    buffer = strtok_r(right_operand, ".", &temp);
+    (*filter_p)->relation = atoi(buffer);
+    buffer = strtok_r(right_operand, " ", &temp);
+    (*filter_p)->column = atoi(buffer);
+    (*filter_p)->value = atoi(left_operand);
+  }
+  (*filter_p)->comperator = *c;
   //printf(%d %d %c %d\n",(*filter_p)->relation, (*filter_p)->column, (*filter_p)->comperator, (*filter_p)->value );
 }
 

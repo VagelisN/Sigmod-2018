@@ -49,7 +49,7 @@ void FreeQueryString(query_string_array* my_var);
 
 int InsertPredicate(predicates_listnode**,char*);
 
-void TokenizeFilterPredicate(char* predicate, filter_pred **filter_p,char c);
+void TokenizeFilterPredicate(char* predicate, filter_pred **filter_p);
 
 void TokenizeJoinPredicate(char* predicate, join_pred **join_p);
 

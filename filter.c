@@ -126,6 +126,11 @@ int Filter(inter_res** head, int relation_num, relation* rel, char comperator, i
 				if (rel->tuples[i].value < constant)
           InsertFilterRes(&filter_res, &(rel->tuples[i]));
 			break;
+    case '=':
+      for (i = 0; i < rel->num_tuples; i++)
+        if (rel->tuples[i].value == constant)
+          InsertFilterRes(&filter_res, &(rel->tuples[i]));
+      break;
 		default:
 			printf("Wrong comperator in filter function\n");
       return -1;
