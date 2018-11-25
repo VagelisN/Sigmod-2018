@@ -326,8 +326,8 @@ predicates_listnode* ReturnExecPred(batch_listnode* curr_query,inter_res* interm
         )
       {
         prev->next=current->next;
-        if(current == prev && current->next == NULL)
-          curr_query->predicate_list = NULL;
+        if(current == prev)
+          curr_query->predicate_list = current->next;
         return current;
       }
       else
