@@ -4,6 +4,9 @@
 #include <unistd.h>
 #include "query.h"
 #include "structs.h"
+#include "rhjoin.h"
+#include "results.h"
+#include "preprocess.h"
 #include "inter_res.h"
 #include "filter.h"
 #include "relation_map.h"
@@ -44,7 +47,50 @@ int main(void)
 	printf("Give queries (or type Exit to quit):\n");
 	freopen("/dev/tty", "r", stdin);
 	batch_listnode *batch = NULL, *batch_temp = NULL;
-	while ( fgets(buff,250,stdin) != NULL )
+
+
+	//---------------------------------------------------------------------------
+	inter_res *intermediate_result = NULL;
+	InitInterResults(&intermediate_result, 4);
+	printf("Joining 0.0=1.0\n");
+	relation* relR = GetRelation(0, 0 , intermediate_result,rel_map);
+	relation* relS = GetRelation(1, 0, intermediate_result, rel_map);
+	result* curr_res = RadixHashJoin(relR,relS);
+	InsertJoinToInterResults(&intermediate_result, 0, 1, curr_res);
+	FreeRelation(relR);
+	FreeRelation(relS);
+	FreeResult(curr_res);
+	relR = NULL; relS = NULL; curr_res = NULL;
+
+	printf("Joining 2.0=3.0\n");
+	relR = GetRelation(2, 0, intermediate_result,rel_map);
+	relS = GetRelation(3, 0, intermediate_result, rel_map);
+	curr_res = RadixHashJoin(relR,relS);
+	InsertJoinToInterResults(&intermediate_result, 2, 3, curr_res);
+	FreeRelation(relR);
+	FreeRelation(relS);
+	FreeResult(curr_res);
+	relR = NULL; relS = NULL; curr_res = NULL;
+
+	printf("Joining 1.0=2.0\n");
+	relR = GetRelation(1, 0 , intermediate_result,rel_map);
+	relS = GetRelation(2, 0, intermediate_result, rel_map);
+	curr_res = RadixHashJoin(relR,relS);
+	InsertJoinToInterResults(&intermediate_result, 1, 2, curr_res);
+	FreeRelation(relR);
+	FreeRelation(relS);
+	FreeResult(curr_res);
+
+
+	PrintInterResults(intermediate_result);
+	sleep(25);
+	printf("\n\n\n\nMerge inter_res\n\n\n\n");
+	MergeInterNodes(&intermediate_result);
+	PrintInterResults(intermediate_result);
+	FreeInterResults(intermediate_result);
+
+	// --------------------------------------
+	/*while ( fgets(buff,250,stdin) != NULL )
 	{
 		if (strcmp(buff, "Exit\n") == 0) break;
 		// If F is given the end of the current batch is reached
@@ -65,13 +111,12 @@ int main(void)
 
 			FreeBatch(batch);
 			batch = NULL;
-			printf("Give queries: (or type Exit to quit)\n");
 		}
 		// Else we are still on the same batch
 		else
 			InsertToQueryBatch(&batch, buff);
-		printf("Give queries (or type Exit to quit):\n");
-	}
+		printf("Give queries or:\n-type F to finish the current batch\n-type Exit to quit\n");
+	}*/
 	FreeRelationMap(rel_map, relations_count);
 	printf("EXIT\n");
 	return 0;

@@ -372,6 +372,7 @@ void ExecuteQuery(batch_listnode* curr_query, relation_map* rel_map)
 
       // Filters are always the head of the list
       FreePredListNode(current);
+      FreeRelation(rel);
     }
     else
     {
@@ -391,6 +392,11 @@ void ExecuteQuery(batch_listnode* curr_query, relation_map* rel_map)
                                current->join_p->relation1,
                                current->join_p->relation2, curr_res);
       FreePredListNode(current);
-      }
+      FreeRelation(relR);
+      FreeRelation(relS);
+      FreeResult(curr_res);
     }
+  }
+  PrintInterResults(intermediate_result);
+  FreeInterResults(intermediate_result);
 }

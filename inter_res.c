@@ -245,23 +245,27 @@ result* SelfJoin(int given_rel, int column1, int column2,inter_res* inter, relat
 
 void MergeInterNodes(inter_res **inter)
 {
+	printf("Entering MergeInterNodes\n");
 	// for each relation
-	inter_res **temp = inter;
 	for (size_t i = 0; i < (*inter)->num_of_relations; i++)
 	{
+		inter_res *temp = (*inter);
 		// Check if it's active in multiple nodes
 		if( (*inter)->data->table[i] == NULL )continue;
-		while((*temp)->next != NULL)
+		while(temp->next != NULL)
 		{
-			if ((*temp)->data->table[i] != NULL)
+			//If relation i is active on both inter_res nodes, merge them
+			if (temp->next->data->table[i] != NULL)
 			{
-				//If relation i is active on both inter_res nodes, merge them
-				Merge(inter, &(*temp)->next, i);
+				printf("\n\n\t\tAbout to merge!\n\n");
+				Merge(inter, &temp, i);
 			}
-			(*temp) = (*temp)->next;
+			temp = temp->next;
+			if(temp == NULL)break;
 		}
 	}
 	if( (*inter)->next != NULL )MergeInterNodes(&(*inter)->next);
+	printf("Exiting MergeInterNodes\n");
 }
 
 
@@ -273,13 +277,13 @@ void Merge(inter_res **head, inter_res **node, int rel_num)
 	//First allocate space in head for each active relation in node.
 	for (size_t i = 0; i < (*head)->num_of_relations; i++)
 	{
-		if ((*node)->next->data->table != NULL)
+		if ((*node)->next->data->table[i] != NULL && (*head)->data->table[i] == NULL)
 		{
-			if((*head)->data->table != NULL)
+			/*if((*head)->data->table[i] != NULL)
 			{
 				printf("Error, a relation is active on 2 nodes.\n");
 				exit(-2);
-			}
+			}*/
 			(*head)->data->table[i] = malloc( (*head)->data->num_tuples * sizeof(uint64_t) );
 		}
 	}
@@ -291,15 +295,20 @@ void Merge(inter_res **head, inter_res **node, int rel_num)
 	for (size_t i = 0; i < (*head)->data->num_tuples; i++)
 	{
 		//Position is the (*node)'s row_id corresponding to the i-th element in (*head)
-		int position = (*head)->data->table[rel_num][i];
+		uint64_t position = (*head)->data->table[rel_num][i];
 		for (size_t j = 0; j < (*head)->num_of_relations; j++)
 		{
 				if((*node)->next->data->table[j] == NULL) continue;
+				//printf("j: %lu , i: %lu, position: %lu\n", j, i, position);
+				//printf("\tInserting (*node)[%lu][%lu] to (*head)[%lu][%lu]\n", j, position, j, i);
 				(*head)->data->table[j][i] = (*node)->next->data->table[j][position];
 		}
 	}
+	inter_res *temp = (*node)->next;
 	(*node)->next = (*node)->next->next;
-	FreeInterResults((*node)->next);
+	FreeInterData(temp->data, (*node)->num_of_relations);
+	free(temp->active_relations);
+	free(temp);
 }
 
 void CalculateQueryResults(inter_res *inter, relation_map *map, query_string_array *views)
