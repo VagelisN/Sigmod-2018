@@ -2,11 +2,8 @@
 #define QUERY_H
 
 #include "structs.h"
-typedef struct query_string_array
-{
-  char **data;
-  int num_of_elements;
-}query_string_array;
+#include "inter_res.h"
+
 
 typedef struct filter_pred
 {
@@ -59,6 +56,12 @@ void FreeBatch(batch_listnode* batch);
 
 void PrintBatch(batch_listnode* batch);
 
+predicates_listnode* FreePredListNode(predicates_listnode *current);
+
+predicates_listnode* ReturnExecPred(batch_listnode* curr_query,inter_res* intermediate_result);
+
 void ExecuteQuery(batch_listnode* curr_query,relation_map* rel_map);
+
+
 
 #endif

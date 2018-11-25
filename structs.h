@@ -94,4 +94,10 @@ typedef struct relation_map
 	uint64_t **columns;
 }relation_map;
 
+typedef struct query_string_array
+{
+  char **data;
+  int num_of_elements;
+}query_string_array;
+
 #endif

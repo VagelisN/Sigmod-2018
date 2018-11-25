@@ -303,32 +303,55 @@ void PrintBatch(batch_listnode* batch)
   }
 }
 
-predicates_listnode* FreePredListNode(predicates_listnode *current, predicates_listnode* prev)
+predicates_listnode* ReturnExecPred(batch_listnode* curr_query,inter_res* intermediate_result)
 {
-  // This node is the head of the list
-  if (prev == current)
+  predicates_listnode* current =curr_query->predicate_list;
+  predicates_listnode* prev =curr_query->predicate_list;
+  if(current->filter_p != NULL)
   {
-    current=current->next;
-    if (prev->filter_p != NULL)
-      free(prev->filter_p);
-    else
-      free(prev->join_p);
-    free(prev);
+    curr_query->predicate_list=current->next;
     return current;
   }
   else
   {
-    prev->next = current->next;
+    //Execute Join
+    //if either of the relations is in the intermediate result or we reached the end
+    while(1)
+    {
+      int relation1 = curr_query->relations[current->join_p->relation1];
+      int relation2 = curr_query->relations[current->join_p->relation2];
+      if(current->next==NULL ||
+         intermediate_result->active_relations[relation1] != -1 ||
+         intermediate_result->active_relations[relation2] != -1
+        )
+      {
+        prev->next=current->next;
+        if(current == prev && current->next == NULL)
+          curr_query->predicate_list = NULL;
+        return current;
+      }
+      else
+      {
+        //check if a relation is in the intermediate result
+        prev=current;
+        current = current->next;
+      }
+    }
+  }
+}
+
+predicates_listnode* FreePredListNode(predicates_listnode *current)
+{
+  // This node is the head of the list
     if (current->filter_p != NULL)
       free(current->filter_p);
     else
       free(current->join_p);
     free(current);
-    return NULL;
-  }
 }
 
-void ExecuteQuery(batch_listnode* curr_query,relation_map* rel_map)
+
+void ExecuteQuery(batch_listnode* curr_query, relation_map* rel_map)
 {
   // Initialize an intermediate result
   inter_res* intermediate_result = NULL;
@@ -339,9 +362,7 @@ void ExecuteQuery(batch_listnode* curr_query,relation_map* rel_map)
   {
     // First execute all filters
     // All filters are int the beginning of the list
-
-    predicates_listnode* current = curr_query->predicate_list;
-    predicates_listnode* prev = curr_query->predicate_list;
+    predicates_listnode* current = ReturnExecPred(curr_query,intermediate_result);
     // Found a filter
     if(current->filter_p != NULL)
     {
@@ -350,54 +371,26 @@ void ExecuteQuery(batch_listnode* curr_query,relation_map* rel_map)
       Filter(&intermediate_result, curr_query->num_of_relations,rel,current->filter_p->comperator,current->filter_p->value);
 
       // Filters are always the head of the list
-      curr_query->predicate_list = FreePredListNode(current,prev);
+      FreePredListNode(current);
     }
     else
     {
       //Execute Join
       //if either of the relations is in the intermediate result or we reached the end
-      while(1)
-      {
-        int relation1 = curr_query->relations[current->join_p->relation1];
-        int relation2 = curr_query->relations[current->join_p->relation2];
-        if(current->next==NULL ||
-           intermediate_result->active_relations[relation1] != -1 ||
-           intermediate_result->active_relations[relation2] != -1
-          )
-        {
-          relation* relR = GetRelation(current->join_p->relation1,
-                                       current->join_p->column1 ,
-                                       intermediate_result,rel_map);
-          relation* relS = GetRelation(current->join_p->relation2,
-                                       current->join_p->column2,
-                                       intermediate_result, rel_map);
-          printf("Joining rel: %d and rel: %d \n", relation1, relation2 );
-          result* curr_res = RadixHashJoin(relR,relS);
-          InsertJoinToInterResults(&intermediate_result,
-                                   current->join_p->relation1,
-                                   current->join_p->relation2, curr_res);
-          FreeRelation(relR);
-          FreeRelation(relS);
-          FreeResult(curr_res);
-          predicates_listnode* temp = FreePredListNode(current,prev);
-          //if there is a new head for the list
-          if (temp != NULL)
-            curr_query->predicate_list = temp;
-          else
-            curr_query->predicate_list = NULL;
-          break;
-        }
-        else
-        {
-          //check if a relation is in the intermediate result
-          prev=current;
-          current = current->next;
-        }
-
+      int relation1 = curr_query->relations[current->join_p->relation1];
+      int relation2 = curr_query->relations[current->join_p->relation2];
+      printf("%d %d\n",relation1,relation2 );
+      relation* relR = GetRelation(current->join_p->relation1,
+                                   current->join_p->column1 ,
+                                   intermediate_result,rel_map);
+      relation* relS = GetRelation(current->join_p->relation2,
+                                  current->join_p->column2,
+                                  intermediate_result, rel_map);
+      result* curr_res = RadixHashJoin(relR,relS);
+      InsertJoinToInterResults(&intermediate_result,
+                               current->join_p->relation1,
+                               current->join_p->relation2, curr_res);
+      FreePredListNode(current);
       }
     }
-  }
-  sleep(7);
-  PrintInterResults(intermediate_result);
-  FreeInterResults(intermediate_result);
 }
