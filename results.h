@@ -10,7 +10,7 @@ int InsertResult(result **, result_tuples*);
 int GetResultNum(result *);
 
 /* Returns the num-th RowID in the list. */
-int FindResultRowId(result *res, int num);
+uint64_t FindResultRowId(result *res, int num);
 
 /** Prints the result list */
 void PrintResult(result*);
@@ -23,6 +23,6 @@ result_tuples* FindResultTuples(result*, int);
 
 void CheckResult(result* );
 
-int InsertSelfResult(result **, uint64_t *);
+int InsertRowIdResult(result **, uint64_t *);
 
 #endif

@@ -9,6 +9,8 @@ int InsertFilterRes(result **, tuple*);
  * to the inter_res variable. */
 int Filter(inter_res** head, int relation_num, relation* rel, char comperator, int constant);
 
-int InsertFilterToInterResult(inter_res** head, int relation_num, result* res);
+/* Used to insert result with single row_id values to inter_res. This function
+ * is being used by Filter and by SelfJoin.*/
+int InsertSingleRowIdsToInterResult(inter_res** head, int relation_num, result* res);
 
 #endif

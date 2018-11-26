@@ -52,27 +52,29 @@ int main(void)
 	//---------------------------------------------------------------------------
 	inter_res *intermediate_result = NULL;
 	InitInterResults(&intermediate_result, 4);
-	printf("Joining 0.0=1.0\n");
-	relation* relR = GetRelation(0, 0 , intermediate_result,rel_map);
-	relation* relS = GetRelation(1, 0, intermediate_result, rel_map);
-	result* curr_res = RadixHashJoin(relR,relS);
-	InsertJoinToInterResults(&intermediate_result, 0, 1, curr_res);
-	FreeRelation(relR);
-	FreeRelation(relS);
-	FreeResult(curr_res);
-	relR = NULL; relS = NULL; curr_res = NULL;
+	printf("Joining 0.0=0.0\n");
+	//relation* relR = GetRelation(0, 0 , intermediate_result,rel_map);
+	//relation* relS = GetRelation(0, 1, intermediate_result, rel_map);
+	SelfJoin(0, 0, 0, &intermediate_result, rel_map);
+	//FreeRelation(relR);
+	//FreeRelation(relS);
+	//FreeResult(curr_res);
+	relation *relR = NULL, *relS = NULL;result* curr_res = NULL;
+	PrintInterResults(intermediate_result);
+	printf("Going to sleep.\n" );
+	sleep(10);
 
-	printf("Joining 2.0=3.0\n");
-	relR = GetRelation(2, 0, intermediate_result,rel_map);
+	printf("Joining 0.2=3.0\n");
+	relR = GetRelation(0, 2, intermediate_result,rel_map);
 	relS = GetRelation(3, 0, intermediate_result, rel_map);
 	curr_res = RadixHashJoin(relR,relS);
-	InsertJoinToInterResults(&intermediate_result, 2, 3, curr_res);
+	InsertJoinToInterResults(&intermediate_result, 0, 3, curr_res);
 	FreeRelation(relR);
 	FreeRelation(relS);
 	FreeResult(curr_res);
 	relR = NULL; relS = NULL; curr_res = NULL;
-
-	printf("Joining 1.0=2.0\n");
+	PrintInterResults(intermediate_result);
+/*	printf("Joining 1.0=2.0\n");
 	relR = GetRelation(1, 0 , intermediate_result,rel_map);
 	relS = GetRelation(2, 0, intermediate_result, rel_map);
 	curr_res = RadixHashJoin(relR,relS);
@@ -81,7 +83,7 @@ int main(void)
 	FreeRelation(relS);
 	FreeResult(curr_res);
 
-
+*/
 	PrintInterResults(intermediate_result);
 	sleep(25);
 	printf("\n\n\n\nMerge inter_res\n\n\n\n");

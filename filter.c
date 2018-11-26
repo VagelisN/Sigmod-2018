@@ -8,49 +8,7 @@
 #include "results.h"
 #include "preprocess.h"
 
-int InsertFilterRes(result** res, tuple* tup)
-{
-  if( (*res) == NULL )
-	{
-		(*res)=malloc(sizeof(result));
-		CheckMalloc((*res), "*head (results.c)");
-		(*res)->buff = malloc(RESULT_MAX_BUFFER * sizeof(char));
-		CheckMalloc((*res)->buff, "*head->buff (results.c)");
-		(*res)->current_load = 1;
-		(*res)->next = NULL;
-		memcpy((*res)->buff, tup, sizeof(tuple));
-
-	}
-	//else find the first node with available space
-	else
-	{
-		result *temp = (*res);
-		while( ((temp->current_load*sizeof(tuple)) + sizeof(tuple)) > RESULT_MAX_BUFFER)
-		{
-			if ( temp->next != NULL) temp = temp->next;
-			//if all nodes are full create a new one
-			else
-			{
-				temp->next = malloc(sizeof(result));
-				CheckMalloc(temp->next, "temp->next (results.c)");
-				temp->next->buff = malloc(RESULT_MAX_BUFFER * sizeof(char));
-				CheckMalloc(temp->next->buff, "temp->next->buff (results.c)");
-				temp->next->current_load = 1;
-				temp->next->next = NULL;
-				memcpy(temp->next->buff, tup, sizeof(tuple));
-				return 0;
-			}
-		}
-		//found the last, make the insertion
-		void* data = temp->buff;
-		data += (temp->current_load*sizeof(tuple));
-		memcpy(data, tup, sizeof(tuple));
-		temp->current_load ++;
-		return 0;
-	}
-}
-
-int InsertFilterToInterResult(inter_res** head, int relation_num, result* res)
+int InsertSingleRowIdsToInterResult(inter_res** head, int relation_num, result* res)
 {
   // Find the number of the results in res
   int i, j, num_of_results = GetResultNum(res);
@@ -72,7 +30,7 @@ int InsertFilterToInterResult(inter_res** head, int relation_num, result* res)
     {
     	/* If the bucket is already active then remove the tuples that dont fulfil the filter */
     	//Allocate and initialise the new inter_data variable.
-        inter_data *temp_array = NULL;
+      inter_data *temp_array = NULL;
       (*head)->data->num_tuples = GetResultNum(res);
       InitInterData(&temp_array, (*head)->num_of_relations, (*head)->data->num_tuples);
     	for (size_t i = 0; i < (*head)->num_of_relations; i++)
@@ -102,7 +60,7 @@ int InsertFilterToInterResult(inter_res** head, int relation_num, result* res)
   //Allocate a new inter_res node
   InitInterResults(&(*head)->next, (*head)->num_of_relations);
   //Insert the results to the new node
-  InsertFilterToInterResult(&(*head)->next, relation_num, res);
+  InsertSingleRowIdsToInterResult(&(*head)->next, relation_num, res);
 }
 
 
@@ -117,23 +75,23 @@ int Filter(inter_res** head, int relation_num, relation* rel, char comperator, i
        * insert it to the filter_res */
 			for (i = 0; i < rel->num_tuples; i++)
 				if (rel->tuples[i].value > constant)
-          InsertFilterRes(&filter_res, &(rel->tuples[i]));
+          InsertRowIdResult(&filter_res, &(rel->tuples[i].row_id));
 			break;
 		case '<':
 			for (i = 0; i < rel->num_tuples; i++)
 				if (rel->tuples[i].value < constant)
-          InsertFilterRes(&filter_res, &(rel->tuples[i]));
+          InsertRowIdResult(&filter_res, &(rel->tuples[i].row_id));
 			break;
     case '=':
       for (i = 0; i < rel->num_tuples; i++)
         if (rel->tuples[i].value == constant)
-          InsertFilterRes(&filter_res, &(rel->tuples[i]));
+          InsertRowIdResult(&filter_res, &(rel->tuples[i].row_id));
       break;
 		default:
 			printf("Wrong comperator in filter function\n");
       return -1;
 	}
   /* Insert the results to the intermediate_results data structure */
-  InsertFilterToInterResult(head, relation_num, filter_res);
+  InsertSingleRowIdsToInterResult(head, relation_num, filter_res);
   FreeResult(filter_res);
 }

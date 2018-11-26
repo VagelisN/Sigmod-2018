@@ -54,11 +54,13 @@ relation* GetRelation(int, int , inter_res*, relation_map*);
 relation* ScanInterResults(int,int, inter_res*,relation_map* );
 
 /* Handles the case of joining 2 different rows of the same relation. */
-result* SelfJoin(int , int , int ,inter_res* , relation_map* );
+int SelfJoin(int , int , int ,inter_res** , relation_map* );
 
-
+/* Checks whether a relation is active on multiple nodes of the inter_res.
+ * If it is , then call merge between the nodes that the relation is active.*/
 void MergeInterNodes(inter_res **inter);
 
+/* Merges two inter_res nodes to one. Needs a common active relation. */
 void Merge(inter_res **head, inter_res **node, int rel_num);
 
 /* Takes the views defined by the query, the intermediate results data structure

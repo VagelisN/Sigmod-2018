@@ -50,10 +50,10 @@ int InsertResult(result **head, result_tuples *res_tuples)
 }
 
 
-int FindResultRowId(result *res, int num)
+uint64_t FindResultRowId(result *res, int num)
 {
   int pos,total_load = 0;
-  tuple *temp;
+  uint64_t *row_id;
   /* Find the right bucket */
   while( (res != NULL) &&  ((total_load + res->current_load) < num))
   {
@@ -62,8 +62,8 @@ int FindResultRowId(result *res, int num)
   }
   pos = num - total_load;
   //Find the right tuple
-  temp = (tuple *) (res->buff + pos * sizeof(tuple));
-  return temp->row_id;
+  row_id = (uint64_t *) (res->buff + pos * sizeof(uint64_t));
+	return *row_id;
 }
 
 int GetResultNum(result *res)
@@ -188,7 +188,7 @@ void FreeResult(result* head)
 	}
 }
 
-int InsertSelfResult(result **head, uint64_t *row_id)
+int InsertRowIdResult(result **head, uint64_t *row_id)
 {
 	//if the list is empty create the first node and insert the first result
 	if( (*head) == NULL )
@@ -200,13 +200,13 @@ int InsertSelfResult(result **head, uint64_t *row_id)
 		(*head)->current_load = 1;
 		(*head)->next = NULL;
 
-		memcpy((*head)->buff,row_id,sizeof(int64_t));
+		memcpy((*head)->buff, row_id, sizeof(uint64_t));
 	}
 	//else find the first node with available space
 	else
 	{
 		result *temp = (*head);
-		while( ((temp->current_load*sizeof(int64_t)) + sizeof(int64_t)) > RESULT_MAX_BUFFER)
+		while( ((temp->current_load*sizeof(uint64_t)) + sizeof(uint64_t)) > RESULT_MAX_BUFFER)
 		{
 			if ( temp->next != NULL) temp = temp->next;
 			//if all nodes are full create a new one
@@ -218,14 +218,14 @@ int InsertSelfResult(result **head, uint64_t *row_id)
 				CheckMalloc(temp->next->buff, "temp->next->buff (results.c)");
 				temp->next->current_load = 1;
 				temp->next->next = NULL;
-				memcpy(temp->next->buff,row_id,sizeof(int64_t));
+				memcpy(temp->next->buff,row_id,sizeof(uint64_t));
 				return 0;
 			}
 		}
 		//found the last, make the insertion
 		void* data = temp->buff;
-		data += (temp->current_load*sizeof(int64_t));
-		memcpy(data, row_id, sizeof(int64_t));
+		data += (temp->current_load*sizeof(uint64_t));
+		memcpy(data, row_id, sizeof(uint64_t));
 		temp->current_load ++;
 		return 0;
 	}

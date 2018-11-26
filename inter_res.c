@@ -4,6 +4,7 @@
 #include "structs.h"
 #include "query.h"
 #include "results.h"
+#include "filter.h"
 #include "inter_res.h"
 
 int InitInterData(inter_data** head, int num_of_relations, int num_tuples)
@@ -40,7 +41,6 @@ int InsertJoinToInterResults(inter_res** head, int ex_rel_num, int new_rel_num, 
 		//If this is the first instance of the inter_res node
 		if ((*head)->data->num_tuples == 0)
 		{
-
 			//Insert everything from the result to the inter_res
 			(*head)->data->num_tuples = GetResultNum(res);
 			(*head)->data->table[ex_rel_num] = malloc((*head)->data->num_tuples * sizeof(uint64_t));
@@ -75,7 +75,6 @@ int InsertJoinToInterResults(inter_res** head, int ex_rel_num, int new_rel_num, 
 			for (size_t i = 0; i < (*head)->num_of_relations; i++)
 				if((*head)->data->table[i] != NULL)
 					temp_array->table[i] = malloc(((*head)->data->num_tuples) * sizeof(uint64_t));
-
 			// [new_rel_num] is still inactive , so we have to manually alocate it
 			temp_array->table[new_rel_num] = malloc((*head)->data->num_tuples * sizeof(uint64_t));
 
@@ -168,11 +167,9 @@ relation* ScanInterResults(int given_rel,int column, inter_res* inter, relation_
 
 	//Get a pointer to the correct column of the mapped relation
 	uint64_t* col = map[given_rel].columns[column];
-
 	int i;
 	for (i = 0; i < inter->data->num_tuples; ++i)
 	{
-
 		new_rel->tuples[i].row_id = i;
 		new_rel->tuples[i].value = col[inter->data->table[given_rel][i]];
 	}
@@ -207,7 +204,7 @@ relation* GetRelation(int given_rel, int column, inter_res* inter, relation_map*
 }
 
 
-result* SelfJoin(int given_rel, int column1, int column2,inter_res* inter, relation_map* map)
+int SelfJoin(int given_rel, int column1, int column2, inter_res** inter, relation_map* map)
 {
 	result *res = NULL;
 	uint64_t i;
@@ -215,30 +212,37 @@ result* SelfJoin(int given_rel, int column1, int column2,inter_res* inter, relat
 	uint64_t* col2 = map[given_rel].columns[column2];
 
 	int found_flag = 1;
-	while(found_flag == 1 && inter!=NULL)
+	inter_res* temp = (*inter);
+	printf("First instance of temp: %p\n", temp);
+	while(found_flag == 1 && temp !=NULL)
 	{
-		if (inter->data->table[given_rel] != NULL) found_flag = 0;
-		else inter = inter->next;
+		printf("Instance of temp: %p\n", temp);
+		if (temp->data->table[given_rel] != NULL)
+			found_flag = 0;
+		else temp = temp->next;
 	}
-
+	printf("Final instance of temp: %p\n", temp);
 	//the relation is not in the intermediate result
 	if (found_flag == 1)
 	{
 		for (i = 0; i < map[given_rel].num_tuples; ++i)
-		if( col1[i] == col2[i]) InsertSelfResult(&res, &i);
+			if( col1[i] == col2[i]) InsertRowIdResult(&res, &i);
 	}
 	else
 	{
-		for (i = 0; i < inter->data->num_tuples; ++i)
-			if ( col1[inter->data->table[given_rel][i]] == col2[inter->data->table[given_rel][i]])
-				InsertSelfResult(&res, inter->data->table[i]);
+		for (i = 0; i < temp->data->num_tuples; ++i)
+			if ( col1[temp->data->table[given_rel][i]] == col2[temp->data->table[given_rel][i]])
+				InsertRowIdResult(&res, temp->data->table[i]);
 	}
-	return res;
+	//Insert the results to inter_res
+	InsertSingleRowIdsToInterResult(inter, given_rel, res);
+	FreeResult(res);
+	return 1;
 }
 
 void MergeInterNodes(inter_res **inter)
 {
-	printf("Entering MergeInterNodes\n");
+	if((*inter)->next == NULL)return;
 	// for each relation
 	for (size_t i = 0; i < (*inter)->num_of_relations; i++)
 	{
@@ -249,10 +253,7 @@ void MergeInterNodes(inter_res **inter)
 		{
 			//If relation i is active on both inter_res nodes, merge them
 			if (temp->next->data->table[i] != NULL)
-			{
-				printf("\n\n\t\tAbout to merge!\n\n");
 				Merge(inter, &temp, i);
-			}
 			temp = temp->next;
 			if(temp == NULL)break;
 		}
@@ -269,17 +270,8 @@ void Merge(inter_res **head, inter_res **node, int rel_num)
 	 */
 	//First allocate space in head for each active relation in node.
 	for (size_t i = 0; i < (*head)->num_of_relations; i++)
-	{
 		if ((*node)->next->data->table[i] != NULL && (*head)->data->table[i] == NULL)
-		{
-			/*if((*head)->data->table[i] != NULL)
-			{
-				printf("Error, a relation is active on 2 nodes.\n");
-				exit(-2);
-			}*/
 			(*head)->data->table[i] = malloc( (*head)->data->num_tuples * sizeof(uint64_t) );
-		}
-	}
 
 	/* (*head)->data->table[rel_num] values are row_ids pointing to tuples of
 	 * (*node)->data->table . So for each tuple in (*head) insert all relations
@@ -292,8 +284,6 @@ void Merge(inter_res **head, inter_res **node, int rel_num)
 		for (size_t j = 0; j < (*head)->num_of_relations; j++)
 		{
 				if((*node)->next->data->table[j] == NULL) continue;
-				//printf("j: %lu , i: %lu, position: %lu\n", j, i, position);
-				//printf("\tInserting (*node)[%lu][%lu] to (*head)[%lu][%lu]\n", j, position, j, i);
 				(*head)->data->table[j][i] = (*node)->next->data->table[j][position];
 		}
 	}
@@ -305,14 +295,15 @@ void Merge(inter_res **head, inter_res **node, int rel_num)
 
 void CalculateQueryResults(inter_res *inter, relation_map *map, query_string_array *views)
 {
-	//Need another for loop for every column that needs to be displayed
-	for (size_t j = 0; j < views->num_of_elements; j++)
+	//For every different sum
+	for (size_t i = 0; i < views->num_of_elements; i++)
 	{
-		int temp_rel = views->data[j][0] - '0';
-		int temp_col = views->data[j][2] - '0';
+		int relation = views->data[i][0];//rel number
+		int column = views->data[i][2];//column number
 		int temp_sum = 0;
-		for (size_t i = 0; i < inter->data->num_tuples; i++)
-			temp_sum += map[temp_rel].columns[temp_col][ (inter->data->table[temp_rel][i]) ];
+		/* Intermediate result should be only one node at this point! */
+		for (size_t j = 0; j < inter->data->num_tuples; j++)
+			temp_sum += map[relation].columns[column][ (inter->data->table[relation][j]) ];
 		if (temp_sum == 0)printf("NULL ");
 		else printf("%d ", temp_sum);
 	}
