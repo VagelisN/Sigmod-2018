@@ -29,9 +29,6 @@ int InitInterResults(inter_res** head, int num_of_rel)
 	(*head) = malloc(sizeof(inter_res));
 	(*head)->next = NULL;
 	(*head)->num_of_relations = num_of_rel;
-	(*head)->active_relations = malloc(num_of_rel * sizeof(int));
-	for (size_t i = 0; i < num_of_rel; i++)
-		(*head)->active_relations[i] = -1;
 	InitInterData(&(*head)->data, num_of_rel, 0);
 }
 
@@ -46,8 +43,6 @@ int InsertJoinToInterResults(inter_res** head, int ex_rel_num, int new_rel_num, 
 
 			//Insert everything from the result to the inter_res
 			(*head)->data->num_tuples = GetResultNum(res);
-			(*head)->active_relations[ex_rel_num] = 1;
-			(*head)->active_relations[new_rel_num] = 1;
 			(*head)->data->table[ex_rel_num] = malloc((*head)->data->num_tuples * sizeof(uint64_t));
 			(*head)->data->table[new_rel_num] = malloc((*head)->data->num_tuples * sizeof(uint64_t));
 			for (size_t i = 0; i < (*head)->data->num_tuples; i++)
@@ -61,10 +56,10 @@ int InsertJoinToInterResults(inter_res** head, int ex_rel_num, int new_rel_num, 
 		/* Switch ex_rel_num with new_rel_num depending on which is the one in the
 		 * inter_res. */
 		// If ex_rel_num is the one active in the intermediate results.
-		if((*head)->active_relations[ex_rel_num] == 1 )
+		if((*head)->data->table[ex_rel_num] != NULL )
 			flag = 1;
 		// If new_rel_num is the one active in the intermediate results.
-		else if ((*head)->active_relations[new_rel_num] == 1)
+		else if ((*head)->data->table[new_rel_num] != NULL)
 		{
 			flag = 1;
 			int temp_rel = ex_rel_num;
@@ -78,7 +73,7 @@ int InsertJoinToInterResults(inter_res** head, int ex_rel_num, int new_rel_num, 
 			inter_data *temp_array = NULL;
 			InitInterData(&temp_array, (*head)->num_of_relations, (*head)->data->num_tuples);
 			for (size_t i = 0; i < (*head)->num_of_relations; i++)
-				if((*head)->active_relations[i] == 1)
+				if((*head)->data->table[i] != NULL)
 					temp_array->table[i] = malloc(((*head)->data->num_tuples) * sizeof(uint64_t));
 
 			// [new_rel_num] is still inactive , so we have to manually alocate it
@@ -97,13 +92,12 @@ int InsertJoinToInterResults(inter_res** head, int ex_rel_num, int new_rel_num, 
 				temp_array->table[ex_rel_num][i] = (*head)->data->table[ex_rel_num][old_pos];
 				temp_array->table[new_rel_num][i] = temp->tuple_S.row_id;
 				for (size_t j = 0; j < (*head)->num_of_relations; j++)
-					if ((ex_rel_num != j) && (*head)->active_relations[j] == 1)
+					if ((ex_rel_num != j) && (*head)->data->table[j] != NULL)
 						temp_array->table[j][i] = (*head)->data->table[j][old_pos];
 			}
 			/* Set the newly added relation as active. And set the new instance of
 			 * the inter_res variable, after deallocating the memory of the
 			 * previous instance. */
-			(*head)->active_relations[new_rel_num] = 1;
 			FreeInterData((*head)->data, (*head)->num_of_relations);
 			(*head)->data = temp_array;
 			return 1;
@@ -148,7 +142,6 @@ void FreeInterResults(inter_res* var)
 				free(var->data->table[i]);
 	free(var->data->table);
 	free(var->data);
-	free(var->active_relations);
 	free(var);
 }
 
@@ -163,7 +156,7 @@ relation* ScanInterResults(int given_rel,int column, inter_res* inter, relation_
 	int found_flag = 1;
 	while(found_flag == 1 && inter!=NULL)
 	{
-		if (inter->active_relations[given_rel] != -1) found_flag = 0;
+		if (inter->data->table[given_rel] != NULL) found_flag = 0;
 		else inter = inter->next;
 	}
 	if (found_flag == 1) return NULL;
@@ -224,7 +217,7 @@ result* SelfJoin(int given_rel, int column1, int column2,inter_res* inter, relat
 	int found_flag = 1;
 	while(found_flag == 1 && inter!=NULL)
 	{
-		if (inter->active_relations[given_rel] != -1) found_flag = 0;
+		if (inter->data->table[given_rel] != NULL) found_flag = 0;
 		else inter = inter->next;
 	}
 
@@ -307,7 +300,6 @@ void Merge(inter_res **head, inter_res **node, int rel_num)
 	inter_res *temp = (*node)->next;
 	(*node)->next = (*node)->next->next;
 	FreeInterData(temp->data, (*node)->num_of_relations);
-	free(temp->active_relations);
 	free(temp);
 }
 

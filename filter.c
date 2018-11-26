@@ -61,8 +61,6 @@ int InsertFilterToInterResult(inter_res** head, int relation_num, result* res)
     {
       /* Insert all results to the inter_res */
       printf("Relation num: %d\n",relation_num );
-      printf("Head->active_relations: %p\n", (*head)->active_relations);
-      (*head)->active_relations[relation_num] = 1;
       (*head)->data->num_tuples = num_of_results;
       (*head)->data->table[relation_num] = malloc(num_of_results * sizeof(uint64_t));
       // Insert results one by one
@@ -70,7 +68,7 @@ int InsertFilterToInterResult(inter_res** head, int relation_num, result* res)
         (*head)->data->table[relation_num][i] = FindResultRowId(res, i);
       return 1;
     }
-    else if((*head)->active_relations[relation_num] == 1)
+    else if((*head)->data->table[relation_num] != NULL)
     {
     	/* If the bucket is already active then remove the tuples that dont fulfil the filter */
     	//Allocate and initialise the new inter_data variable.
@@ -80,7 +78,7 @@ int InsertFilterToInterResult(inter_res** head, int relation_num, result* res)
     	for (size_t i = 0; i < (*head)->num_of_relations; i++)
     	{
     		/* Allocate memory for all the active relations */
-    		if((*head)->active_relations[i] == 1)
+    		if((*head)->data->table[i] != NULL)
     			temp_array->table[i] = malloc((*head)->data->num_tuples * sizeof(uint64_t));
     	}
     	//Insert the results.
@@ -91,7 +89,7 @@ int InsertFilterToInterResult(inter_res** head, int relation_num, result* res)
     		/* temp is a rowId which refers to the current result's row_id in the inter_res data table.*/
     		temp_array->table[relation_num][i] = (*head)->data->table[relation_num][temp];
     		for (size_t j = 0; j < (*head)->num_of_relations; j++)
-    			if ((relation_num != j) && (*head)->active_relations[j] == 1)
+    			if ((relation_num != j) && (*head)->data->table[j] != NULL)
     				temp_array->table[j][i] = (*head)->data->table[j][temp];
     	}
       FreeInterData((*head)->data, (*head)->num_of_relations);

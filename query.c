@@ -321,8 +321,8 @@ predicates_listnode* ReturnExecPred(batch_listnode* curr_query,inter_res* interm
       int relation1 = curr_query->relations[current->join_p->relation1];
       int relation2 = curr_query->relations[current->join_p->relation2];
       if(current->next==NULL ||
-         intermediate_result->active_relations[relation1] != -1 ||
-         intermediate_result->active_relations[relation2] != -1
+         intermediate_result->data->table[relation1] != NULL ||
+         intermediate_result->data->table[relation2] != NULL
         )
       {
         prev->next=current->next;

@@ -13,7 +13,6 @@ typedef struct inter_data
 typedef struct intermediate_result
 {
 	struct inter_data *data;
-	int *active_relations;
 	int num_of_relations;
 	struct intermediate_result *next;
 }inter_res;

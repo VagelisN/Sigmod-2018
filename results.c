@@ -104,6 +104,31 @@ void PrintResult(result* head)
 	printf("-------------------------------\n");
 }
 
+void PrintSelfResult(result* head)
+{
+	printf("------------------------------\n");
+	printf("Printing results:\n");
+	int temp_curr_load, num_results = 0;
+	uint64_t* data;
+	uint64_t row_id;
+	while(head!=NULL)
+	{
+		data = (uint64_t*)head->buff;
+		temp_curr_load = head->current_load;
+		while(temp_curr_load > 0)
+		{
+			num_results++;
+			printf("row_id %2ld",*data);
+			data++;
+			temp_curr_load --;
+		}
+		head = head->next;
+	}
+	printf("Finished printing results!\n");
+	printf("Number of rows in the result: %d\n",num_results );
+	printf("-------------------------------\n");
+}
+
 
 void CheckResult(result* head)
 {
