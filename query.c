@@ -399,6 +399,8 @@ void ExecuteQuery(batch_listnode* curr_query, relation_map* rel_map)
         InsertJoinToInterResults(&intermediate_result,
                                  current->join_p->relation1,
                                  current->join_p->relation2, curr_res);
+
+        MergeInterNodes(&intermediate_result);
         FreeRelation(relR);
         FreeRelation(relS);
       }
