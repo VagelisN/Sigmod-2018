@@ -381,19 +381,28 @@ void ExecuteQuery(batch_listnode* curr_query, relation_map* rel_map)
       int relation1 = curr_query->relations[current->join_p->relation1];
       int relation2 = curr_query->relations[current->join_p->relation2];
       printf("%d %d\n",relation1,relation2 );
-      relation* relR = GetRelation(current->join_p->relation1,
-                                   current->join_p->column1 ,
-                                   intermediate_result,rel_map);
-      relation* relS = GetRelation(current->join_p->relation2,
-                                  current->join_p->column2,
-                                  intermediate_result, rel_map);
-      result* curr_res = RadixHashJoin(relR,relS);
-      InsertJoinToInterResults(&intermediate_result,
-                               current->join_p->relation1,
-                               current->join_p->relation2, curr_res);
+      result* curr_res = NULL;
+      if(relation1 == relation2)
+      {
+        SelfJoin(relation1, current->join_p->column1, current->join_p->column2, &intermediate_result,rel_map);
+      }
+
+      else
+      {
+        relation* relR = GetRelation(current->join_p->relation1,
+                                     current->join_p->column1 ,
+                                     intermediate_result,rel_map);
+        relation* relS = GetRelation(current->join_p->relation2,
+                                    current->join_p->column2,
+                                    intermediate_result, rel_map);
+        result* curr_res = RadixHashJoin(relR,relS);
+        InsertJoinToInterResults(&intermediate_result,
+                                 current->join_p->relation1,
+                                 current->join_p->relation2, curr_res);
+        FreeRelation(relR);
+        FreeRelation(relS);
+      }
       FreePredListNode(current);
-      FreeRelation(relR);
-      FreeRelation(relS);
       FreeResult(curr_res);
     }
   }
