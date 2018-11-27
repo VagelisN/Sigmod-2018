@@ -17,21 +17,23 @@ int main(void)
 	// First get all the relations from stdin
 	char buff[250] = "start";
 	int relations_count = 0;
-
+	int done_flag = 0;
 	// The list that holds the names of the relation files
 	relation_listnode *relation_list = NULL;
-	printf("If you've completed adding relation, type Done .\n");
-	while ( strcmp(buff,"Done") != 0 )
+	fprintf(stderr,"If you've completed adding relation, type Done .\n");
+	while (done_flag == 0)
 	{
 		if (scanf("%s",buff) == EOF)
-		{
 			freopen("/dev/tty", "r", stdin);
-        	scanf("%s",buff);
-		}
 		else
 		{
+			if (strcmp(buff,"Done") == 0 )
+			{
+				done_flag = 1;
+				break;
+			}
 			if ( !RelationListInsert(&relation_list,buff) ) relations_count ++;
-			else fprintf(stderr, "RelationListInsert Error \n");
+			else fprintf(stderr, "RelationListInsert Error %s\n",buff);
 		}
 	}
 	PrintRelationList(relation_list);
@@ -44,7 +46,7 @@ int main(void)
 	sleep(1);
 
 	// Start getting batches of querries
-	printf("Give queries (or type Exit to quit):\n");
+	fprintf(stderr,"Give queries (or type Exit to quit):\n");
 	freopen("/dev/tty", "r", stdin);
 	batch_listnode *batch = NULL, *batch_temp = NULL;
 

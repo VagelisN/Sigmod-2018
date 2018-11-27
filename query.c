@@ -204,7 +204,7 @@ void TokenizeFilterPredicate(char* predicate, filter_pred **filter_p)
   left_operand = strtok_r(predicate, "<>=", &temp);
   right_operand = strtok_r(NULL, " ", &temp);
 
-  while((*c == '<'||*c == '>'||*c == '='))
+  while((*c != '<'&& *c != '>'&& *c != '='))
     c++;
   (*filter_p)->comperator = *c;
 

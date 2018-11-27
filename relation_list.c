@@ -8,6 +8,7 @@
 #include <fcntl.h>
 #include <stdint.h>
 #include "relation_list.h"
+#include <errno.h>
 
 
 int RelationListInsert(relation_listnode** head,char* relation_text)
@@ -22,7 +23,12 @@ int RelationListInsert(relation_listnode** head,char* relation_text)
 		//CheckMalloc((*head)->filename, "*head->filename (relation_list.c)");
 		strcpy((*head)->filename,relation_text);
 
-		if((*head)->fd = open(relation_text,O_RDONLY) == -1) return 1;
+		if((*head)->fd = open(relation_text,O_RDONLY) == -1)
+		{
+
+			fprintf(stderr,"open error %s : %s\n\n",relation_text, strerror(errno));
+			return 1;
+		} 
 		(*head)->next = NULL;
 
 		return 0;
@@ -40,7 +46,11 @@ int RelationListInsert(relation_listnode** head,char* relation_text)
 		//CheckMalloc(temp->next->filename, "temp->next->filename (relation_list.c)");
 
 		strcpy(temp->next->filename,relation_text);
-		if(temp->next->fd = open(relation_text,O_RDONLY) == -1) return 1;
+		if(temp->next->fd = open(relation_text,O_RDONLY) == -1)
+		{
+			fprintf(stderr,"open error %s : %s\n\n",relation_text, strerror(errno));
+			return 1;
+		}
 		temp->next->next = NULL;
 		return 0;
 	}
