@@ -97,7 +97,7 @@ int main(void)
 	*/
 
 	// --------------------------------------
-	while ( fgets(buff,250,stdin) != NULL )
+	while (fgets(buff,250,stdin) != NULL )
 	{
 		if (strcmp(buff, "Exit\n") == 0) break;
 		// If F is given the end of the current batch is reached

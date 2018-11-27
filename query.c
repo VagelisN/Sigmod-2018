@@ -201,12 +201,13 @@ void TokenizeFilterPredicate(char* predicate, filter_pred **filter_p)
   (*filter_p) = malloc(sizeof(filter_pred));
   char *buffer, *left_operand,*right_operand,*temp;
   char *c = predicate;
-  left_operand = strtok_r(predicate, "<>=", &temp);
-  right_operand = strtok_r(NULL, " ", &temp);
 
-  while((*c != '<'&& *c != '>'&& *c != '='))
+  while( (*c != '<' && *c != '>' && *c != '='))
     c++;
   (*filter_p)->comperator = *c;
+
+  left_operand = strtok_r(predicate, "<>=", &temp);
+  right_operand = strtok_r(NULL, " ", &temp);
 
   char comperator;
   c =left_operand;
@@ -261,7 +262,7 @@ void FreeBatch(batch_listnode* batch)
 	{
 		temp = batch;
 		batch = batch->next;
-		FreePredicateList(temp->predicate_list);
+		//FreePredicateList(temp->predicate_list);
     FreeQueryString(temp->views);
     free(temp->relations);
 		free(temp);
@@ -358,8 +359,10 @@ void ExecuteQuery(batch_listnode* curr_query, relation_map* rel_map)
   InitInterResults(&intermediate_result,curr_query->num_of_relations);
 
   // Execute the predicates
+  printf("ENA EDW EXECUTE \n");
   while(curr_query->predicate_list != NULL)
   {
+    printf("PEEEEEEEEEEEEOS\n");
     // First execute all filters
     // All filters are int the beginning of the list
     predicates_listnode* current = ReturnExecPred(curr_query,intermediate_result);
@@ -367,9 +370,9 @@ void ExecuteQuery(batch_listnode* curr_query, relation_map* rel_map)
     if(current->filter_p != NULL)
     {
       relation* rel = NULL;
+      printf("filter_p relation %d\n",current->filter_p->relation);
       rel = GetRelation(current->filter_p->relation,current->filter_p->column ,intermediate_result,rel_map);
       Filter(&intermediate_result, curr_query->num_of_relations,rel,current->filter_p->comperator,current->filter_p->value);
-
       // Filters are always the head of the list
       FreePredListNode(current);
       FreeRelation(rel);
@@ -380,7 +383,7 @@ void ExecuteQuery(batch_listnode* curr_query, relation_map* rel_map)
       //if either of the relations is in the intermediate result or we reached the end
       int relation1 = curr_query->relations[current->join_p->relation1];
       int relation2 = curr_query->relations[current->join_p->relation2];
-      printf("%d %d\n",relation1,relation2 );
+      printf("join pred %d %d\n",relation1,relation2 );
       result* curr_res = NULL;
       if(relation1 == relation2)
         SelfJoin(relation1, current->join_p->column1, current->join_p->column2, &intermediate_result,rel_map);

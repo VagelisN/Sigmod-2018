@@ -311,7 +311,7 @@ void CalculateQueryResults(inter_res *inter, relation_map *map, batch_listnode *
 			temp_sum += map[relation].columns[column][ (inter->data->table[index][j]) ];
 		}
 		if (temp_sum == 0)printf("NULL ");
-		else printf("%d ", temp_sum);
+		else printf(" temp sum %d ", temp_sum);
 	}
 	printf("\n");
 }
