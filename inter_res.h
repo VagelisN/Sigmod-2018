@@ -7,9 +7,6 @@ typedef struct inter_data
 	uint64_t **table;
 }inter_data;
 
-
-/* active_relations[i] = 1 if the i-th relations is active
- * or -1 if it is inactive */
 typedef struct intermediate_result
 {
 	struct inter_data *data;
@@ -65,7 +62,7 @@ void Merge(inter_res **head, inter_res **node, int rel_num);
 
 /* Takes the views defined by the query, the intermediate results data structure
  * and the relation_map and prints the query results. */
-void CalculateQueryResults(inter_res *inter, relation_map *map, query_string_array *views);
+void CalculateQueryResults(inter_res *inter, relation_map *map, batch_listnode *query);
 
 
 #endif

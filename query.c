@@ -406,7 +406,7 @@ void ExecuteQuery(batch_listnode* curr_query, relation_map* rel_map)
       FreeResult(curr_res);
     }
   }
-  PrintInterResults(intermediate_result);
-  CalculateQueryResults(intermediate_result, rel_map, curr_query->views);
+  //PrintInterResults(intermediate_result);
+  CalculateQueryResults(intermediate_result, rel_map, curr_query);
   FreeInterResults(intermediate_result);
 }

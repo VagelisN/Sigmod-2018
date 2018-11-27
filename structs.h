@@ -94,10 +94,42 @@ typedef struct relation_map
 	uint64_t **columns;
 }relation_map;
 
+typedef struct filter_pred
+{
+	int relation;
+	int column;
+	int value;
+	char comperator;
+}filter_pred;
+
+typedef struct join_pred
+{
+	int relation1;
+	int relation2;
+	int column1;
+	int column2;
+}join_pred;
+
 typedef struct query_string_array
 {
   char **data;
   int num_of_elements;
 }query_string_array;
+
+typedef struct predicates_listnode
+{
+	filter_pred *filter_p;
+	join_pred *join_p;
+	struct predicates_listnode *next;
+}predicates_listnode;
+
+typedef struct query_batch_listnode
+{
+	int num_of_relations;
+	int *relations;
+	predicates_listnode * predicate_list;
+	query_string_array *views;
+	struct query_batch_listnode *next;
+}batch_listnode;
 
 #endif
