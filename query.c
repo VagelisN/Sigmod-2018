@@ -208,7 +208,6 @@ void TokenizeFilterPredicate(char* predicate, filter_pred **filter_p)
     c++;
   (*filter_p)->comperator = *c;
 
-
   char comperator;
   c =left_operand;
   int found_fullstop = 0;
@@ -237,7 +236,6 @@ void TokenizeFilterPredicate(char* predicate, filter_pred **filter_p)
     (*filter_p)->column = atoi(buffer);
     (*filter_p)->value = atoi(left_operand);
   }
-  (*filter_p)->comperator = *c;
   //printf(%d %d %c %d\n",(*filter_p)->relation, (*filter_p)->column, (*filter_p)->comperator, (*filter_p)->value );
 }
 
