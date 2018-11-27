@@ -200,12 +200,17 @@ void TokenizeFilterPredicate(char* predicate, filter_pred **filter_p)
 {
   (*filter_p) = malloc(sizeof(filter_pred));
   char *buffer, *left_operand,*right_operand,*temp;
-
+  char *c = predicate;
   left_operand = strtok_r(predicate, "<>=", &temp);
   right_operand = strtok_r(NULL, " ", &temp);
 
+  while((*c == '<'||*c == '>'||*c == '='))
+    c++;
+  (*filter_p)->comperator = *c;
+
+
   char comperator;
-  char *c =left_operand;
+  c =left_operand;
   int found_fullstop = 0;
   while( *c != '\0')
   {
@@ -213,8 +218,6 @@ void TokenizeFilterPredicate(char* predicate, filter_pred **filter_p)
     {
       found_fullstop =1;
     }
-    if (*c == '<'||*c == '>'||*c == '=')
-      comperator = *c;
     c++;
   }
 
