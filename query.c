@@ -96,7 +96,6 @@ int ReadQuery(batch_listnode** curr_query, char* buffer)
   InitialiseQueryString(&temp_array, elements, views_temp, " ");
 
   (*curr_query)->views = temp_array;
-
   (*curr_query)->next = NULL;
   return 0;
 }
@@ -383,10 +382,7 @@ void ExecuteQuery(batch_listnode* curr_query, relation_map* rel_map)
       printf("%d %d\n",relation1,relation2 );
       result* curr_res = NULL;
       if(relation1 == relation2)
-      {
         SelfJoin(relation1, current->join_p->column1, current->join_p->column2, &intermediate_result,rel_map);
-      }
-
       else
       {
         relation* relR = GetRelation(current->join_p->relation1,
@@ -403,11 +399,13 @@ void ExecuteQuery(batch_listnode* curr_query, relation_map* rel_map)
         MergeInterNodes(&intermediate_result);
         FreeRelation(relR);
         FreeRelation(relS);
+        FreeResult(curr_res);
       }
       FreePredListNode(current);
       FreeResult(curr_res);
     }
   }
   PrintInterResults(intermediate_result);
+  CalculateQueryResults(intermediate_result, rel_map, curr_query->views);
   FreeInterResults(intermediate_result);
 }

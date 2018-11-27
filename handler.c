@@ -50,6 +50,7 @@ int main(void)
 
 
 	//---------------------------------------------------------------------------
+	/*
 	inter_res *intermediate_result = NULL;
 	InitInterResults(&intermediate_result, 4);
 	printf("Joining 0.0=0.0\n");
@@ -84,15 +85,17 @@ int main(void)
 	FreeResult(curr_res);
 
 */
+/*
 	PrintInterResults(intermediate_result);
 	sleep(25);
 	printf("\n\n\n\nMerge inter_res\n\n\n\n");
 	MergeInterNodes(&intermediate_result);
 	PrintInterResults(intermediate_result);
 	FreeInterResults(intermediate_result);
+	*/
 
 	// --------------------------------------
-	/*while ( fgets(buff,250,stdin) != NULL )
+	while ( fgets(buff,250,stdin) != NULL )
 	{
 		if (strcmp(buff, "Exit\n") == 0) break;
 		// If F is given the end of the current batch is reached
@@ -118,7 +121,7 @@ int main(void)
 		else
 			InsertToQueryBatch(&batch, buff);
 		printf("Give queries or:\n-type F to finish the current batch\n-type Exit to quit\n");
-	}*/
+	}
 	FreeRelationMap(rel_map, relations_count);
 	printf("EXIT\n");
 	return 0;

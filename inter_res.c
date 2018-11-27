@@ -298,8 +298,10 @@ void CalculateQueryResults(inter_res *inter, relation_map *map, query_string_arr
 	//For every different sum
 	for (size_t i = 0; i < views->num_of_elements; i++)
 	{
-		int relation = views->data[i][0];//rel number
-		int column = views->data[i][2];//column number
+		printf("View[%lu] = %s\n", i, views->data[i]);
+		int relation = views->data[i][0] - '0';//rel number
+		int column = views->data[i][2] - '0';//column number
+		printf("Relation: %d Column: %d\n", relation, column);
 		int temp_sum = 0;
 		/* Intermediate result should be only one node at this point! */
 		for (size_t j = 0; j < inter->data->num_tuples; j++)
