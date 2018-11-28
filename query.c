@@ -397,6 +397,11 @@ void ExecuteQuery(batch_listnode* curr_query, relation_map* rel_map)
                                     current->join_p->column2,
                                     intermediate_result, rel_map,
                                     curr_query->relations);
+        PrintRelation(relR);
+        printf("REL R %ld\n",relR->num_tuples);
+        PrintRelation(relS);
+        printf("REL S\n");
+        exit(2);
         result* curr_res = RadixHashJoin(relR,relS);
         InsertJoinToInterResults(&intermediate_result,
                                  relation1, relation2, curr_res);
