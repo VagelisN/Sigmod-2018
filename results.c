@@ -232,3 +232,13 @@ int InsertRowIdResult(result **head, uint64_t *row_id)
 		return 0;
 	}
 }
+
+void PrintRelation(relation* rel)
+{
+	printf("\nprinting relation:\n\n");
+	for (int i = 0; i < rel->num_tuples; ++i)
+	{
+		printf("Row Id: %ld Value %ld\n",rel->tuples[i].row_id, rel->tuples[i].value );
+	}
+	printf("\nfinished printing relation\n\n");
+}

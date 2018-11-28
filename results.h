@@ -25,4 +25,6 @@ void CheckResult(result* );
 
 int InsertRowIdResult(result **, uint64_t *);
 
+void PrintRelation(relation* rel);
+
 #endif
