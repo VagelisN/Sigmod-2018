@@ -99,30 +99,35 @@ int main(void)
 	// --------------------------------------
 	while (fgets(buff,250,stdin) != NULL )
 	{
-		if (strcmp(buff, "Exit\n") == 0) break;
-		// If F is given the end of the current batch is reached
-		if (strcmp(buff,"F\n") == 0)
+ 		if(strlen(buff) < 2)
+ 			fprintf(stderr,"Input too small\n");
+ 		else
 		{
-			printf("End of the current batch\n");
-
-			// EXECUTE THE QUERIES
-			batch_temp = batch;
-			PrintBatch(batch);
-
-
-			while(batch_temp!=NULL)
+			if (strcmp(buff, "Exit\n") == 0) break;
+			// If F is given the end of the current batch is reached
+			if (strcmp(buff,"F\n") == 0)
 			{
-				ExecuteQuery(batch_temp,rel_map);
-				batch_temp = batch_temp->next;
-			}
+				printf("End of the current batch\n");
 
-			FreeBatch(batch);
-			batch = NULL;
+				// EXECUTE THE QUERIES
+				batch_temp = batch;
+				PrintBatch(batch);
+
+
+				while(batch_temp!=NULL)
+				{
+					ExecuteQuery(batch_temp,rel_map);
+					batch_temp = batch_temp->next;
+				}
+
+				FreeBatch(batch);
+				batch = NULL;
+			}
+			// Else we are still on the same batch
+			else
+				InsertToQueryBatch(&batch, buff);
+			printf("Give queries or:\n-type F to finish the current batch\n-type Exit to quit\n");
 		}
-		// Else we are still on the same batch
-		else
-			InsertToQueryBatch(&batch, buff);
-		printf("Give queries or:\n-type F to finish the current batch\n-type Exit to quit\n");
 	}
 	FreeRelationMap(rel_map, relations_count);
 	printf("EXIT\n");
