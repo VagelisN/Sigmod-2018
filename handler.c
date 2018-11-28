@@ -43,8 +43,6 @@ int main(void)
 	InitRelationMap(relation_list,rel_map);
 	FreeRelationList(relation_list);
 
-	sleep(1);
-
 	// Start getting batches of querries
 	fprintf(stderr,"Give queries (or type Exit to quit):\n");
 	freopen("/dev/tty", "r", stdin);

@@ -11,19 +11,16 @@
 int InsertSingleRowIdsToInterResult(inter_res** head, int relation_num, result* res)
 {
   // Find the number of the results in res
-  int i, j, num_of_results = GetResultNum(res);
+  int i, j;
+  uint64_t num_of_results = GetResultNum(res);
+  printf("Filter num_of_results: %lu\n", num_of_results);
   while(1)
   {
     // If its the first instance of the inter_res node
     if ((*head)->data->num_tuples == 0)
     {
       /* Insert all results to the inter_res */
-      printf("Relation num: %d\n",relation_num );
       (*head)->data->num_tuples = num_of_results;
-      printf("POU %d\n",num_of_results );
-      printf("Pointer: data: %p \n", (*head)->data);
-      printf("Pointer: data->table: %p \n", (*head)->data->table);
-      printf("Pointer: data->table[%d]: %p \n", relation_num, (*head)->data->table[relation_num]);
       (*head)->data->table[relation_num] = malloc(num_of_results * sizeof(uint64_t));
       // Insert results one by one
       for (size_t i = 0; i < num_of_results; i++)
