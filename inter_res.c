@@ -59,11 +59,11 @@ int InsertJoinToInterResults(inter_res** head, int rel1, int rel2, result* res)
 		{
 			printf("\n\nInterRes: Rel1 is the only one active!\n\n");
 			//Allocate and initialise the new inter_data variable.
-			printf("Previous num_tuples = %lu\n", (*head)->data->num_tuples);
-			(*head)->data->num_tuples = GetResultNum(res);
-			printf("New num_tuples = %lu\n", (*head)->data->num_tuples);
+			//printf("Previous num_tuples = %lu\n", (*head)->data->num_tuples);
+			uint64_t new_tuples = GetResultNum(res);
+			//printf("New num_tuples = %lu\n", (*head)->data->num_tuples);
 			inter_data *temp_array = NULL;
-			InitInterData(&temp_array, (*head)->num_of_relations, (*head)->data->num_tuples);
+			InitInterData(&temp_array, (*head)->num_of_relations, new_tuples);
 			for (size_t i = 0; i < (*head)->num_of_relations; i++)
 				if((*head)->data->table[i] != NULL)
 					temp_array->table[i] = malloc(((*head)->data->num_tuples) * sizeof(uint64_t));
@@ -80,6 +80,12 @@ int InsertJoinToInterResults(inter_res** head, int rel1, int rel2, result* res)
 				//printf("Old_pos = %lu\n", temp->tuple_R.row_id);
 				/* tuple_R.row_id is an index of the previous instance of the inter_res.*/
 				old_pos = temp->tuple_R.row_id;
+				if (old_pos < 0 || old_pos >= (*head)->data->num_tuples)
+				{
+					printf("\n\n\n\n\n\n\t\tError, old pos is out of bounds!!!!\n\n\n\n\n\n");
+					exit(2);
+				}
+				printf("Old_pos: %d, temp->tuple_S.row_id: %lu\n", old_pos, temp->tuple_S.row_id);
 				temp_array->table[rel2][i] = temp->tuple_S.row_id;
 				for (size_t j = 0; j < (*head)->num_of_relations; j++)
 					if ((*head)->data->table[j] != NULL)
@@ -198,7 +204,7 @@ relation* ScanInterResults(int given_rel,int column, inter_res* inter, relation_
 	for (i = 0; i < inter->data->num_tuples; ++i)
 	{
 		new_rel->tuples[i].row_id = i;
-		new_rel->tuples[i].value = col[inter->data->table[given_rel][i]];
+		new_rel->tuples[i].value = col[ inter->data->table[given_rel][i] ];
 		printf("\t\tNum_tuples: %lu | Row_id: %d Value: %ld \n", inter->data->num_tuples, i ,  col[ inter->data->table[given_rel][i] ]);
 	}
 	return new_rel;
@@ -210,7 +216,7 @@ relation* GetRelation(int given_rel, int column, inter_res* inter, relation_map*
 	int i;
 
 	// If the relation is in the intermediate results
-	if ( (new_rel = ScanInterResults(given_rel, column, inter, map, query_relations)) != NULL)
+	if ((inter != NULL) && (new_rel = ScanInterResults(given_rel, column, inter, map, query_relations)) != NULL)
 		return new_rel;
 	// If the relation is only in the map
 	else
@@ -334,14 +340,14 @@ void CalculateQueryResults(inter_res *inter, relation_map *map, batch_listnode *
 		/* Intermediate result should be only one node at this point! */
 		for (size_t j = 0; j < inter->data->num_tuples; j++)
 		{
-			printf("index %d\n", index );
-			printf("Rel[%d] size is: %lu\n", relation, map[relation].num_tuples);
-			printf("Accessing: rel_map[Rel:%d][Col:%d][Tup: %lu]\n", relation, column, (inter->data->table[index][j]));
+			//printf("index %d\n", index );
+			//printf("Rel[%d] size is: %lu\n", relation, map[relation].num_tuples);
+			//printf("Accessing: rel_map[Rel:%d][Col:%d][Tup: %lu]\n", relation, column, (inter->data->table[index][j]));
 			//printf ("value %ld\n",map[relation].columns[column][ (inter->data->table[index][j]) ]);
 			temp_sum += map[relation].columns[column][ (inter->data->table[index][j]) ];
 		}
 		if (temp_sum == 0)printf("NULL ");
-		else printf(" temp sum %d ", temp_sum);
+		else printf("%d ", temp_sum);
 	}
 	printf("\n");
 }

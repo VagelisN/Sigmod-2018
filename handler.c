@@ -50,52 +50,57 @@ int main(void)
 
 
 	//---------------------------------------------------------------------------
-	/*
+	int relations[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
 	inter_res *intermediate_result = NULL;
-	InitInterResults(&intermediate_result, 4);
-	printf("Joining 0.0=0.0\n");
-	//relation* relR = GetRelation(0, 0 , intermediate_result,rel_map);
-	//relation* relS = GetRelation(0, 1, intermediate_result, rel_map);
-	SelfJoin(0, 0, 0, &intermediate_result, rel_map);
-	//FreeRelation(relR);
-	//FreeRelation(relS);
-	//FreeResult(curr_res);
-	relation *relR = NULL, *relS = NULL;result* curr_res = NULL;
-	PrintInterResults(intermediate_result);
-	printf("Going to sleep.\n" );
-	sleep(10);
+	InitInterResults(&intermediate_result, 10);
 
-	printf("Joining 0.2=3.0\n");
-	relR = GetRelation(0, 2, intermediate_result,rel_map);
-	relS = GetRelation(3, 0, intermediate_result, rel_map);
-	curr_res = RadixHashJoin(relR,relS);
-	InsertJoinToInterResults(&intermediate_result, 0, 3, curr_res);
+	//Filter 3.2 > 3499
+	printf("Filter 3.2>3499\n");
+	relation* relR = GetRelation(3, 2 , intermediate_result, rel_map, relations);
+	Filter(&intermediate_result, 3, relR, '>', 3499);
 	FreeRelation(relR);
-	FreeRelation(relS);
-	FreeResult(curr_res);
-	relR = NULL; relS = NULL; curr_res = NULL;
+	relation *relS = NULL;result* curr_res = NULL;
 	PrintInterResults(intermediate_result);
-/*	printf("Joining 1.0=2.0\n");
-	relR = GetRelation(1, 0 , intermediate_result,rel_map);
-	relS = GetRelation(2, 0, intermediate_result, rel_map);
-	curr_res = RadixHashJoin(relR,relS);
-	InsertJoinToInterResults(&intermediate_result, 1, 2, curr_res);
+	printf("Going to sleep. Above is the first instance of inter_res after the filter.\n" );
+	sleep(5);
+
+	//Join 0.0=3.2
+	relR = GetRelation(3, 2, intermediate_result, rel_map, relations);
+	relS = GetRelation(0, 0, intermediate_result, rel_map, relations);
+	curr_res = RadixHashJoin(relR, relS);
+
+	InsertJoinToInterResults(&intermediate_result, 3, 0, curr_res);
 	FreeRelation(relR);
 	FreeRelation(relS);
 	FreeResult(curr_res);
 
-*/
-/*
-	PrintInterResults(intermediate_result);
-	sleep(25);
-	printf("\n\n\n\nMerge inter_res\n\n\n\n");
-	MergeInterNodes(&intermediate_result);
-	PrintInterResults(intermediate_result);
-	FreeInterResults(intermediate_result);
-	*/
-
+	//Join  3.1=1.0
+	relR = GetRelation(3, 1, intermediate_result, rel_map, relations);
+	relS = GetRelation(1, 0, intermediate_result, rel_map, relations);
+	curr_res = RadixHashJoin(relR, relS);
+	InsertJoinToInterResults(&intermediate_result, 3, 1, curr_res);
+	FreeRelation(relR);
+	FreeRelation(relS);
+	FreeResult(curr_res);
+	batch_listnode* query = malloc(sizeof(batch_listnode));
+	query->num_of_relations = 10;
+	query->relations = (int*)&relations;
+	query->views = malloc(sizeof(query_string_array));
+	query->views->num_of_elements = 2;
+	query->views->data = malloc(2 * sizeof(char*));
+	query->views->data[0] = malloc(5 * sizeof(char));
+	query->views->data[0][0] = '0';
+	query->views->data[0][1] = '.';
+	query->views->data[0][2] = '2';
+	query->views->data[0][3] = '\0';
+	query->views->data[1] = malloc(5 * sizeof(char));
+	query->views->data[1][0] = '3';
+	query->views->data[1][1] = '.';
+	query->views->data[1][2] = '1';
+	query->views->data[1][3] = '\0';
+	CalculateQueryResults(intermediate_result, rel_map, query);
 	// --------------------------------------
-	while (fgets(buff,250,stdin) != NULL )
+/*	while (fgets(buff,250,stdin) != NULL )
 	{
  		if(strlen(buff) < 2)
  			fprintf(stderr,"Input too small\n");
@@ -127,6 +132,8 @@ int main(void)
 			printf("Give queries or:\n-type F to finish the current batch\n-type Exit to quit\n");
 		}
 	}
+	*/
+	FreeInterResults(intermediate_result);
 	FreeRelationMap(rel_map, relations_count);
 	printf("EXIT\n");
 	return 0;

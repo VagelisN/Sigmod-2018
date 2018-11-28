@@ -372,7 +372,10 @@ void ExecuteQuery(batch_listnode* curr_query, relation_map* rel_map)
       printf("filter_p relation %d\n",current->filter_p->relation);
       rel = GetRelation(current->filter_p->relation,current->filter_p->column ,intermediate_result,rel_map,curr_query->relations);
       Filter(&intermediate_result, current->filter_p->relation, rel,current->filter_p->comperator, current->filter_p->value);
-      sleep(5);
+      FreeRelation(rel);
+      rel = GetRelation(current->filter_p->relation,current->filter_p->column ,intermediate_result,rel_map,curr_query->relations);
+      PrintRelation(rel);
+      sleep(20);
       // Filters are always the head of the list
       FreePredListNode(current);
       FreeRelation(rel);
@@ -397,12 +400,7 @@ void ExecuteQuery(batch_listnode* curr_query, relation_map* rel_map)
                                     current->join_p->column2,
                                     intermediate_result, rel_map,
                                     curr_query->relations);
-        PrintRelation(relR);
-        printf("REL R %ld\n",relR->num_tuples);
-        PrintRelation(relS);
-        printf("REL S\n");
-        exit(2);
-        result* curr_res = RadixHashJoin(relR,relS);
+        result* curr_res = RadixHashJoin(relR, relS);
         InsertJoinToInterResults(&intermediate_result,
                                  relation1, relation2, curr_res);
         //PrintInterResults(intermediate_result);
@@ -418,7 +416,6 @@ void ExecuteQuery(batch_listnode* curr_query, relation_map* rel_map)
   }
   //PrintInterResults(intermediate_result);
   //printf("This is the final form of the inter_res.\n");
-  sleep(10);
   CalculateQueryResults(intermediate_result, rel_map, curr_query);
   FreeInterResults(intermediate_result);
 }
