@@ -387,7 +387,7 @@ void ExecuteQuery(batch_listnode* curr_query, relation_map* rel_map)
       printf("join pred %d %d\n",relation1,relation2 );
       result* curr_res = NULL;
       if(relation1 == relation2)
-        SelfJoin(relation1, current->join_p->column1, current->join_p->column2, &intermediate_result,rel_map);
+        SelfJoin(relation1, current->join_p->column1, current->join_p->column2, &intermediate_result,rel_map,curr_query->relations);
       else
       {
         relation* relR = GetRelation(current->join_p->relation1,

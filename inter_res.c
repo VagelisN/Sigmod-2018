@@ -204,12 +204,12 @@ relation* GetRelation(int given_rel, int column, inter_res* inter, relation_map*
 }
 
 
-int SelfJoin(int given_rel, int column1, int column2, inter_res** inter, relation_map* map)
+int SelfJoin(int given_rel, int column1, int column2, inter_res** inter, relation_map* map, int* query_relations)
 {
 	result *res = NULL;
 	uint64_t i;
-	uint64_t* col1 = map[given_rel].columns[column1];
-	uint64_t* col2 = map[given_rel].columns[column2];
+	uint64_t* col1 = map[query_relations[given_rel]].columns[column1];
+	uint64_t* col2 = map[query_relations[given_rel]].columns[column2];
 
 	int found_flag = 1;
 	inter_res* temp = (*inter);

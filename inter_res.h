@@ -51,7 +51,7 @@ relation* GetRelation(int given_rel, int column, inter_res* inter, relation_map*
 relation* ScanInterResults(int given_rel,int column, inter_res* inter, relation_map* map,int* query_relations);
 
 /* Handles the case of joining 2 different rows of the same relation. */
-int SelfJoin(int , int , int ,inter_res** , relation_map* );
+int SelfJoin(int given_rel, int column1, int column2, inter_res** inter, relation_map* map, int* query_relations);
 
 /* Checks whether a relation is active on multiple nodes of the inter_res.
  * If it is , then call merge between the nodes that the relation is active.*/
