@@ -35,7 +35,6 @@ int InitInterResults(inter_res** head, int num_of_rel)
 
 int InsertJoinToInterResults(inter_res** head, int rel1, int rel2, result* res)
 {
-	printf("\n\n\nStarted insert. Rel1: %d , Rel2: %d\n", rel1, rel2);
 	while(1)
 	{
 		//If this is the first instance of the inter_res node
@@ -57,11 +56,10 @@ int InsertJoinToInterResults(inter_res** head, int rel1, int rel2, result* res)
 		// If rel1 is the one active in the intermediate results.
 		else if((*head)->data->table[rel1] != NULL && (*head)->data->table[rel2] == NULL)
 		{
-			printf("\n\nInterRes: Rel1 is the only one active!\n\n");
 			//Allocate and initialise the new inter_data variable.
 			//printf("Previous num_tuples = %lu\n", (*head)->data->num_tuples);
 			uint64_t new_tuples = GetResultNum(res);
-			//printf("New num_tuples = %lu\n", (*head)->data->num_tuples);
+			//printf("New num_tuples = %lu\n", new_tuples);
 			inter_data *temp_array = NULL;
 			InitInterData(&temp_array, (*head)->num_of_relations, new_tuples);
 			for (size_t i = 0; i < (*head)->num_of_relations; i++)
@@ -85,7 +83,7 @@ int InsertJoinToInterResults(inter_res** head, int rel1, int rel2, result* res)
 					printf("\n\n\n\n\n\n\t\tError, old pos is out of bounds!!!!\n\n\n\n\n\n");
 					exit(2);
 				}
-				printf("Old_pos: %d, temp->tuple_S.row_id: %lu\n", old_pos, temp->tuple_S.row_id);
+				//printf("Old_pos: %d, temp->tuple_S.row_id: %lu\n", old_pos, temp->tuple_S.row_id);
 				temp_array->table[rel2][i] = temp->tuple_S.row_id;
 				for (size_t j = 0; j < (*head)->num_of_relations; j++)
 					if ((*head)->data->table[j] != NULL)
@@ -98,7 +96,6 @@ int InsertJoinToInterResults(inter_res** head, int rel1, int rel2, result* res)
 		// If rel2 is the one active in the intermediate results.
 		else if ((*head)->data->table[rel2] != NULL && (*head)->data->table[rel1] == NULL)
 		{
-			printf("\n\nInterRes: Rel2 is the only one active!\n\n");
 			//Allocate and initialise the new inter_data variable.
 			(*head)->data->num_tuples = GetResultNum(res);
 			inter_data *temp_array = NULL;
@@ -205,7 +202,7 @@ relation* ScanInterResults(int given_rel,int column, inter_res* inter, relation_
 	{
 		new_rel->tuples[i].row_id = i;
 		new_rel->tuples[i].value = col[ inter->data->table[given_rel][i] ];
-		printf("\t\tNum_tuples: %lu | Row_id: %d Value: %ld \n", inter->data->num_tuples, i ,  col[ inter->data->table[given_rel][i] ]);
+		//printf("\t\tNum_tuples: %lu | Row_id: %d Value: %ld \n", inter->data->num_tuples, i ,  col[ inter->data->table[given_rel][i] ]);
 	}
 	return new_rel;
 }

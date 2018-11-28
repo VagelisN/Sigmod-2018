@@ -60,16 +60,20 @@ int main(void)
 	Filter(&intermediate_result, 3, relR, '>', 3499);
 	FreeRelation(relR);
 	relation *relS = NULL;result* curr_res = NULL;
-	PrintInterResults(intermediate_result);
-	printf("Going to sleep. Above is the first instance of inter_res after the filter.\n" );
-	sleep(5);
+//	PrintInterResults(intermediate_result);
+	printf("After filter. Tuples in Inter_res: %lu.\n", intermediate_result->data->num_tuples );
+	sleep(2);
 
 	//Join 0.0=3.2
 	relR = GetRelation(3, 2, intermediate_result, rel_map, relations);
 	relS = GetRelation(0, 0, intermediate_result, rel_map, relations);
+	printf("\tRelR num_tuples: %lu\n", relR->num_tuples);
+	printf("\tRelS num_tuples: %lu\n", relS->num_tuples);
 	curr_res = RadixHashJoin(relR, relS);
-
+	printf("\tResult->load: %lu\n",curr_res->current_load );
 	InsertJoinToInterResults(&intermediate_result, 3, 0, curr_res);
+	//PrintInterResults(intermediate_result);
+	printf("After join 3.2=0.0 . Tuples in Inter_res: %lu.\n", intermediate_result->data->num_tuples );
 	FreeRelation(relR);
 	FreeRelation(relS);
 	FreeResult(curr_res);
@@ -77,8 +81,13 @@ int main(void)
 	//Join  3.1=1.0
 	relR = GetRelation(3, 1, intermediate_result, rel_map, relations);
 	relS = GetRelation(1, 0, intermediate_result, rel_map, relations);
+	printf("\tRelR num_tuples: %lu\n", relR->num_tuples);
+	printf("\tRelS num_tuples: %lu\n", relS->num_tuples);
 	curr_res = RadixHashJoin(relR, relS);
+	printf("\tResult->load: %lu\n",curr_res->current_load );
 	InsertJoinToInterResults(&intermediate_result, 3, 1, curr_res);
+	printf("After join 3.1=1.0 . Tuples in Inter_res: %lu.\n", intermediate_result->data->num_tuples );
+	sleep(5);
 	FreeRelation(relR);
 	FreeRelation(relS);
 	FreeResult(curr_res);
