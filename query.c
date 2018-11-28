@@ -372,8 +372,7 @@ void ExecuteQuery(batch_listnode* curr_query, relation_map* rel_map)
       printf("filter_p relation %d\n",current->filter_p->relation);
       rel = GetRelation(current->filter_p->relation,current->filter_p->column ,intermediate_result,rel_map,curr_query->relations);
       Filter(&intermediate_result, current->filter_p->relation, rel,current->filter_p->comperator, current->filter_p->value);
-      PrintInterResults(intermediate_result);
-      exit(2);
+      sleep(5);
       // Filters are always the head of the list
       FreePredListNode(current);
       FreeRelation(rel);
@@ -401,8 +400,8 @@ void ExecuteQuery(batch_listnode* curr_query, relation_map* rel_map)
         result* curr_res = RadixHashJoin(relR,relS);
         InsertJoinToInterResults(&intermediate_result,
                                  relation1, relation2, curr_res);
-        PrintInterResults(intermediate_result);
-        sleep(30);
+        //PrintInterResults(intermediate_result);
+        //sleep(5);
         MergeInterNodes(&intermediate_result);
         FreeRelation(relR);
         FreeRelation(relS);
@@ -413,6 +412,8 @@ void ExecuteQuery(batch_listnode* curr_query, relation_map* rel_map)
     }
   }
   //PrintInterResults(intermediate_result);
+  //printf("This is the final form of the inter_res.\n");
+  sleep(10);
   CalculateQueryResults(intermediate_result, rel_map, curr_query);
   FreeInterResults(intermediate_result);
 }

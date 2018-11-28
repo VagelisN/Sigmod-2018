@@ -3,7 +3,7 @@
 
 typedef struct inter_data
 {
-	int num_tuples;
+	uint64_t num_tuples;
 	uint64_t **table;
 }inter_data;
 

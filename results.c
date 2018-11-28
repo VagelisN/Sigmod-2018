@@ -68,9 +68,11 @@ uint64_t FindResultRowId(result *res, int num)
 
 int GetResultNum(result *res)
 {
-  int num_of_results = 0;
+  uint64_t num_of_results = 0;
   while(res != NULL)
   {
+		//printf("In GetResultNum, current_load: %lu\n", res->current_load);
+		//printf("Max number of result_tuples in a node = %lu\n", 1048576/sizeof(result_tuples));
     num_of_results += res->current_load;
     res = res->next;
   }
@@ -169,7 +171,6 @@ result_tuples* FindResultTuples(result* head, int num)
 		{
 			res_ptr = (result_tuples*)(head->buff + ( (num-count)*sizeof(result_tuples)));
 			return res_ptr;
-
 		}
 		count += head->current_load;
 		head = head->next;
