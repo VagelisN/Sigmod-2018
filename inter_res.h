@@ -40,7 +40,7 @@ int InsertJoinToInterResults(inter_res** head, int ex_rel_num, int new_rel_num, 
  * If it is then ScanInterResult will create the struct relation else
  * It creates and returns a struct relation from the relation map
  */
-relation* GetRelation(int, int , inter_res*, relation_map*);
+relation* GetRelation(int given_rel, int column, inter_res* inter, relation_map* map,int* query_relations);
 
 /*
  * Given the number of a relations place in the map, it checks
@@ -48,7 +48,7 @@ relation* GetRelation(int, int , inter_res*, relation_map*);
  * a struct relation* that contains only the rowids of the given column
  * that take part in the intermediate result
  */
-relation* ScanInterResults(int,int, inter_res*,relation_map* );
+relation* ScanInterResults(int given_rel,int column, inter_res* inter, relation_map* map,int* query_relations);
 
 /* Handles the case of joining 2 different rows of the same relation. */
 int SelfJoin(int , int , int ,inter_res** , relation_map* );

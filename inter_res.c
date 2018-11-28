@@ -144,7 +144,7 @@ void FreeInterResults(inter_res* var)
 	free(var);
 }
 
-relation* ScanInterResults(int given_rel,int column, inter_res* inter, relation_map* map)
+relation* ScanInterResults(int given_rel,int column, inter_res* inter, relation_map* map,int* query_relations)
 {
 	if (inter->num_of_relations <= given_rel || given_rel < 0 )
 	{
@@ -166,7 +166,7 @@ relation* ScanInterResults(int given_rel,int column, inter_res* inter, relation_
 	new_rel->tuples = malloc(new_rel->num_tuples * sizeof(tuple));
 
 	//Get a pointer to the correct column of the mapped relation
-	uint64_t* col = map[given_rel].columns[column];
+	uint64_t* col = map[query_relations[given_rel]].columns[column];
 	int i;
 	for (i = 0; i < inter->data->num_tuples; ++i)
 	{
@@ -176,22 +176,22 @@ relation* ScanInterResults(int given_rel,int column, inter_res* inter, relation_
 	return new_rel;
 }
 
-relation* GetRelation(int given_rel, int column, inter_res* inter, relation_map* map)
+relation* GetRelation(int given_rel, int column, inter_res* inter, relation_map* map,int* query_relations)
 {
 	relation *new_rel = NULL;
 	int i;
 
 	// If the relation is in the intermediate results
-	if ( (new_rel = ScanInterResults(given_rel, column, inter, map)) != NULL)
+	if ( (new_rel = ScanInterResults(given_rel, column, inter, map, query_relations)) != NULL)
 		return new_rel;
 	// If the relation is only in the map
 	else
 	{
 		relation* new_rel = malloc(sizeof(relation));
-		new_rel->num_tuples = map[given_rel].num_tuples;
+		new_rel->num_tuples = map[query_relations[given_rel]].num_tuples;
 		new_rel->tuples = malloc(new_rel->num_tuples * sizeof(tuple));
 
-		uint64_t *col = map[given_rel].columns[column];
+		uint64_t *col = map[query_relations[given_rel]].columns[column];
 		for (i = 0; i < new_rel->num_tuples; ++i)
 		{
 			new_rel->tuples[i].row_id = i;
@@ -307,7 +307,9 @@ void CalculateQueryResults(inter_res *inter, relation_map *map, batch_listnode *
 		/* Intermediate result should be only one node at this point! */
 		for (size_t j = 0; j < inter->data->num_tuples; j++)
 		{
-			//printf("Accessing: rel_map[Rel:%d][Col:%d][Tup: %lu]\n", relation, column, (inter->data->table[index][j]));
+			printf("index %d\n", index );
+			printf("Accessing: rel_map[Rel:%d][Col:%d][Tup: %lu]\n", relation, column, (inter->data->table[index][j]));
+			//printf ("value %ld\n",map[relation].columns[column][ (inter->data->table[index][j]) ]);
 			temp_sum += map[relation].columns[column][ (inter->data->table[index][j]) ];
 		}
 		if (temp_sum == 0)printf("NULL ");

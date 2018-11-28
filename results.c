@@ -200,6 +200,7 @@ int InsertRowIdResult(result **head, uint64_t *row_id)
 		(*head)->current_load = 1;
 		(*head)->next = NULL;
 
+
 		memcpy((*head)->buff, row_id, sizeof(uint64_t));
 	}
 	//else find the first node with available space

@@ -319,8 +319,9 @@ predicates_listnode* ReturnExecPred(batch_listnode* curr_query,inter_res* interm
     //if either of the relations is in the intermediate result or we reached the end
     while(1)
     {
-      int relation1 = curr_query->relations[current->join_p->relation1];
-      int relation2 = curr_query->relations[current->join_p->relation2];
+      int relation1 = current->join_p->relation1;
+      int relation2 = current->join_p->relation2;
+      printf("Rel1: %d Rel2: %d\n", relation1, relation2);
       if(current->next==NULL ||
          intermediate_result->data->table[relation1] != NULL ||
          intermediate_result->data->table[relation2] != NULL
@@ -356,13 +357,11 @@ void ExecuteQuery(batch_listnode* curr_query, relation_map* rel_map)
 {
   // Initialize an intermediate result
   inter_res* intermediate_result = NULL;
-  InitInterResults(&intermediate_result,curr_query->num_of_relations);
+  InitInterResults(&intermediate_result, curr_query->num_of_relations);
 
   // Execute the predicates
-  printf("ENA EDW EXECUTE \n");
   while(curr_query->predicate_list != NULL)
   {
-    printf("PEEEEEEEEEEEEOS\n");
     // First execute all filters
     // All filters are int the beginning of the list
     predicates_listnode* current = ReturnExecPred(curr_query,intermediate_result);
@@ -371,8 +370,10 @@ void ExecuteQuery(batch_listnode* curr_query, relation_map* rel_map)
     {
       relation* rel = NULL;
       printf("filter_p relation %d\n",current->filter_p->relation);
-      rel = GetRelation(current->filter_p->relation,current->filter_p->column ,intermediate_result,rel_map);
-      Filter(&intermediate_result, curr_query->num_of_relations,rel,current->filter_p->comperator,current->filter_p->value);
+      rel = GetRelation(current->filter_p->relation,current->filter_p->column ,intermediate_result,rel_map,curr_query->relations);
+      Filter(&intermediate_result, current->filter_p->relation, rel,current->filter_p->comperator, current->filter_p->value);
+      PrintInterResults(intermediate_result);
+      exit(2);
       // Filters are always the head of the list
       FreePredListNode(current);
       FreeRelation(rel);
@@ -381,8 +382,8 @@ void ExecuteQuery(batch_listnode* curr_query, relation_map* rel_map)
     {
       //Execute Join
       //if either of the relations is in the intermediate result or we reached the end
-      int relation1 = curr_query->relations[current->join_p->relation1];
-      int relation2 = curr_query->relations[current->join_p->relation2];
+      int relation1 = current->join_p->relation1;
+      int relation2 = current->join_p->relation2;
       printf("join pred %d %d\n",relation1,relation2 );
       result* curr_res = NULL;
       if(relation1 == relation2)
@@ -391,15 +392,17 @@ void ExecuteQuery(batch_listnode* curr_query, relation_map* rel_map)
       {
         relation* relR = GetRelation(current->join_p->relation1,
                                      current->join_p->column1 ,
-                                     intermediate_result,rel_map);
+                                     intermediate_result,rel_map,
+                                     curr_query->relations);
         relation* relS = GetRelation(current->join_p->relation2,
                                     current->join_p->column2,
-                                    intermediate_result, rel_map);
+                                    intermediate_result, rel_map,
+                                    curr_query->relations);
         result* curr_res = RadixHashJoin(relR,relS);
         InsertJoinToInterResults(&intermediate_result,
-                                 current->join_p->relation1,
-                                 current->join_p->relation2, curr_res);
-
+                                 relation1, relation2, curr_res);
+        PrintInterResults(intermediate_result);
+        sleep(30);
         MergeInterNodes(&intermediate_result);
         FreeRelation(relR);
         FreeRelation(relS);
