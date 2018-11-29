@@ -13,7 +13,7 @@ int InsertSingleRowIdsToInterResult(inter_res** head, int relation_num, result* 
   // Find the number of the results in res
   int i, j;
   uint64_t num_of_results = GetResultNum(res);
-  printf("Filter num_of_results: %lu\n", num_of_results);
+  //printf("Filter num_of_results: %lu\n", num_of_results);
   while(1)
   {
     // If its the first instance of the inter_res node

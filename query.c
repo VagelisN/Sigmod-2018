@@ -102,7 +102,7 @@ int ReadQuery(batch_listnode** curr_query, char* buffer)
 
 int InsertPredicate(predicates_listnode **head,char* predicate)
 {
-  printf("predicate %s\n",predicate );
+  //printf("predicate %s\n",predicate );
   char *c = predicate;
   char tempc;
   join_pred *join_p;
@@ -217,6 +217,7 @@ void TokenizeFilterPredicate(char* predicate, filter_pred **filter_p)
     if (*c =='.')
     {
       found_fullstop =1;
+      break;
     }
     c++;
   }
@@ -225,7 +226,7 @@ void TokenizeFilterPredicate(char* predicate, filter_pred **filter_p)
   {
     buffer = strtok_r(left_operand, ".", &temp);
     (*filter_p)->relation = atoi(buffer);
-    buffer = strtok_r(left_operand, " ", &temp);
+    buffer = strtok_r(NULL, " ", &temp);
     (*filter_p)->column = atoi(buffer);
     (*filter_p)->value = atoi(right_operand);
   }
@@ -233,7 +234,7 @@ void TokenizeFilterPredicate(char* predicate, filter_pred **filter_p)
   {
     buffer = strtok_r(right_operand, ".", &temp);
     (*filter_p)->relation = atoi(buffer);
-    buffer = strtok_r(right_operand, " ", &temp);
+    buffer = strtok_r(NULL, " ", &temp);
     (*filter_p)->column = atoi(buffer);
     (*filter_p)->value = atoi(left_operand);
   }
@@ -321,7 +322,7 @@ predicates_listnode* ReturnExecPred(batch_listnode* curr_query,inter_res* interm
     {
       int relation1 = current->join_p->relation1;
       int relation2 = current->join_p->relation2;
-      printf("Rel1: %d Rel2: %d\n", relation1, relation2);
+      //printf("Rel1: %d Rel2: %d\n", relation1, relation2);
       if(current->next==NULL ||
          intermediate_result->data->table[relation1] != NULL ||
          intermediate_result->data->table[relation2] != NULL
@@ -369,16 +370,12 @@ void ExecuteQuery(batch_listnode* curr_query, relation_map* rel_map)
     if(current->filter_p != NULL)
     {
       relation* rel = NULL;
-      printf("filter_p relation %d\n",current->filter_p->relation);
+      //printf("filter_p relation %d column %d\n",current->filter_p->relation,current->filter_p->column);
       rel = GetRelation(current->filter_p->relation,current->filter_p->column ,intermediate_result,rel_map,curr_query->relations);
       Filter(&intermediate_result, current->filter_p->relation, rel,current->filter_p->comperator, current->filter_p->value);
+
       FreeRelation(rel);
-      rel = GetRelation(current->filter_p->relation,current->filter_p->column ,intermediate_result,rel_map,curr_query->relations);
-      PrintRelation(rel);
-      sleep(20);
-      // Filters are always the head of the list
       FreePredListNode(current);
-      FreeRelation(rel);
     }
     else
     {
@@ -386,8 +383,9 @@ void ExecuteQuery(batch_listnode* curr_query, relation_map* rel_map)
       //if either of the relations is in the intermediate result or we reached the end
       int relation1 = current->join_p->relation1;
       int relation2 = current->join_p->relation2;
-      printf("join pred %d %d\n",relation1,relation2 );
+      //printf("join pred %d %d\n",relation1,relation2 );
       result* curr_res = NULL;
+
       if(relation1 == relation2)
         SelfJoin(relation1, current->join_p->column1, current->join_p->column2, &intermediate_result,rel_map,curr_query->relations);
       else
@@ -403,8 +401,8 @@ void ExecuteQuery(batch_listnode* curr_query, relation_map* rel_map)
         result* curr_res = RadixHashJoin(relR, relS);
         InsertJoinToInterResults(&intermediate_result,
                                  relation1, relation2, curr_res);
+
         //PrintInterResults(intermediate_result);
-        //sleep(5);
         MergeInterNodes(&intermediate_result);
         FreeRelation(relR);
         FreeRelation(relS);

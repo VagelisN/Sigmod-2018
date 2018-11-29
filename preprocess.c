@@ -129,7 +129,7 @@ void FreeRelation(relation *rel)
 {
 	if (rel == NULL) return;
 	free(rel->tuples);
-	//free(rel);
+	free(rel);
 }
 
 int CheckMalloc(void* ptr, char* txt)

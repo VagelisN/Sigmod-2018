@@ -36,7 +36,7 @@ int main(void)
 			else fprintf(stderr, "RelationListInsert Error %s\n",buff);
 		}
 	}
-	PrintRelationList(relation_list);
+	//PrintRelationList(relation_list);
 
 	// From the relations given create a relation map
 	relation_map *rel_map = malloc(relations_count * sizeof(relation_map));
@@ -50,7 +50,7 @@ int main(void)
 
 
 	//---------------------------------------------------------------------------
-	int relations[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+	/*int relations[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
 	inter_res *intermediate_result = NULL;
 	InitInterResults(&intermediate_result, 10);
 
@@ -60,20 +60,21 @@ int main(void)
 	Filter(&intermediate_result, 3, relR, '>', 3499);
 	FreeRelation(relR);
 	relation *relS = NULL;result* curr_res = NULL;
-//	PrintInterResults(intermediate_result);
-	printf("After filter. Tuples in Inter_res: %lu.\n", intermediate_result->data->num_tuples );
-	sleep(2);
+	//PrintInterResults(intermediate_result);
+	printf("Going to sleep. Above is the first instance of inter_res after the filter.\n" );
 
 	//Join 0.0=3.2
 	relR = GetRelation(3, 2, intermediate_result, rel_map, relations);
 	relS = GetRelation(0, 0, intermediate_result, rel_map, relations);
-	printf("\tRelR num_tuples: %lu\n", relR->num_tuples);
-	printf("\tRelS num_tuples: %lu\n", relS->num_tuples);
 	curr_res = RadixHashJoin(relR, relS);
-	printf("\tResult->load: %lu\n",curr_res->current_load );
+
+	//PrintResult(curr_res);
+	//exit(1);
+	printf("Num_tuples in inter_res: %lu\n", intermediate_result->data->num_tuples);
 	InsertJoinToInterResults(&intermediate_result, 3, 0, curr_res);
+	printf("Num_tuples in inter_res: %lu\n", intermediate_result->data->num_tuples);
 	//PrintInterResults(intermediate_result);
-	printf("After join 3.2=0.0 . Tuples in Inter_res: %lu.\n", intermediate_result->data->num_tuples );
+	//exit(1);
 	FreeRelation(relR);
 	FreeRelation(relS);
 	FreeResult(curr_res);
@@ -81,13 +82,8 @@ int main(void)
 	//Join  3.1=1.0
 	relR = GetRelation(3, 1, intermediate_result, rel_map, relations);
 	relS = GetRelation(1, 0, intermediate_result, rel_map, relations);
-	printf("\tRelR num_tuples: %lu\n", relR->num_tuples);
-	printf("\tRelS num_tuples: %lu\n", relS->num_tuples);
 	curr_res = RadixHashJoin(relR, relS);
-	printf("\tResult->load: %lu\n",curr_res->current_load );
 	InsertJoinToInterResults(&intermediate_result, 3, 1, curr_res);
-	printf("After join 3.1=1.0 . Tuples in Inter_res: %lu.\n", intermediate_result->data->num_tuples );
-	sleep(5);
 	FreeRelation(relR);
 	FreeRelation(relS);
 	FreeResult(curr_res);
@@ -107,9 +103,9 @@ int main(void)
 	query->views->data[1][1] = '.';
 	query->views->data[1][2] = '1';
 	query->views->data[1][3] = '\0';
-	CalculateQueryResults(intermediate_result, rel_map, query);
+	CalculateQueryResults(intermediate_result, rel_map, query);*/
 	// --------------------------------------
-/*	while (fgets(buff,250,stdin) != NULL )
+	while (fgets(buff,250,stdin) != NULL )
 	{
  		if(strlen(buff) < 2)
  			fprintf(stderr,"Input too small\n");
@@ -119,17 +115,18 @@ int main(void)
 			// If F is given the end of the current batch is reached
 			if (strcmp(buff,"F\n") == 0)
 			{
-				printf("End of the current batch\n");
+				fprintf(stderr,"End of the current batch\n");
 
 				// EXECUTE THE QUERIES
 				batch_temp = batch;
-				PrintBatch(batch);
+				//PrintBatch(batch);
 
 
 				while(batch_temp!=NULL)
 				{
 					ExecuteQuery(batch_temp,rel_map);
 					batch_temp = batch_temp->next;
+					fprintf(stderr, "in the other loop\n" );
 				}
 
 				FreeBatch(batch);
@@ -138,12 +135,12 @@ int main(void)
 			// Else we are still on the same batch
 			else
 				InsertToQueryBatch(&batch, buff);
-			printf("Give queries or:\n-type F to finish the current batch\n-type Exit to quit\n");
+			fprintf(stderr,"Give queries or:\n-type F to finish the current batch\n-type Exit to quit\n");
 		}
+		fprintf(stderr, "in loop\n" );
 	}
-	*/
-	FreeInterResults(intermediate_result);
+	//FreeInterResults(intermediate_result);
+	fprintf(stderr, "Exited main\n" );
 	FreeRelationMap(rel_map, relations_count);
-	printf("EXIT\n");
 	return 0;
 }

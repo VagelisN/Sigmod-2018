@@ -35,12 +35,13 @@ int InitInterResults(inter_res** head, int num_of_rel)
 
 int InsertJoinToInterResults(inter_res** head, int rel1, int rel2, result* res)
 {
+	//printf("\n\n\nStarted insert. Rel1: %d , Rel2: %d\n", rel1, rel2);
 	while(1)
 	{
 		//If this is the first instance of the inter_res node
 		if ((*head)->data->num_tuples == 0)
 		{
-			printf("\n\nInterRes: Num_tuples == 0\n\n");
+			//printf("\n\nInterRes: Num_tuples == 0\n\n");
 			//Insert everything from the result to the inter_res
 			(*head)->data->num_tuples = GetResultNum(res);
 			(*head)->data->table[rel1] = malloc((*head)->data->num_tuples * sizeof(uint64_t));
@@ -56,12 +57,13 @@ int InsertJoinToInterResults(inter_res** head, int rel1, int rel2, result* res)
 		// If rel1 is the one active in the intermediate results.
 		else if((*head)->data->table[rel1] != NULL && (*head)->data->table[rel2] == NULL)
 		{
+			//printf("\n\nInterRes: Rel1 is the only one active!\n\n");
 			//Allocate and initialise the new inter_data variable.
 			//printf("Previous num_tuples = %lu\n", (*head)->data->num_tuples);
-			uint64_t new_tuples = GetResultNum(res);
-			//printf("New num_tuples = %lu\n", new_tuples);
+			(*head)->data->num_tuples = GetResultNum(res);
+			//printf("New num_tuples = %lu\n", (*head)->data->num_tuples);
 			inter_data *temp_array = NULL;
-			InitInterData(&temp_array, (*head)->num_of_relations, new_tuples);
+			InitInterData(&temp_array, (*head)->num_of_relations, (*head)->data->num_tuples);
 			for (size_t i = 0; i < (*head)->num_of_relations; i++)
 				if((*head)->data->table[i] != NULL)
 					temp_array->table[i] = malloc(((*head)->data->num_tuples) * sizeof(uint64_t));
@@ -86,8 +88,10 @@ int InsertJoinToInterResults(inter_res** head, int rel1, int rel2, result* res)
 				//printf("Old_pos: %d, temp->tuple_S.row_id: %lu\n", old_pos, temp->tuple_S.row_id);
 				temp_array->table[rel2][i] = temp->tuple_S.row_id;
 				for (size_t j = 0; j < (*head)->num_of_relations; j++)
-					if ((*head)->data->table[j] != NULL)
+				{
+					if ((*head)->data->table[j] != NULL && j != rel2) // might need to change rel2
 						temp_array->table[j][i] = (*head)->data->table[j][old_pos];
+				}
 			}
 			FreeInterData((*head)->data, (*head)->num_of_relations);
 			(*head)->data = temp_array;
@@ -96,6 +100,7 @@ int InsertJoinToInterResults(inter_res** head, int rel1, int rel2, result* res)
 		// If rel2 is the one active in the intermediate results.
 		else if ((*head)->data->table[rel2] != NULL && (*head)->data->table[rel1] == NULL)
 		{
+			//printf("\n\nInterRes: Rel2 is the only one active!\n\n");
 			//Allocate and initialise the new inter_data variable.
 			(*head)->data->num_tuples = GetResultNum(res);
 			inter_data *temp_array = NULL;
@@ -118,7 +123,7 @@ int InsertJoinToInterResults(inter_res** head, int rel1, int rel2, result* res)
 				old_pos = temp->tuple_S.row_id;
 				temp_array->table[rel1][i] = temp->tuple_R.row_id;
 				for (size_t j = 0; j < (*head)->num_of_relations; j++)
-					if ((*head)->data->table[j] != NULL)
+					if ((*head)->data->table[j] != NULL && j != rel1)
 						temp_array->table[j][i] = (*head)->data->table[j][old_pos];
 			}
 			FreeInterData((*head)->data, (*head)->num_of_relations);
@@ -128,7 +133,7 @@ int InsertJoinToInterResults(inter_res** head, int rel1, int rel2, result* res)
 		// If both relations are active
 		else if((*head)->data->table[rel1] != NULL && (*head)->data->table[rel2] != NULL)
 		{
-			printf("Both relations are active\n");
+			fprintf(stderr,"Both relations are active\n");
 			exit(2);
 		}
 		if((*head)->next == NULL)break;
@@ -243,15 +248,15 @@ int SelfJoin(int given_rel, int column1, int column2, inter_res** inter, relatio
 
 	int found_flag = 1;
 	inter_res* temp = (*inter);
-	printf("First instance of temp: %p\n", temp);
+	//printf("First instance of temp: %p\n", temp);
 	while(found_flag == 1 && temp !=NULL)
 	{
-		printf("Instance of temp: %p\n", temp);
+		//printf("Instance of temp: %p\n", temp);
 		if (temp->data->table[given_rel] != NULL)
 			found_flag = 0;
 		else temp = temp->next;
 	}
-	printf("Final instance of temp: %p\n", temp);
+	//printf("Final instance of temp: %p\n", temp);
 	//the relation is not in the intermediate result
 	if (found_flag == 1)
 	{
@@ -289,7 +294,7 @@ void MergeInterNodes(inter_res **inter)
 		}
 	}
 	if( (*inter)->next != NULL )MergeInterNodes(&(*inter)->next);
-	printf("Exiting MergeInterNodes\n");
+	//printf("Exiting MergeInterNodes\n");
 }
 
 
@@ -333,7 +338,7 @@ void CalculateQueryResults(inter_res *inter, relation_map *map, batch_listnode *
 		int relation = query->relations[index]; // rel number
 		int column = query->views->data[i][2] - '0';//column number
 		//printf("View[%lu]-> Relation: %d Column: %d\n", i, relation, column);
-		int temp_sum = 0;
+		uint64_t temp_sum = 0;
 		/* Intermediate result should be only one node at this point! */
 		for (size_t j = 0; j < inter->data->num_tuples; j++)
 		{
@@ -344,7 +349,7 @@ void CalculateQueryResults(inter_res *inter, relation_map *map, batch_listnode *
 			temp_sum += map[relation].columns[column][ (inter->data->table[index][j]) ];
 		}
 		if (temp_sum == 0)printf("NULL ");
-		else printf("%d ", temp_sum);
+		else printf("%lu ", temp_sum);
 	}
 	printf("\n");
 }
