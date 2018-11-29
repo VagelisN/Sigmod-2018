@@ -30,7 +30,6 @@ int RelationListInsert(relation_listnode** head,char* relation_text)
 			return 1;
 		} 
 		(*head)->next = NULL;
-
 		return 0;
 	}
 	//else find the last node

@@ -331,6 +331,7 @@ void Merge(inter_res **head, inter_res **node, int rel_num)
 void CalculateQueryResults(inter_res *inter, relation_map *map, batch_listnode *query)
 {
 	//For every different sum
+	char str[500];
 	for (size_t i = 0; i < query->views->num_of_elements; i++)
 	{
 		//printf("View[%lu] = %s\n", i, views->data[i]);
@@ -338,6 +339,9 @@ void CalculateQueryResults(inter_res *inter, relation_map *map, batch_listnode *
 		int relation = query->relations[index]; // rel number
 		int column = query->views->data[i][2] - '0';//column number
 		//printf("View[%lu]-> Relation: %d Column: %d\n", i, relation, column);
+
+
+		char str_temp[500];
 		uint64_t temp_sum = 0;
 		/* Intermediate result should be only one node at this point! */
 		for (size_t j = 0; j < inter->data->num_tuples; j++)
@@ -348,8 +352,10 @@ void CalculateQueryResults(inter_res *inter, relation_map *map, batch_listnode *
 			//printf ("value %ld\n",map[relation].columns[column][ (inter->data->table[index][j]) ]);
 			temp_sum += map[relation].columns[column][ (inter->data->table[index][j]) ];
 		}
-		if (temp_sum == 0)printf("NULL ");
-		else printf("%lu ", temp_sum);
+		if (temp_sum == 0)strcpy(str_temp,"NULL ");
+		else sprintf(str_temp,"%lu ",temp_sum);
+		sprintf(str,"%s%s",str,str_temp);
 	}
-	printf("\n");
+	printf("%s\n",str);
+	str[0]='\0';
 }
