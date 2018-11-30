@@ -50,6 +50,7 @@ int main(void)
 
 
 	//---------------------------------------------------------------------------
+/*
 	int relations[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
 	inter_res *intermediate_result = NULL;
 	InitInterResults(&intermediate_result, 10);
@@ -107,9 +108,9 @@ int main(void)
 	query->views->data[1][1] = '.';
 	query->views->data[1][2] = '1';
 	query->views->data[1][3] = '\0';
-	CalculateQueryResults(intermediate_result, rel_map, query);
+	CalculateQueryResults(intermediate_result, rel_map, query);*/
 	// --------------------------------------
-/*	while (fgets(buff,250,stdin) != NULL )
+	while (fgets(buff,250,stdin) != NULL )
 	{
  		if(strlen(buff) < 2)
  			fprintf(stderr,"Input too small\n");
@@ -141,9 +142,9 @@ int main(void)
 			printf("Give queries or:\n-type F to finish the current batch\n-type Exit to quit\n");
 		}
 	}
-	*/
-	FreeInterResults(intermediate_result);
+	
+	//FreeInterResults(intermediate_result);
 	FreeRelationMap(rel_map, relations_count);
-	printf("EXIT\n");
+	//printf("EXIT\n");
 	return 0;
 }

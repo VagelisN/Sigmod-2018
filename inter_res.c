@@ -358,7 +358,6 @@ void CalculateQueryResults(inter_res *inter, relation_map *map, batch_listnode *
 		int column = query->views->data[i][2] - '0';//column number
 		//printf("View[%lu]-> Relation: %d Column: %d\n", i, relation, column);
 
-
 		char str_temp[500];
 		uint64_t temp_sum = 0;
 		/* Intermediate result should be only one node at this point! */
@@ -371,9 +370,17 @@ void CalculateQueryResults(inter_res *inter, relation_map *map, batch_listnode *
 			temp_sum += map[relation].columns[column][ (inter->data->table[index][j]) ];
 		}
 		if (temp_sum == 0)strcpy(str_temp,"NULL ");
-		else sprintf(str_temp,"%lu ",temp_sum);
-		sprintf(str,"%s%s",str,str_temp);
+		else sprintf(str_temp, "%lu ", temp_sum);
+		sprintf(str,"%s%s", str, str_temp);
 	}
 	printf("%s\n",str);
 	str[0]='\0';
+}
+
+void PrintNullResults(batch_listnode *query)
+{
+	char str[500];
+	for (size_t i = 0; i < query->views->num_of_elements; i++)
+		printf("NULL ");
+	printf("\n");
 }

@@ -19,6 +19,7 @@ int InsertSingleRowIdsToInterResult(inter_res** head, int relation_num, result* 
     // If its the first instance of the inter_res node
     if ((*head)->data->num_tuples == 0)
     {
+      if (res == NULL) return 1;
       /* Insert all results to the inter_res */
       (*head)->data->num_tuples = num_of_results;
       (*head)->data->table[relation_num] = malloc(num_of_results * sizeof(uint64_t));
@@ -65,7 +66,7 @@ int InsertSingleRowIdsToInterResult(inter_res** head, int relation_num, result* 
 }
 
 
-int Filter(inter_res** head, int relation_num, relation* rel, char comperator, int constant)
+result* Filter(inter_res** head, int relation_num, relation* rel, char comperator, int constant)
 {
 	result *filter_res = NULL;
 	int i;
@@ -90,9 +91,8 @@ int Filter(inter_res** head, int relation_num, relation* rel, char comperator, i
       break;
 		default:
 			printf("Wrong comperator in filter function\n");
-      return -1;
+      exit(2);
 	}
   /* Insert the results to the intermediate_results data structure */
-  InsertSingleRowIdsToInterResult(head, relation_num, filter_res);
-  FreeResult(filter_res);
+  return filter_res;
 }

@@ -91,7 +91,7 @@ int ReadQuery(batch_listnode** curr_query, char* buffer)
   FreeQueryString(temp_array);
   temp_array = NULL;
 
-  // find the number ofviews 
+  // find the number ofviews
   elements = 1;
   for (i = 0; i < strlen(views_temp); i++)
     if (views_temp[i] == ' ')elements++;
@@ -380,9 +380,24 @@ void ExecuteQuery(batch_listnode* curr_query, relation_map* rel_map)
     {
       relation* rel = NULL;
       //printf("filter_p relation %d column %d\n",current->filter_p->relation,current->filter_p->column);
-      rel = GetRelation(current->filter_p->relation,current->filter_p->column ,intermediate_result,rel_map,curr_query->relations);
-      Filter(&intermediate_result, current->filter_p->relation, rel,current->filter_p->comperator, current->filter_p->value);
+      rel = GetRelation(current->filter_p->relation,current->filter_p->column,
+                        intermediate_result,rel_map,curr_query->relations);
+      result *filter_res = Filter(&intermediate_result, current->filter_p->relation,
+                                  rel,current->filter_p->comperator, current->filter_p->value);
 
+      /*If a result is NULL then all the query results are NULL */
+      if (filter_res == NULL)
+      {
+        PrintNullResults(curr_query);
+        FreeRelation(rel);
+        FreePredListNode(current);
+        FreeInterResults(intermediate_result);
+        return;
+        //Free all memory used for this query
+        //Exit query
+      }
+      InsertSingleRowIdsToInterResult(&intermediate_result, current->filter_p->relation, filter_res);
+      FreeResult(filter_res);
       FreeRelation(rel);
       FreePredListNode(current);
     }
@@ -408,6 +423,14 @@ void ExecuteQuery(batch_listnode* curr_query, relation_map* rel_map)
                                     intermediate_result, rel_map,
                                     curr_query->relations);
         result* curr_res = RadixHashJoin(relR, relS);
+        if (curr_res == NULL)
+        {
+            PrintNullResults(curr_query);
+            FreeRelation(relR);
+            FreeRelation(relS);
+            FreeInterResults(intermediate_result);
+            return;
+        }
         InsertJoinToInterResults(&intermediate_result,
                                  relation1, relation2, curr_res);
 

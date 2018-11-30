@@ -64,5 +64,8 @@ void Merge(inter_res **head, inter_res **node, int rel_num);
  * and the relation_map and prints the query results. */
 void CalculateQueryResults(inter_res *inter, relation_map *map, batch_listnode *query);
 
+void PrintNullResults(batch_listnode *query);
+
+
 
 #endif
