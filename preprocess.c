@@ -18,7 +18,7 @@ relation* ToRow(int** original_array, int row_to_join, relation* new_rel)
 void ReorderArray(relation* rel_array, int n_lsb, reordered_relation** new_rel)
 {
 	//Check the arguments
-	if ((rel_array == NULL) || (rel_array->num_tuples == 0) || (n_lsb <= 0))
+	if ((rel_array == NULL) || (n_lsb <= 0))
 	{
 		printf("Error in ReorderArray. Invalid arguments\n");
 		exit(1);
@@ -31,9 +31,7 @@ void ReorderArray(relation* rel_array, int n_lsb, reordered_relation** new_rel)
 	//Find the size of the psum and the hist arrays
 	(*new_rel)->hist_size = 1;
 	for (i = 0; i < n_lsb; ++i)
-	{
 		(*new_rel)->hist_size *= 2;
-	}
 
 	// Allocate space for the hist and psum arrays
 	(*new_rel)->psum = malloc((*new_rel)->hist_size * sizeof(int));
@@ -65,10 +63,8 @@ void ReorderArray(relation* rel_array, int n_lsb, reordered_relation** new_rel)
 	int NewStartingPoint = 0;
 	for (i = 0; i < (*new_rel)->hist_size; ++i)
 	{
-		/*
-		 *If the current bucket has 0 values allocated to it then leave
-		 *psum[CurrentBucket][1] to -1.
-		*/
+		/*If the current bucket has 0 values allocated to it then leave
+		 *psum[CurrentBucket][1] to -1.	*/
 		if ((*new_rel)->hist[i] > 0)
 		{
 			(*new_rel)->psum[i] = NewStartingPoint;

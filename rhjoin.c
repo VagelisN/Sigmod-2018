@@ -7,14 +7,17 @@
 
 result* RadixHashJoin(relation *relR, relation* relS)
 {
+	if (relR->num_tuples == 0 || relS->num_tuples == 0)
+		return NULL;
 	int i;
 	//Create histogram,psum,R',S'
 	reordered_relation* NewR = NULL;
 	reordered_relation* NewS = NULL;
-
 	//NewR and NewS both have the first index
 	ReorderArray(relR, N_LSB, &NewR);
 	ReorderArray(relS, N_LSB, &NewS);
+	if (NewR == NULL || NewS == NULL)
+		return NULL;
 	struct result* results= NULL;
 
 	//for every bucket

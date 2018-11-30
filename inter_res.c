@@ -35,13 +35,13 @@ int InitInterResults(inter_res** head, int num_of_rel)
 
 int InsertJoinToInterResults(inter_res** head, int rel1, int rel2, result* res)
 {
-	//printf("\n\n\nStarted insert. Rel1: %d , Rel2: %d\n", rel1, rel2);
 	while(1)
 	{
 		//If this is the first instance of the inter_res node
 		if ((*head)->data->num_tuples == 0)
 		{
-			//printf("\n\nInterRes: Num_tuples == 0\n\n");
+			/*If the result is empty -> do nothing */
+			if (res == NULL) return 1;
 			//Insert everything from the result to the inter_res
 			(*head)->data->num_tuples = GetResultNum(res);
 			(*head)->data->table[rel1] = malloc((*head)->data->num_tuples * sizeof(uint64_t));
@@ -57,11 +57,19 @@ int InsertJoinToInterResults(inter_res** head, int rel1, int rel2, result* res)
 		// If rel1 is the one active in the intermediate results.
 		else if((*head)->data->table[rel1] != NULL && (*head)->data->table[rel2] == NULL)
 		{
-			//printf("\n\nInterRes: Rel1 is the only one active!\n\n");
+			/* If the result is empty -> remove the current inter_data variable
+			 * and replace it with an empty one.*/
+			if (res == NULL)
+			{
+				if((*head)->data->num_tuples == 0)return 1;
+				inter_data *temp_array = NULL;
+				InitInterData(&temp_array, (*head)->num_of_relations, 0);
+				FreeInterData((*head)->data, (*head)->num_of_relations);
+				(*head)->data = temp_array;
+				return 1;
+			}
 			//Allocate and initialise the new inter_data variable.
-			//printf("Previous num_tuples = %lu\n", (*head)->data->num_tuples);
 			(*head)->data->num_tuples = GetResultNum(res);
-			//printf("New num_tuples = %lu\n", (*head)->data->num_tuples);
 			inter_data *temp_array = NULL;
 			InitInterData(&temp_array, (*head)->num_of_relations, (*head)->data->num_tuples);
 			for (size_t i = 0; i < (*head)->num_of_relations; i++)
@@ -100,7 +108,17 @@ int InsertJoinToInterResults(inter_res** head, int rel1, int rel2, result* res)
 		// If rel2 is the one active in the intermediate results.
 		else if ((*head)->data->table[rel2] != NULL && (*head)->data->table[rel1] == NULL)
 		{
-			//printf("\n\nInterRes: Rel2 is the only one active!\n\n");
+			/* If the result is empty -> remove the current inter_data variable
+			 * and replace it with an empty one.*/
+			if (res == NULL)
+			{
+				if((*head)->data->num_tuples == 0)return 1;
+				inter_data *temp_array = NULL;
+				InitInterData(&temp_array, (*head)->num_of_relations, 0);
+				FreeInterData((*head)->data, (*head)->num_of_relations);
+				(*head)->data = temp_array;
+				return 1;
+			}
 			//Allocate and initialise the new inter_data variable.
 			(*head)->data->num_tuples = GetResultNum(res);
 			inter_data *temp_array = NULL;
