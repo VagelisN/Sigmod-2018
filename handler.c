@@ -112,16 +112,16 @@ int main(void)
  			fprintf(stderr,"Input too small\n");
  		else
 		{
+
 			if (strcmp(buff, "Exit\n") == 0) break;
+
 			// If F is given the end of the current batch is reached
 			if (strcmp(buff,"F\n") == 0)
 			{
 				fprintf(stderr,"End of the current batch\n");
 
-				// EXECUTE THE QUERIES
+				// Execute the queries of the current batch
 				batch_temp = batch;
-				//PrintBatch(batch);
-
 
 				while(batch_temp!=NULL)
 				{

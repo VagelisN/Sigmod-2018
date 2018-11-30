@@ -23,8 +23,10 @@ result_tuples* FindResultTuples(result*, int);
 
 void CheckResult(result* );
 
+/* Inserts single rowids to the buffer of a result list in the fors of uint64_t */
 int InsertRowIdResult(result **, uint64_t *);
 
+/* Prints the tuples in a relation */
 void PrintRelation(relation* rel);
 
 #endif

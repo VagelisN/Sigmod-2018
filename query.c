@@ -42,12 +42,13 @@ void FreeQueryString(query_string_array* my_var)
 int ReadQuery(batch_listnode** curr_query, char* buffer)
 {
   if ((*curr_query) == NULL) (*curr_query) = malloc(sizeof(batch_listnode));
-  (*curr_query)->predicate_list = NULL;
+    (*curr_query)->predicate_list = NULL;
 
   char *rel, *pred, *views_temp, *temp;
+  query_string_array *temp_array = NULL;
   int i;
 
-  //Seperate 1. 2. 3. (delimeter = | )
+  //Seperate relations predicates and views (delimeter = | )
   rel = strtok_r(buffer, "|", &temp);
   pred = strtok_r(NULL, "|", &temp);
   views_temp = strtok_r(NULL, "|", &temp);
@@ -58,14 +59,13 @@ int ReadQuery(batch_listnode** curr_query, char* buffer)
     return -1;
   }
 
-  /*Save all the different relations needed in the query to an array
-   *for easier access. Find the number of relations first, before
-   * allocating space.*/
+  // find the number of relations
   int elements = 1;
   (*curr_query)->relations = NULL;
   for (i = 0; i < strlen(rel); i++)
     if (rel[i] == ' ')elements++;
 
+  // allocate the space needed and set the relations given
   (*curr_query)->relations = malloc(elements * sizeof(int));
   i = 0;
   while( (temp = strtok_r(rel, " ", &rel)) != NULL )
@@ -76,25 +76,30 @@ int ReadQuery(batch_listnode** curr_query, char* buffer)
 
   (*curr_query)->num_of_relations = elements;
 
-  /*Save all the predicates in a ch_listnode for easier access.*/
-  query_string_array *temp_array = NULL;
+  // find the number of predicates
   elements = 1;
   for (i = 0; i < strlen(pred); i++)
     if (pred[i] == '&')elements++;
+
+  // save all the predicates in a query string array for easier access.
   InitialiseQueryString(&temp_array, elements, pred, "&");
 
+  // insert all the predicates found to the predicate list of the current batch_listnode
   for (i = 0; i < temp_array->num_of_elements; ++i)
       InsertPredicate(&(*curr_query)->predicate_list, temp_array->data[i]);
 
   FreeQueryString(temp_array);
   temp_array = NULL;
 
-  /*Save all the views in a ch_listnode. */
+  // find the number ofviews 
   elements = 1;
   for (i = 0; i < strlen(views_temp); i++)
     if (views_temp[i] == ' ')elements++;
+
+  // save all the views in a query string array for easier access.
   InitialiseQueryString(&temp_array, elements, views_temp, " ");
 
+  // set the current batch_listnode's view to point to the query string array
   (*curr_query)->views = temp_array;
   (*curr_query)->next = NULL;
   return 0;
@@ -102,12 +107,16 @@ int ReadQuery(batch_listnode** curr_query, char* buffer)
 
 int InsertPredicate(predicates_listnode **head,char* predicate)
 {
-  //printf("predicate %s\n",predicate );
+
   char *c = predicate;
   char tempc;
+  int fullstop_count = 0;
+
+  // the predicate given can either be a join or a filter
   join_pred *join_p;
   filter_pred *filter_p;
-  int fullstop_count = 0;
+
+  // if two fullstops are found the predicate is a join, or else it is a filter
   while( *c != '\0')
   {
     if (*c =='.') fullstop_count++;
