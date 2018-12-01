@@ -45,9 +45,8 @@ int main(void)
 
 	// Start getting batches of querries
 	fprintf(stderr,"Give queries (or type Exit to quit):\n");
-	freopen("/dev/tty", "r", stdin);
+	//freopen("/dev/tty", "r", stdin);
 	batch_listnode *batch = NULL, *batch_temp = NULL;
-
 
 	//---------------------------------------------------------------------------
 /*
@@ -112,6 +111,7 @@ int main(void)
 	// --------------------------------------
 	while (fgets(buff,250,stdin) != NULL )
 	{
+		fprintf(stderr, "%s\n",buff );
  		if(strlen(buff) < 2)
  			fprintf(stderr,"Input too small\n");
  		else
@@ -120,7 +120,7 @@ int main(void)
 			// If F is given the end of the current batch is reached
 			if (strcmp(buff,"F\n") == 0)
 			{
-				printf("End of the current batch\n");
+				fprintf(stderr,"End of the current batch\n");
 
 				// EXECUTE THE QUERIES
 				batch_temp = batch;
@@ -139,7 +139,7 @@ int main(void)
 			// Else we are still on the same batch
 			else
 				InsertToQueryBatch(&batch, buff);
-			printf("Give queries or:\n-type F to finish the current batch\n-type Exit to quit\n");
+			fprintf(stderr,"Give queries or:\n-type F to finish the current batch\n-type Exit to quit\n");
 		}
 	}
 	

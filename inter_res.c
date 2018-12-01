@@ -373,6 +373,7 @@ void CalculateQueryResults(inter_res *inter, relation_map *map, batch_listnode *
 		else sprintf(str_temp, "%lu ", temp_sum);
 		sprintf(str,"%s%s", str, str_temp);
 	}
+	fprintf(stderr, "%s\n",str );
 	printf("%s\n",str);
 	str[0]='\0';
 }
@@ -381,6 +382,12 @@ void PrintNullResults(batch_listnode *query)
 {
 	char str[500];
 	for (size_t i = 0; i < query->views->num_of_elements; i++)
-		printf("NULL ");
-	printf("\n");
+	{
+		char str_temp[500];
+		strcpy(str_temp,"NULL");
+		sprintf("%s %s",str,str_temp);
+	}
+	fprintf(stderr, "%s\n",str );
+	printf("%s\n",str);
+	str[0]='\0';
 }
