@@ -411,34 +411,61 @@ void ExecuteQuery(batch_listnode* curr_query, relation_map* rel_map)
       result* curr_res = NULL;
 
       if(relation1 == relation2)
-        SelfJoin(relation1, current->join_p->column1, current->join_p->column2, &intermediate_result,rel_map,curr_query->relations);
+      {
+        result* self_res = NULL;
+        self_res = SelfJoin(relation1, current->join_p->column1, current->join_p->column2, &intermediate_result,rel_map,curr_query->relations);
+        if (self_res == NULL)
+        {
+          PrintNullResults(curr_query);
+          FreeInterResults(intermediate_result);
+          FreePredListNode(current);
+          return;
+        }
+        InsertSingleRowIdsToInterResult(&intermediate_result, relation1, self_res);
+      	FreeResult(self_res);
+      }
       else
       {
-        relation* relR = GetRelation(current->join_p->relation1,
-                                     current->join_p->column1 ,
-                                     intermediate_result,rel_map,
-                                     curr_query->relations);
-        relation* relS = GetRelation(current->join_p->relation2,
-                                    current->join_p->column2,
-                                    intermediate_result, rel_map,
-                                    curr_query->relations);
-        result* curr_res = RadixHashJoin(relR, relS);
-        if (curr_res == NULL)
+        //Check whether or not the relations are both active in the same node
+        /*if (AreActiveInInter(intermediate_result, current->join_p->relation1, current->join_p->relation2) == 1)
         {
-            PrintNullResults(curr_query);
-            FreeRelation(relR);
-            FreeRelation(relS);
-            FreeInterResults(intermediate_result);
-            return;
+          fprintf(stderr, "\n\n\nIn JoinInterNode\n\n" );
+          if(JoinInterNode(&intermediate_result, rel_map, current->join_p->relation1, current->join_p->column1,
+                           current->join_p->relation2, current->join_p->column2) == 0)
+          {
+            fprintf(stderr, "Error in JoinInterNode()\n");
+            exit(2);
+          }
+          fprintf(stderr, "\nExited JoinInterNode\n" );
         }
-        InsertJoinToInterResults(&intermediate_result,
-                                 relation1, relation2, curr_res);
+        else
+        {*/
+          relation* relR = GetRelation(current->join_p->relation1,
+                                       current->join_p->column1 ,
+                                       intermediate_result,rel_map,
+                                       curr_query->relations);
+          relation* relS = GetRelation(current->join_p->relation2,
+                                      current->join_p->column2,
+                                      intermediate_result, rel_map,
+                                      curr_query->relations);
+          result* curr_res = RadixHashJoin(relR, relS);
+          if (curr_res == NULL)
+          {
+              PrintNullResults(curr_query);
+              FreeRelation(relR);
+              FreeRelation(relS);
+              FreeInterResults(intermediate_result);
+              return;
+          }
+          InsertJoinToInterResults(&intermediate_result,
+                                   relation1, relation2, curr_res);
 
-        //PrintInterResults(intermediate_result);
-        MergeInterNodes(&intermediate_result);
-        FreeRelation(relR);
-        FreeRelation(relS);
-        FreeResult(curr_res);
+          //PrintInterResults(intermediate_result);
+          MergeInterNodes(&intermediate_result);
+          FreeRelation(relR);
+          FreeRelation(relS);
+          FreeResult(curr_res);
+        /*}*/
       }
       FreePredListNode(current);
       FreeResult(curr_res);

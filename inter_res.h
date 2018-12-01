@@ -51,7 +51,7 @@ relation* GetRelation(int given_rel, int column, inter_res* inter, relation_map*
 relation* ScanInterResults(int given_rel,int column, inter_res* inter, relation_map* map,int* query_relations);
 
 /* Handles the case of joining 2 different rows of the same relation. */
-int SelfJoin(int given_rel, int column1, int column2, inter_res** inter, relation_map* map, int* query_relations);
+result* SelfJoin(int given_rel, int column1, int column2, inter_res** inter, relation_map* map, int* query_relations);
 
 /* Checks whether a relation is active on multiple nodes of the inter_res.
  * If it is , then call merge between the nodes that the relation is active.*/
@@ -66,6 +66,10 @@ void CalculateQueryResults(inter_res *inter, relation_map *map, batch_listnode *
 
 void PrintNullResults(batch_listnode *query);
 
+/* Checks if rel1, rel2 are active in the same node of inter_res */
+int AreActiveInInter(inter_res *inter, int rel1, int rel2);
 
+/* Performs the join between two relations that are active in the same inter_res node. */
+int JoinInterNode(inter_res **inter, relation_map* rel_map, int relation1, int column1, int relation2, int column2);
 
 #endif

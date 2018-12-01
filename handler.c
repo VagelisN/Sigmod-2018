@@ -30,6 +30,7 @@ int main(void)
 			if (strcmp(buff,"Done") == 0 )
 			{
 				done_flag = 1;
+				fflush(stdin);
 				break;
 			}
 			if ( !RelationListInsert(&relation_list,buff) ) relations_count ++;
@@ -143,7 +144,7 @@ int main(void)
 			fprintf(stderr,"Give queries or:\n-type F to finish the current batch\n-type Exit to quit\n");
 		}
 	}
-	
+
 	//FreeInterResults(intermediate_result);
 	FreeRelationMap(rel_map, relations_count);
 	//printf("EXIT\n");

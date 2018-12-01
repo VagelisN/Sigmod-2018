@@ -90,7 +90,7 @@ int InsertJoinToInterResults(inter_res** head, int rel1, int rel2, result* res)
 				old_pos = temp->tuple_R.row_id;
 				if (old_pos < 0 || old_pos >= (*head)->data->num_tuples)
 				{
-					fprintf(stderr,"\n\n\n\n\n\n\t\tError, old pos is out of bounds!!!!\n\n\n\n\n\n");
+					printf("\n\n\n\n\n\n\t\tError, old pos is out of bounds!!!!\n\n\n\n\n\n");
 					exit(2);
 				}
 				//printf("Old_pos: %d, temp->tuple_S.row_id: %lu\n", old_pos, temp->tuple_S.row_id);
@@ -151,8 +151,47 @@ int InsertJoinToInterResults(inter_res** head, int rel1, int rel2, result* res)
 		// If both relations are active
 		else if((*head)->data->table[rel1] != NULL && (*head)->data->table[rel2] != NULL)
 		{
-			fprintf(stderr,"Both relations are active\n");
-			exit(2);
+			/* This case should be handled before we call RHJ. We should just scan the
+			 * inter_res node that they are both in and then remove the tuples that don't
+			 * have equal values. */
+			 fprintf(stderr, "\n\nBoth %d, %d relations are active!\n\n", rel1, rel2);
+			 /* If the result is empty -> remove the current inter_data variable
+ 			 * and replace it with an empty one.*/
+ 			if (res == NULL)
+ 			{
+ 				if((*head)->data->num_tuples == 0)return 1;
+ 				inter_data *temp_array = NULL;
+ 				InitInterData(&temp_array, (*head)->num_of_relations, 0);
+ 				FreeInterData((*head)->data, (*head)->num_of_relations);
+ 				(*head)->data = temp_array;
+ 				return 1;
+ 			}
+ 			//Allocate and initialise the new inter_data variable.
+ 			(*head)->data->num_tuples = GetResultNum(res);
+ 			inter_data *temp_array = NULL;
+ 			InitInterData(&temp_array, (*head)->num_of_relations, (*head)->data->num_tuples);
+ 			for (size_t i = 0; i < (*head)->num_of_relations; i++)
+ 				if((*head)->data->table[i] != NULL)
+ 					temp_array->table[i] = malloc(((*head)->data->num_tuples) * sizeof(uint64_t));
+
+ 			//Insert the results.
+ 			result_tuples *temp;
+ 			int old_pos;
+ 			for (size_t i = 0; i < (*head)->data->num_tuples; i++)
+ 			{
+ 				//Insert the results that are stored in the res variable.
+ 				temp = FindResultTuples(res, i);
+
+ 				/* Old_pos refers to the current result's row_id in the inter_res data table.*/
+ 				old_pos = temp->tuple_R.row_id;
+ 				for (size_t j = 0; j < (*head)->num_of_relations; j++)
+ 					if ((*head)->data->table[j] != NULL)
+ 						temp_array->table[j][i] = (*head)->data->table[j][old_pos];
+ 			}
+ 			FreeInterData((*head)->data, (*head)->num_of_relations);
+ 			(*head)->data = temp_array;
+ 			return 1;
+
 		}
 		if((*head)->next == NULL)break;
 		(*head) = (*head)->next;
@@ -257,7 +296,7 @@ relation* GetRelation(int given_rel, int column, inter_res* inter, relation_map*
 }
 
 
-int SelfJoin(int given_rel, int column1, int column2, inter_res** inter, relation_map* map, int* query_relations)
+result* SelfJoin(int given_rel, int column1, int column2, inter_res** inter, relation_map* map, int* query_relations)
 {
 	result *res = NULL;
 	uint64_t i;
@@ -288,9 +327,7 @@ int SelfJoin(int given_rel, int column1, int column2, inter_res** inter, relatio
 				InsertRowIdResult(&res, temp->data->table[i]);
 	}
 	//Insert the results to inter_res
-	InsertSingleRowIdsToInterResult(inter, given_rel, res);
-	FreeResult(res);
-	return 1;
+	return res;
 }
 
 void MergeInterNodes(inter_res **inter)
@@ -349,7 +386,6 @@ void Merge(inter_res **head, inter_res **node, int rel_num)
 void CalculateQueryResults(inter_res *inter, relation_map *map, batch_listnode *query)
 {
 	//For every different sum
-	fflush(stdout);
 	for (size_t i = 0; i < query->views->num_of_elements; i++)
 	{
 		//printf("View[%lu] = %s\n", i, views->data[i]);
@@ -368,35 +404,71 @@ void CalculateQueryResults(inter_res *inter, relation_map *map, batch_listnode *
 			//printf ("value %ld\n",map[relation].columns[column][ (inter->data->table[index][j]) ]);
 			temp_sum += map[relation].columns[column][ (inter->data->table[index][j]) ];
 		}
-		fprintf(stderr,"%lu",temp_sum);
+		//fprintf(stderr,"%lu",temp_sum);
 		printf("%lu",temp_sum);
 		if( i != query->views->num_of_elements-1)
 		{
-			fprintf(stderr, " ");
+			//fprintf(stderr, " ");
 			printf (" ");
 		}
 
 	}
 	printf("\n");
-	fprintf(stderr, "\n");
-	
+	//fprintf(stderr, "\n");
 }
 
 void PrintNullResults(batch_listnode *query)
 {
-	fflush(stdout);
 	for (size_t i = 0; i < query->views->num_of_elements; i++)
 	{
-		fprintf(stderr,"NULL");
-		printf("NULL");
+		//fprintf(stderr,"NULL");
+		printf("NULL ");
 
 		if(i != query->views->num_of_elements-1)
 		{
-			fprintf(stderr," ");
+			//fprintf(stderr," ");
 			printf(" ");
 		}
 	}
-	fprintf(stderr,"\n");
+	//fprintf(stderr,"\n");
 	printf("\n");
-	fflush(stdout);
+}
+
+int AreActiveInInter(inter_res *inter, int rel1, int rel2)
+{
+	while(inter != NULL)
+	{
+		if (inter->data->table[rel1] != NULL && inter->data->table[rel2] != NULL)
+			return 1;
+			inter = inter->next;
+	}
+	return 0;
+}
+
+int JoinInterNode(inter_res **inter, relation_map *rel_map, int rel1, int col1, int rel2, int col2)
+{
+	inter_res *node = (*inter);
+	while(node != NULL)
+	{
+		//Find the correct node of the inter_res
+		if(node->data->table[rel1] != NULL && node->data->table[rel2] != NULL)
+			break;
+		node = node->next;
+	}
+	if(node == NULL)return 0;
+	result *curr_res = NULL;
+	//For every tuple in the current node
+	for (size_t i = 0; i < node->data->num_tuples; i++)
+	{
+		/* Compare their values using the inter_res and the rel_map.
+		 * If they have the same value then insert them in the curr_res.*/
+		if ( rel_map[rel1].columns[col1][node->data->table[rel1][i]] ==
+				 rel_map[rel2].columns[col2][node->data->table[rel2][i]] )
+		{
+			InsertRowIdResult(&curr_res, &node->data->table[rel1][i]);
+		}
+	}
+	InsertSingleRowIdsToInterResult(inter, rel1, curr_res);
+	FreeResult(curr_res);
+	return 1;
 }
