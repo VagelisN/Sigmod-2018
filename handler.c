@@ -109,8 +109,14 @@ int main(void)
 	query->views->data[1][3] = '\0';
 	CalculateQueryResults(intermediate_result, rel_map, query);*/
 	// --------------------------------------
-	while (fgets(buff,250,stdin) != NULL )
+	while (1)
 	{
+		fprintf(stderr, "to vrhka\n");
+		if(fgets(buff,250,stdin) == NULL )
+		{
+			fprintf(stderr, "NOOOOOOOOOOO\n");
+			break;
+		}
 		fprintf(stderr, "%s\n",buff );
  		if(strlen(buff) < 2)
  			fprintf(stderr,"Input too small\n");
@@ -124,21 +130,20 @@ int main(void)
 
 				// EXECUTE THE QUERIES
 				batch_temp = batch;
-				PrintBatch(batch);
-
-
 				while(batch_temp!=NULL)
 				{
 					ExecuteQuery(batch_temp,rel_map);
 					batch_temp = batch_temp->next;
 				}
-
 				FreeBatch(batch);
 				batch = NULL;
+				fprintf(stderr, "EDW \n");
 			}
 			// Else we are still on the same batch
 			else
+			{
 				InsertToQueryBatch(&batch, buff);
+			}
 			fprintf(stderr,"Give queries or:\n-type F to finish the current batch\n-type Exit to quit\n");
 		}
 	}
