@@ -90,7 +90,7 @@ int InsertJoinToInterResults(inter_res** head, int rel1, int rel2, result* res)
 				old_pos = temp->tuple_R.row_id;
 				if (old_pos < 0 || old_pos >= (*head)->data->num_tuples)
 				{
-					printf("\n\n\n\n\n\n\t\tError, old pos is out of bounds!!!!\n\n\n\n\n\n");
+					fprintf(stderr,"\n\n\n\n\n\n\t\tError, old pos is out of bounds!!!!\n\n\n\n\n\n");
 					exit(2);
 				}
 				//printf("Old_pos: %d, temp->tuple_S.row_id: %lu\n", old_pos, temp->tuple_S.row_id);
@@ -349,6 +349,7 @@ void Merge(inter_res **head, inter_res **node, int rel_num)
 void CalculateQueryResults(inter_res *inter, relation_map *map, batch_listnode *query)
 {
 	//For every different sum
+	fflush(stdout);
 	for (size_t i = 0; i < query->views->num_of_elements; i++)
 	{
 		//printf("View[%lu] = %s\n", i, views->data[i]);
@@ -378,10 +379,12 @@ void CalculateQueryResults(inter_res *inter, relation_map *map, batch_listnode *
 	}
 	printf("\n");
 	fprintf(stderr, "\n");
+	
 }
 
 void PrintNullResults(batch_listnode *query)
 {
+	fflush(stdout);
 	for (size_t i = 0; i < query->views->num_of_elements; i++)
 	{
 		fprintf(stderr,"NULL");
@@ -395,4 +398,5 @@ void PrintNullResults(batch_listnode *query)
 	}
 	fprintf(stderr,"\n");
 	printf("\n");
+	fflush(stdout);
 }

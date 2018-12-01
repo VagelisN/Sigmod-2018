@@ -36,7 +36,7 @@ int main(void)
 			else fprintf(stderr, "RelationListInsert Error %s\n",buff);
 		}
 	}
-	PrintRelationList(relation_list);
+	//SPrintRelationList(relation_list);
 
 	// From the relations given create a relation map
 	relation_map *rel_map = malloc(relations_count * sizeof(relation_map));
@@ -111,12 +111,9 @@ int main(void)
 	// --------------------------------------
 	while (1)
 	{
-		fprintf(stderr, "to vrhka\n");
+		fflush(stdout);
 		if(fgets(buff,250,stdin) == NULL )
-		{
-			fprintf(stderr, "NOOOOOOOOOOO\n");
 			break;
-		}
 		fprintf(stderr, "%s\n",buff );
  		if(strlen(buff) < 2)
  			fprintf(stderr,"Input too small\n");
@@ -137,7 +134,6 @@ int main(void)
 				}
 				FreeBatch(batch);
 				batch = NULL;
-				fprintf(stderr, "EDW \n");
 			}
 			// Else we are still on the same batch
 			else
