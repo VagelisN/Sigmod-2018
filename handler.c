@@ -46,7 +46,7 @@ int main(void)
 
 	// Start getting batches of querries
 	fprintf(stderr,"Give queries (or type Exit to quit):\n");
-	freopen("/dev/tty", "r", stdin);
+	//freopen("/dev/tty", "r", stdin);
 	batch_listnode *batch = NULL, *batch_temp = NULL;
 
 	//---------------------------------------------------------------------------

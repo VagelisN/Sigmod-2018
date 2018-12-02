@@ -148,51 +148,6 @@ int InsertJoinToInterResults(inter_res** head, int rel1, int rel2, result* res)
 			(*head)->data = temp_array;
 			return 1;
 		}
-		// If both relations are active
-		else if((*head)->data->table[rel1] != NULL && (*head)->data->table[rel2] != NULL)
-		{
-			/* This case should be handled before we call RHJ. We should just scan the
-			 * inter_res node that they are both in and then remove the tuples that don't
-			 * have equal values. */
-			 fprintf(stderr, "\n\nBoth %d, %d relations are active!\n\n", rel1, rel2);
-			 /* If the result is empty -> remove the current inter_data variable
- 			 * and replace it with an empty one.*/
- 			if (res == NULL)
- 			{
- 				if((*head)->data->num_tuples == 0)return 1;
- 				inter_data *temp_array = NULL;
- 				InitInterData(&temp_array, (*head)->num_of_relations, 0);
- 				FreeInterData((*head)->data, (*head)->num_of_relations);
- 				(*head)->data = temp_array;
- 				return 1;
- 			}
- 			//Allocate and initialise the new inter_data variable.
- 			(*head)->data->num_tuples = GetResultNum(res);
- 			inter_data *temp_array = NULL;
- 			InitInterData(&temp_array, (*head)->num_of_relations, (*head)->data->num_tuples);
- 			for (size_t i = 0; i < (*head)->num_of_relations; i++)
- 				if((*head)->data->table[i] != NULL)
- 					temp_array->table[i] = malloc(((*head)->data->num_tuples) * sizeof(uint64_t));
-
- 			//Insert the results.
- 			result_tuples *temp;
- 			int old_pos;
- 			for (size_t i = 0; i < (*head)->data->num_tuples; i++)
- 			{
- 				//Insert the results that are stored in the res variable.
- 				temp = FindResultTuples(res, i);
-
- 				/* Old_pos refers to the current result's row_id in the inter_res data table.*/
- 				old_pos = temp->tuple_R.row_id;
- 				for (size_t j = 0; j < (*head)->num_of_relations; j++)
- 					if ((*head)->data->table[j] != NULL)
- 						temp_array->table[j][i] = (*head)->data->table[j][old_pos];
- 			}
- 			FreeInterData((*head)->data, (*head)->num_of_relations);
- 			(*head)->data = temp_array;
- 			return 1;
-
-		}
 		if((*head)->next == NULL)break;
 		(*head) = (*head)->next;
 	}
@@ -465,7 +420,7 @@ int JoinInterNode(inter_res **inter, relation_map *rel_map, int rel1, int col1, 
 		if ( rel_map[relations[rel1]].columns[col1][node->data->table[rel1][i]] ==
 				 rel_map[relations[rel2]].columns[col2][node->data->table[rel2][i]] )
 		{
-			InsertRowIdResult(&curr_res, &node->data->table[rel1][i]);
+			InsertRowIdResult(&curr_res, &i/*&node->data->table[rel1][i]*/);
 		}
 	}
 	InsertSingleRowIdsToInterResult(inter, rel1, curr_res);
