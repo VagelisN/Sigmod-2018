@@ -70,6 +70,6 @@ void PrintNullResults(batch_listnode *query);
 int AreActiveInInter(inter_res *inter, int rel1, int rel2);
 
 /* Performs the join between two relations that are active in the same inter_res node. */
-int JoinInterNode(inter_res **inter, relation_map* rel_map, int relation1, int column1, int relation2, int column2);
+int JoinInterNode(inter_res **inter, relation_map* rel_map, int relation1, int column1, int relation2, int column2, int* relations);
 
 #endif

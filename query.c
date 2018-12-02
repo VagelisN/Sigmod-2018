@@ -427,11 +427,11 @@ void ExecuteQuery(batch_listnode* curr_query, relation_map* rel_map)
       else
       {
         //Check whether or not the relations are both active in the same node
-        /*if (AreActiveInInter(intermediate_result, current->join_p->relation1, current->join_p->relation2) == 1)
+        if (AreActiveInInter(intermediate_result, current->join_p->relation1, current->join_p->relation2) == 1)
         {
           fprintf(stderr, "\n\n\nIn JoinInterNode\n\n" );
           if(JoinInterNode(&intermediate_result, rel_map, current->join_p->relation1, current->join_p->column1,
-                           current->join_p->relation2, current->join_p->column2) == 0)
+                           current->join_p->relation2, current->join_p->column2,curr_query->relations) == 0)
           {
             fprintf(stderr, "Error in JoinInterNode()\n");
             exit(2);
@@ -439,7 +439,7 @@ void ExecuteQuery(batch_listnode* curr_query, relation_map* rel_map)
           fprintf(stderr, "\nExited JoinInterNode\n" );
         }
         else
-        {*/
+        {
           relation* relR = GetRelation(current->join_p->relation1,
                                        current->join_p->column1 ,
                                        intermediate_result,rel_map,
@@ -465,7 +465,7 @@ void ExecuteQuery(batch_listnode* curr_query, relation_map* rel_map)
           FreeRelation(relR);
           FreeRelation(relS);
           FreeResult(curr_res);
-        /*}*/
+        }
       }
       FreePredListNode(current);
       FreeResult(curr_res);

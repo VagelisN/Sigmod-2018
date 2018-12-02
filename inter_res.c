@@ -445,7 +445,7 @@ int AreActiveInInter(inter_res *inter, int rel1, int rel2)
 	return 0;
 }
 
-int JoinInterNode(inter_res **inter, relation_map *rel_map, int rel1, int col1, int rel2, int col2)
+int JoinInterNode(inter_res **inter, relation_map *rel_map, int rel1, int col1, int rel2, int col2, int* relations)
 {
 	inter_res *node = (*inter);
 	while(node != NULL)
@@ -462,8 +462,8 @@ int JoinInterNode(inter_res **inter, relation_map *rel_map, int rel1, int col1, 
 	{
 		/* Compare their values using the inter_res and the rel_map.
 		 * If they have the same value then insert them in the curr_res.*/
-		if ( rel_map[rel1].columns[col1][node->data->table[rel1][i]] ==
-				 rel_map[rel2].columns[col2][node->data->table[rel2][i]] )
+		if ( rel_map[relations[rel1]].columns[col1][node->data->table[rel1][i]] ==
+				 rel_map[relations[rel2]].columns[col2][node->data->table[rel2][i]] )
 		{
 			InsertRowIdResult(&curr_res, &node->data->table[rel1][i]);
 		}
