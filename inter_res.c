@@ -377,7 +377,7 @@ void PrintNullResults(batch_listnode *query)
 	for (size_t i = 0; i < query->views->num_of_elements; i++)
 	{
 		//fprintf(stderr,"NULL");
-		printf("NULL ");
+		printf("NULL");
 
 		if(i != query->views->num_of_elements-1)
 		{
