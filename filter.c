@@ -66,33 +66,71 @@ int InsertSingleRowIdsToInterResult(inter_res** head, int relation_num, result* 
 }
 
 
-result* Filter(inter_res** head, int relation_num, relation* rel, char comperator, int constant)
+result* Filter(inter_res* head,filter_pred* filter_p, relation_map* map,int *query_relations)
 {
-	result *filter_res = NULL;
-	int i;
-	switch(comperator)
-	{
-		case '>':
+  result *res = NULL;
+  uint64_t relation = filter_p->relation,column = filter_p->column;
+  uint64_t* col = map[query_relations[relation]].columns[column];
+
+  int found_flag = 1;
+  while(found_flag == 1 && head !=NULL)
+  {
+    if (head->data->table[relation] != NULL)
+      found_flag = 0;
+    else head = head->next;
+  }
+
+  uint64_t i;
+  switch(filter_p->comperator)
+  {
+    case '>':
       /* For every tuple in the relation, if it satisfies the comperator
        * insert it to the filter_res */
-			for (i = 0; i < rel->num_tuples; i++)
-				if (rel->tuples[i].value > constant)
-          InsertRowIdResult(&filter_res, &(rel->tuples[i].row_id));
-			break;
-		case '<':
-			for (i = 0; i < rel->num_tuples; i++)
-				if (rel->tuples[i].value < constant)
-          InsertRowIdResult(&filter_res, &(rel->tuples[i].row_id));
-			break;
-    case '=':
-      for (i = 0; i < rel->num_tuples; i++)
-        if (rel->tuples[i].value == constant)
-          InsertRowIdResult(&filter_res, &(rel->tuples[i].row_id));
+      if (found_flag == 1)
+      {
+        for (i = 0; i < map[query_relations[relation]].num_tuples; i++)
+          if (col[i] > filter_p->value)
+            InsertRowIdResult(&res, &i);
+      }
+      else
+      {
+        for (i = 0; i < head->data->num_tuples; ++i)
+        if ( col[head->data->table[relation][i]] > filter_p->value)
+        InsertRowIdResult(&res, &i);
+      }
       break;
-		default:
-			printf("Wrong comperator in filter function\n");
+    case '<':
+      if (found_flag == 1)
+      {
+        for (i = 0; i < map[query_relations[relation]].num_tuples; i++)
+          if (col[i] < filter_p->value)
+            InsertRowIdResult(&res, &i);
+      }
+      else
+      {
+        for (i = 0; i < head->data->num_tuples; ++i)
+        if ( col[head->data->table[relation][i]] < filter_p->value)
+        InsertRowIdResult(&res, &i);
+      }
+      break;
+    case '=':
+      if (found_flag == 1)
+      {
+        for (i = 0; i < map[query_relations[relation]].num_tuples; i++)
+          if (col[i] == filter_p->value)
+            InsertRowIdResult(&res, &i);
+      }
+      else
+      {
+        for (i = 0; i < head->data->num_tuples; ++i)
+        if ( col[head->data->table[relation][i]] == filter_p->value)
+        InsertRowIdResult(&res, &i);
+      }
+      break;
+    default:
+      printf("Wrong comperator in filter function\n");
       exit(2);
-	}
+  }
   /* Insert the results to the intermediate_results data structure */
-  return filter_res;
+  return res;
 }

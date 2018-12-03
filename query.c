@@ -379,11 +379,9 @@ void ExecuteQuery(batch_listnode* curr_query, relation_map* rel_map)
     if(current->filter_p != NULL)
     {
       relation* rel = NULL;
-      //printf("filter_p relation %d column %d\n",current->filter_p->relation,current->filter_p->column);
-      rel = GetRelation(current->filter_p->relation,current->filter_p->column,
-                        intermediate_result,rel_map,curr_query->relations);
-      result *filter_res = Filter(&intermediate_result, current->filter_p->relation,
-                                  rel,current->filter_p->comperator, current->filter_p->value);
+      //printf("filter_p relation %d column %d\n",current->filter_p->relation,current->filter_p->column)
+      result *filter_res = Filter(intermediate_result, current->filter_p,
+                                  rel_map,curr_query->relations);
 
       /*If a result is NULL then all the query results are NULL */
       if (filter_res == NULL)
@@ -412,6 +410,7 @@ void ExecuteQuery(batch_listnode* curr_query, relation_map* rel_map)
 
       if(relation1 == relation2)
       {
+        fprintf(stderr, "KALA MPHKA \n");
         result* self_res = NULL;
         self_res = SelfJoin(relation1, current->join_p->column1, current->join_p->column2, &intermediate_result,rel_map,curr_query->relations);
         if (self_res == NULL)
@@ -422,6 +421,8 @@ void ExecuteQuery(batch_listnode* curr_query, relation_map* rel_map)
           return;
         }
         InsertSingleRowIdsToInterResult(&intermediate_result, relation1, self_res);
+        PrintInterResults(intermediate_result);
+        exit(1);
       	FreeResult(self_res);
       }
       else

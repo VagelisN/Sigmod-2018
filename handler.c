@@ -144,7 +144,6 @@ int main(void)
 			fprintf(stderr,"Give queries or:\n-type F to finish the current batch\n-type Exit to quit\n");
 		}
 	}
-
 	//FreeInterResults(intermediate_result);
 	FreeRelationMap(rel_map, relations_count);
 	//printf("EXIT\n");

@@ -269,17 +269,21 @@ result* SelfJoin(int given_rel, int column1, int column2, inter_res** inter, rel
 		else temp = temp->next;
 	}
 	//printf("Final instance of temp: %p\n", temp);
+
 	//the relation is not in the intermediate result
 	if (found_flag == 1)
 	{
-		for (i = 0; i < map[given_rel].num_tuples; ++i)
-			if( col1[i] == col2[i]) InsertRowIdResult(&res, &i);
+		for (i = 0; i < map[query_relations[given_rel]].num_tuples; ++i)
+		{
+			if( col1[i] == col2[i])
+				InsertRowIdResult(&res, &i);
+		}
 	}
 	else
 	{
 		for (i = 0; i < temp->data->num_tuples; ++i)
 			if ( col1[temp->data->table[given_rel][i]] == col2[temp->data->table[given_rel][i]])
-				InsertRowIdResult(&res, temp->data->table[i]);
+				InsertRowIdResult(&res,&i);
 	}
 	//Insert the results to inter_res
 	return res;
