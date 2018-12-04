@@ -10,10 +10,9 @@ result* RadixHashJoin(relation *relR, relation* relS)
 	if (relR->num_tuples == 0 || relS->num_tuples == 0)
 		return NULL;
 	int i;
-	//Create histogram,psum,R',S'
 	reordered_relation* NewR = NULL;
 	reordered_relation* NewS = NULL;
-	//NewR and NewS both have the first index
+	//Create histogram,psum,R',S'
 	ReorderArray(relR, N_LSB, &NewR);
 	ReorderArray(relS, N_LSB, &NewS);
 	if (NewR == NULL || NewS == NULL)
@@ -26,37 +25,27 @@ result* RadixHashJoin(relation *relR, relation* relS)
 		//if both relations have elements in this bucket
 		if (NewR->hist[i] != 0 && NewS->hist[i] != 0)
 		{
+			bc_index* ind = NULL;
 			//if R is bigger than S
 			if( NewR->hist[i] >= NewS->hist[i])
 			{
-				bc_index* indS = NULL;
+				
 				//Create a second layer index for the respective bucket of S
-
-				InitIndex(&indS, NewS->hist[i], NewS->psum[i]);
-
-				CreateIndex(NewS,&indS,i);
-
+				InitIndex(&ind, NewS->hist[i], NewS->psum[i]);
+				CreateIndex(NewS,&ind,i);
 				//Get results
-				GetResults(NewR,NewS,indS,&results,i,0);
-				DeleteIndex(&indS);
+				GetResults(NewR,NewS,ind,&results,i,0);
 			}
 			//if S is bigger than R
 			else
 			{
-				bc_index* indR = NULL;
-				//Initialize the 2nd layer index
-				InitIndex(&indR, NewR->hist[i], NewR->psum[i]);
-
 				//Create a second layer index for the respective bucket of R
-				CreateIndex(NewR,&indR,i);
-
+				InitIndex(&ind, NewR->hist[i], NewR->psum[i]);
+				CreateIndex(NewR,&ind,i);
 				//GetResults
-				GetResults(NewS,NewR,indR,&results,i,1);
-
-				//Delete the 2nd layer index
-				DeleteIndex(&indR);
-
+				GetResults(NewS,NewR,ind,&results,i,1);
 			}
+			DeleteIndex(&ind);
 		}
 	}
 	//Free NewS and NewR
@@ -66,47 +55,43 @@ result* RadixHashJoin(relation *relR, relation* relS)
 }
 
 
-int GetResults(reordered_relation* full_relation,reordered_relation* indexed_relation,bc_index * ind,struct result ** res,int curr_bucket,int r_s)
+int GetResults(reordered_relation* full_rel,reordered_relation* indexed_rel,bc_index * ind,
+			   struct result ** res,int curr_bucket,int r_s)
 {
-	int i, start_full, hash_value, sp;
+	uint64_t i, start_full, hash_value, sp, value1, value2;
 
 	//the start of the non indexed current bucket
-	start_full = full_relation->psum[curr_bucket];
+	start_full = full_rel->psum[curr_bucket];
+
+	tuple* full_tuples = full_rel->rel_array->tuples;
+	tuple* ind_tuples = indexed_rel->rel_array->tuples;
 
 	//for every element of the non indexed relation's bucket
-	for (i = 0; i < full_relation->hist[curr_bucket]; i++)
+	for (i = 0; i < full_rel->hist[curr_bucket]; i++)
 	{
 		//check the index of the second relation
-		hash_value = HashFunction2((full_relation->rel_array->tuples[(start_full + i)].value), ind->index_size);
+		hash_value = HashFunction2((full_tuples[(start_full + i)].value), ind->index_size);
 
 		//if there are elements in this bucket of the indexed relation
 		if( ind->bucket[hash_value] != -1)
 		{
-			//scan the values following the chain for equality
-			if(indexed_relation->rel_array->tuples[(ind->start + (ind->bucket[hash_value])-1)].value == full_relation->rel_array->tuples[(start_full + i)].value)
+			//scan the values starting from the bucket and following the chain for equality
+			value1 =ind_tuples[(ind->start + (ind->bucket[hash_value])-1)].value;
+			value2 =full_tuples[(start_full + i)].value;
+			if(value1 == value2)
 			{
-				result_tuples curr_res;
-
-				//index is built on relation S
-				if (r_s == 0)
+				result_tuple curr_res;
+				// S has the second layer index 
+				if (r_s == 0) 
 				{
-					curr_res.tuple_R.row_id = full_relation->rel_array->tuples[start_full + i].row_id;
-					curr_res.tuple_R.value = full_relation->rel_array->tuples[start_full + i].value;
-
-					curr_res.tuple_S.row_id = indexed_relation->rel_array->tuples[(ind->start + (ind->bucket[hash_value])-1)].row_id;
-					curr_res.tuple_S.value = indexed_relation->rel_array->tuples[(ind->start + (ind->bucket[hash_value])-1)].value;
+					curr_res.row_idR = full_tuples[start_full + i].row_id;
+					curr_res.row_idS = ind_tuples[(ind->start + (ind->bucket[hash_value])-1)].row_id;
 				}
-				//index is built on relation R
 				else
 				{
-					curr_res.tuple_S.row_id = full_relation->rel_array->tuples[start_full + i].row_id;
-					curr_res.tuple_S.value = full_relation->rel_array->tuples[start_full + i].value;
-
-					curr_res.tuple_R.row_id = indexed_relation->rel_array->tuples[(ind->start + (ind->bucket[hash_value])-1)].row_id;
-					curr_res.tuple_R.value = indexed_relation->rel_array->tuples[(ind->start + (ind->bucket[hash_value])-1)].value;
+					curr_res.row_idS = full_tuples[start_full + i].row_id;
+					curr_res.row_idR = ind_tuples[(ind->start + (ind->bucket[hash_value])-1)].row_id;
 				}
-
-				//insert the result in the list
 				InsertResult(res,&curr_res);
 			}
 
@@ -114,26 +99,21 @@ int GetResults(reordered_relation* full_relation,reordered_relation* indexed_rel
 			sp = (ind->bucket[hash_value]-1);
 			while( ind->chain[sp] != 0)
 			{
-				if(indexed_relation->rel_array->tuples[(ind->start + (ind->chain[sp]-1))].value == full_relation->rel_array->tuples[start_full + i].value)
+				value1 = ind_tuples[(ind->start + (ind->chain[sp]-1))].value;
+				value2 = full_tuples[start_full + i].value;
+				if( value1 == value2)
 				{
-					result_tuples curr_res;
+					result_tuple curr_res;
 					if (r_s == 0)
 					{
-						curr_res.tuple_R.row_id = full_relation->rel_array->tuples[start_full + i].row_id;
-						curr_res.tuple_R.value = full_relation->rel_array->tuples[start_full + i].value;
-
-						curr_res.tuple_S.row_id = indexed_relation->rel_array->tuples[(ind->start + (ind->chain[sp]-1))].row_id;
-						curr_res.tuple_S.value = indexed_relation->rel_array->tuples[(ind->start + (ind->chain[sp]-1))].value;
+						curr_res.row_idR = full_tuples[start_full + i].row_id;
+						curr_res.row_idS = ind_tuples[(ind->start + (ind->chain[sp]-1))].row_id;
 					}
 					else
 					{
-						curr_res.tuple_S.row_id = full_relation->rel_array->tuples[start_full + i].row_id;
-						curr_res.tuple_S.value = full_relation->rel_array->tuples[start_full + i].value;
-
-						curr_res.tuple_R.row_id = indexed_relation->rel_array->tuples[(ind->start + (ind->chain[sp]-1))].row_id;
-						curr_res.tuple_R.value = indexed_relation->rel_array->tuples[(ind->start + (ind->chain[sp]-1))].value;
+						curr_res.row_idS = full_tuples[start_full + i].row_id;
+						curr_res.row_idR = ind_tuples[(ind->start + (ind->chain[sp]-1))].row_id;
 					}
-					//insert the result in the list
 					InsertResult(res, &curr_res);
 				}
 				sp = (ind->chain[sp]-1);
@@ -241,27 +221,28 @@ void PrintIndex(bc_index* ind)
 	}
 }
 
-uint32_t HashFunction1(int32_t num, int n)
+uint64_t HashFunction1(uint64_t num, uint64_t n)
 {
-	//mask is 32 ones
-	uint32_t mask = 0b11111111111111111111111111111111;
+	//mask is 64 ones
+	uint64_t mask = 
+	0b1111111111111111111111111111111111111111111111111111111111111111;
 
 	//keep only n ones on the right
-	mask = mask << 32-n;
-	mask = mask >> 32-n;
+	mask = mask << 64-n;
+	mask = mask >> 64-n;
 
 	//num AND mask only keeps the n rightmost bits of num
-	uint32_t hash_value = num & mask;
+	uint64_t hash_value = num & mask;
 
 	return hash_value;
 }
 
-uint32_t FindNextPrime(uint32_t num)
+uint64_t FindNextPrime(uint64_t num)
 {
 	if(num == 1) return 1;
 	if(num == 2) return 2;
 
-	uint32_t next_prime;
+	uint64_t next_prime;
 	if (num % 2 == 0) next_prime = num + 1;
 	else next_prime = num;
 
@@ -286,7 +267,7 @@ uint32_t FindNextPrime(uint32_t num)
 	return next_prime;
 }
 
-uint32_t HashFunction2(int32_t num, uint32_t prime)
+uint64_t HashFunction2(uint64_t num, uint64_t prime)
 {
 	return num % prime;
 }

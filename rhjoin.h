@@ -7,16 +7,16 @@
 result* RadixHashJoin(relation*, relation*);
 
 /** Hash function that returns the n last bits of a given number */
-uint32_t HashFunction1(int32_t, int);
+uint64_t HashFunction1(uint64_t, uint64_t);
 
 /** Hash function that returns the modulo of a number and a given prime number */
-uint32_t HashFunction2(int32_t, uint32_t);
+uint64_t HashFunction2(uint64_t, uint64_t);
 
 /*
  * Given a number, returns the closest prime number 
  * that is greater or equal than the number given 
  */
-uint32_t FindNextPrime(uint32_t);
+uint64_t FindNextPrime(uint64_t);
 
 /*
  * Initializes a bc_index struct

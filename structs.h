@@ -39,11 +39,11 @@ typedef struct result
 }result;
 
 /** Struct that contains two tuples as a result from the join */
-typedef struct result_tuples
+typedef struct result_tuple
 {
-	tuple tuple_R;
-	tuple tuple_S;
-}result_tuples;
+	uint64_t row_idR;
+	uint64_t row_idS;
+}result_tuple;
 
 typedef struct reorder_relation
 {

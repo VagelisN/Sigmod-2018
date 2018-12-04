@@ -48,9 +48,9 @@ int InsertJoinToInterResults(inter_res** head, int rel1, int rel2, result* res)
 			(*head)->data->table[rel2] = malloc((*head)->data->num_tuples * sizeof(uint64_t));
 			for (size_t i = 0; i < (*head)->data->num_tuples; i++)
 			{
-				result_tuples *temp = FindResultTuples(res, i);
-				(*head)->data->table[rel1][i] = temp->tuple_R.row_id;
-				(*head)->data->table[rel2][i] = temp->tuple_S.row_id;
+				result_tuple *temp = FindResultTuples(res, i);
+				(*head)->data->table[rel1][i] = temp->row_idR;
+				(*head)->data->table[rel2][i] = temp->row_idS;
 			}
 			return 1;
 		}
@@ -79,15 +79,15 @@ int InsertJoinToInterResults(inter_res** head, int rel1, int rel2, result* res)
 			temp_array->table[rel2] = malloc((*head)->data->num_tuples * sizeof(uint64_t));
 
 			//Insert the results.
-			result_tuples *temp;
+			result_tuple *temp;
 			int old_pos;
 			for (size_t i = 0; i < (*head)->data->num_tuples; i++)
 			{
 				//Insert the results that are stored in the res variable.
 				temp = FindResultTuples(res, i);
-				/* tuple_R.row_id is an index of the previous instance of the inter_res.*/
-				old_pos = temp->tuple_R.row_id;
-				temp_array->table[rel2][i] = temp->tuple_S.row_id;
+				/* row_idR is an index of the previous instance of the inter_res.*/
+				old_pos = temp->row_idR;
+				temp_array->table[rel2][i] = temp->row_idS;
 				for (size_t j = 0; j < (*head)->num_of_relations; j++)
 					if ((*head)->data->table[j] != NULL && j != rel2) // might need to change rel2
 						temp_array->table[j][i] = (*head)->data->table[j][old_pos];
@@ -121,7 +121,7 @@ int InsertJoinToInterResults(inter_res** head, int rel1, int rel2, result* res)
 			temp_array->table[rel1] = malloc((*head)->data->num_tuples * sizeof(uint64_t));
 
 			//Insert the results.
-			result_tuples *temp;
+			result_tuple *temp;
 			int old_pos;
 			for (size_t i = 0; i < (*head)->data->num_tuples; i++)
 			{
@@ -129,8 +129,8 @@ int InsertJoinToInterResults(inter_res** head, int rel1, int rel2, result* res)
 				temp = FindResultTuples(res, i);
 
 				/* Old_pos refers to the current result's row_id in the inter_res data table.*/
-				old_pos = temp->tuple_S.row_id;
-				temp_array->table[rel1][i] = temp->tuple_R.row_id;
+				old_pos = temp->row_idS;
+				temp_array->table[rel1][i] = temp->row_idR;
 				for (size_t j = 0; j < (*head)->num_of_relations; j++)
 					if ((*head)->data->table[j] != NULL && j != rel1)
 						temp_array->table[j][i] = (*head)->data->table[j][old_pos];
