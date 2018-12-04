@@ -14,8 +14,10 @@ typedef struct intermediate_result
 	struct intermediate_result *next;
 }inter_res;
 
+/* Initialises an inter_data variable.*/
 int InitInterData(inter_data** head, int num_of_relations, int num_tuples);
 
+/* Free the allocated memory used by inter_data variable. */
 void FreeInterData(inter_data *head, int num_of_relations);
 
 /* Initialises an inter_res variable */
@@ -64,6 +66,7 @@ void Merge(inter_res **head, inter_res **node, int rel_num);
  * and the relation_map and prints the query results. */
 void CalculateQueryResults(inter_res *inter, relation_map *map, batch_listnode *query);
 
+/* Takes the views defined by the query and prints NULL for every sum needed.*/
 void PrintNullResults(batch_listnode *query);
 
 /* Checks if rel1, rel2 are active in the same node of inter_res */
@@ -71,5 +74,9 @@ int AreActiveInInter(inter_res *inter, int rel1, int rel2);
 
 /* Performs the join between two relations that are active in the same inter_res node. */
 int JoinInterNode(inter_res **inter, relation_map* rel_map, int relation1, int column1, int relation2, int column2, int* relations);
+
+/* If at the end of the query, the inter_res has multiple nodes, then call the
+ * CartesianInterResults to merge them to one node.*/
+void CartesianInterResults(inter_res **inter);
 
 #endif

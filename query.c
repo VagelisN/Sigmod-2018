@@ -379,7 +379,6 @@ void ExecuteQuery(batch_listnode* curr_query, relation_map* rel_map)
     if(current->filter_p != NULL)
     {
       relation* rel = NULL;
-      //printf("filter_p relation %d column %d\n",current->filter_p->relation,current->filter_p->column)
       result *filter_res = Filter(intermediate_result, current->filter_p,
                                   rel_map,curr_query->relations);
 
@@ -405,14 +404,14 @@ void ExecuteQuery(batch_listnode* curr_query, relation_map* rel_map)
       //if either of the relations is in the intermediate result or we reached the end
       int relation1 = current->join_p->relation1;
       int relation2 = current->join_p->relation2;
-      //printf("join pred %d %d\n",relation1,relation2 );
       result* curr_res = NULL;
 
       if(relation1 == relation2)
       {
         fprintf(stderr, "KALA MPHKA \n");
         result* self_res = NULL;
-        self_res = SelfJoin(relation1, current->join_p->column1, current->join_p->column2, &intermediate_result,rel_map,curr_query->relations);
+        self_res = SelfJoin(relation1, current->join_p->column1, current->join_p->column2,
+                            &intermediate_result,rel_map,curr_query->relations);
         if (self_res == NULL)
         {
           PrintNullResults(curr_query);
@@ -459,8 +458,7 @@ void ExecuteQuery(batch_listnode* curr_query, relation_map* rel_map)
           InsertJoinToInterResults(&intermediate_result,
                                    relation1, relation2, curr_res);
 
-          //PrintInterResults(intermediate_result);
-          MergeInterNodes(&intermediate_result);
+          if(intermediate_result->next != NULL) MergeInterNodes(&intermediate_result);
           FreeRelation(relR);
           FreeRelation(relS);
           FreeResult(curr_res);
@@ -470,6 +468,7 @@ void ExecuteQuery(batch_listnode* curr_query, relation_map* rel_map)
       FreeResult(curr_res);
     }
   }
+  if(intermediate_result->next != NULL)CartesianInterResults(&intermediate_result);
   CalculateQueryResults(intermediate_result, rel_map, curr_query);
   FreeInterResults(intermediate_result);
 }
