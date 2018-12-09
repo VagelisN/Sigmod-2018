@@ -22,7 +22,7 @@ int InsertSingleRowIdsToInterResult(inter_res** head, int relation_num, result* 
       (*head)->data->num_tuples = num_of_results;
       (*head)->data->table[relation_num] = malloc(num_of_results * sizeof(uint64_t));
       // Insert results one by one
-      for (size_t i = 0; i < num_of_results; i++)
+      for (uint64_t i = 0; i < num_of_results; i++)
         (*head)->data->table[relation_num][i] = FindResultRowId(res, i);
       return 1;
     }

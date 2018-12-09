@@ -83,13 +83,12 @@ void PrintResult(result* head)
 {
 	printf("------------------------------\n");
 	printf("Printing results:\n");
-	int temp_curr_load, num_results = 0;
-	void* data;
+	int num_results = 0;
 	result_tuple res_tuple;
 	while(head!=NULL)
 	{
-		data = head->buff;
-		temp_curr_load = head->current_load;
+		void *data = head->buff;
+		int temp_curr_load = head->current_load;
 		while(temp_curr_load > 0)
 		{
 			memcpy(&res_tuple,data,sizeof(result_tuple));
@@ -109,12 +108,11 @@ void PrintSelfResult(result* head)
 {
 	printf("------------------------------\n");
 	printf("Printing results:\n");
-	int temp_curr_load, num_results = 0;
-	uint64_t* data;
+	int num_results = 0;
 	while(head!=NULL)
 	{
-		data = (uint64_t*)head->buff;
-		temp_curr_load = head->current_load;
+		uint64_t *data = (uint64_t*)head->buff;
+		int temp_curr_load = head->current_load;
 		while(temp_curr_load > 0)
 		{
 			num_results++;
@@ -149,10 +147,9 @@ result_tuple* FindResultTuples(result* head, int num)
 
 void FreeResult(result* head)
 {
-	result* temp;
 	while(head != NULL)
 	{
-		temp = head;
+		result *temp = head;
 		head=head->next;
 		free(temp->buff);
 		free(temp);

@@ -12,7 +12,7 @@
 
 int InitRelationMap(relation_listnode *head,relation_map *rel_map)
 {
-	int i =0, length;
+	int i =0;
 	struct stat sb;
 	uint64_t *map;
 
@@ -23,8 +23,8 @@ int InitRelationMap(relation_listnode *head,relation_map *rel_map)
 		if ( (head->fd = open(head->filename, O_RDONLY)) == -1 )return 1;
 
 		//find its length (needed for mmap)
-  		if (fstat(head->fd , &sb) == -1) return 1;
-		length = sb.st_size;
+  	if (fstat(head->fd , &sb) == -1) return 1;
+		int length = sb.st_size;
 
 		//map the file
 		map = mmap(NULL,length,PROT_READ,MAP_PRIVATE,head->fd,0);

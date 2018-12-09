@@ -266,10 +266,9 @@ int InsertToQueryBatch(batch_listnode** batch, char* query_str)
 
 void FreeBatch(batch_listnode* batch)
 {
-	batch_listnode* temp;
 	while(batch != NULL)
 	{
-		temp = batch;
+		batch_listnode *temp = batch;
 		batch = batch->next;
 		//FreePredicateList(temp->predicate_list);
     FreeQueryString(temp->views);
@@ -419,8 +418,8 @@ void ExecuteQuery(batch_listnode* curr_query, relation_map* rel_map)
         }
         InsertSingleRowIdsToInterResult(&intermediate_result, relation1, self_res);
         PrintInterResults(intermediate_result);
-        exit(1);
       	FreeResult(self_res);
+        exit(1);
       }
       else
       {

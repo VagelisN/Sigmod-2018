@@ -28,7 +28,7 @@ int RelationListInsert(relation_listnode** head,char* relation_text)
 
 			fprintf(stderr,"open error %s : %s\n\n",relation_text, strerror(errno));
 			return 1;
-		} 
+		}
 		(*head)->next = NULL;
 		return 0;
 	}
@@ -57,10 +57,9 @@ int RelationListInsert(relation_listnode** head,char* relation_text)
 
 void FreeRelationList(relation_listnode* head)
 {
-	relation_listnode *temp;
 	while(head != NULL)
 	{
-		temp=head;
+		relation_listnode *temp=head;
 		free(temp->filename);
 		close(temp->fd);
 		head=head->next;

@@ -122,11 +122,11 @@ int InsertJoinToInterResults(inter_res** head, int rel1, int rel2, result* res)
 
 void PrintInterResults(inter_res *head)
 {
-	int i = 0;
+	int index = 0;
 	while(head != NULL)
 	{
-		printf("Intermediate results node[%d]: \n", i);
-		for (size_t i = 0; i < head->data->num_tuples; i++) {
+		printf("Intermediate results node[%d]: \n", index);
+		for (uint64_t i = 0; i < head->data->num_tuples; i++) {
 			printf("Tuple: %5lu|||||", i);
 			for (size_t j = 0; j < head->num_of_relations; j++) {
 				if (head->data->table[j] != NULL)
@@ -137,7 +137,7 @@ void PrintInterResults(inter_res *head)
 		}
 		printf("--------------------------------------------------\n" );
 		head = head->next;
-		i++;
+		index++;
 	}
 }
 

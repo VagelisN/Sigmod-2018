@@ -29,7 +29,7 @@ result* RadixHashJoin(relation *relR, relation* relS)
 			//if R is bigger than S
 			if( NewR->hist[i] >= NewS->hist[i])
 			{
-				
+
 				//Create a second layer index for the respective bucket of S
 				InitIndex(&ind, NewS->hist[i], NewS->psum[i]);
 				CreateIndex(NewS,&ind,i);
@@ -58,7 +58,7 @@ result* RadixHashJoin(relation *relR, relation* relS)
 int GetResults(reordered_relation* full_rel,reordered_relation* indexed_rel,bc_index * ind,
 			   struct result ** res,int curr_bucket,int r_s)
 {
-	uint64_t i, start_full, hash_value, sp, value1, value2;
+	uint64_t i, start_full, sp, value1, value2;
 
 	//the start of the non indexed current bucket
 	start_full = full_rel->psum[curr_bucket];
@@ -70,7 +70,7 @@ int GetResults(reordered_relation* full_rel,reordered_relation* indexed_rel,bc_i
 	for (i = 0; i < full_rel->hist[curr_bucket]; i++)
 	{
 		//check the index of the second relation
-		hash_value = HashFunction2((full_tuples[(start_full + i)].value), ind->index_size);
+		uint64_t hash_value = HashFunction2((full_tuples[(start_full + i)].value), ind->index_size);
 
 		//if there are elements in this bucket of the indexed relation
 		if( ind->bucket[hash_value] != -1)
@@ -81,8 +81,8 @@ int GetResults(reordered_relation* full_rel,reordered_relation* indexed_rel,bc_i
 			if(value1 == value2)
 			{
 				result_tuple curr_res;
-				// S has the second layer index 
-				if (r_s == 0) 
+				// S has the second layer index
+				if (r_s == 0)
 				{
 					curr_res.row_idR = full_tuples[start_full + i].row_id;
 					curr_res.row_idS = ind_tuples[(ind->start + (ind->bucket[hash_value])-1)].row_id;
@@ -124,7 +124,7 @@ int GetResults(reordered_relation* full_rel,reordered_relation* indexed_rel,bc_i
 
 int CreateIndex(reordered_relation *rel, bc_index** ind,int curr_bucket)
 {
-	int start, i, hash_value;
+	int start, i;
 
 	//the start of the current bucket is in psum
 	start = rel->psum[curr_bucket];
@@ -132,7 +132,7 @@ int CreateIndex(reordered_relation *rel, bc_index** ind,int curr_bucket)
 	//Hash every value of the bucket from last to first with H2 and set up bucket and chain
 	for (i = (rel->hist[curr_bucket]-1); i >= 0; i--)
 	{
-		hash_value = HashFunction2(rel->rel_array->tuples[start+i].value,(*ind)->index_size);
+		uint64_t hash_value = HashFunction2(rel->rel_array->tuples[start+i].value,(*ind)->index_size);
 
 		//last encounter
 		if ((*ind)->bucket[hash_value] == -1 )
@@ -224,7 +224,7 @@ void PrintIndex(bc_index* ind)
 uint64_t HashFunction1(uint64_t num, uint64_t n)
 {
 	//mask is 64 ones
-	uint64_t mask = 
+	uint64_t mask =
 	0b1111111111111111111111111111111111111111111111111111111111111111;
 
 	//keep only n ones on the right

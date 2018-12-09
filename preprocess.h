@@ -22,6 +22,6 @@ int CheckMalloc(void* ptr, char* txt);
 /* Checks whether a bucket size exceeds L1 cache (32 KB).
  * Prints a warning if a bucket can't fit in L1 cache.
  */
-void CheckBucketSizes(int* Hist, int hist_size);
+//void CheckBucketSizes(int* Hist, int hist_size);
 
 #endif

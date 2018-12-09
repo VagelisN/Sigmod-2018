@@ -119,7 +119,7 @@ int CheckMalloc(void* ptr, char* txt)
 	return 0;//if ptr != null return 0
 }
 
-
+/*
 void CheckBucketSizes(int* hist, int hist_size)
 {
 	int i, flag = 0;
@@ -135,4 +135,4 @@ void CheckBucketSizes(int* hist, int hist_size)
 	{
 		printf("Warning! Bucket size exceeds L1 cache size (aprox. 32 KB). Consider increasing the N_LSB for the H1 hash function.\n");
 	}
-}
+}*/
