@@ -4,17 +4,6 @@
 #include "rhjoin.h"
 #include "preprocess.h"
 
-relation* ToRow(int** original_array, int row_to_join, relation* new_rel)
-{
-	for (int i = 0; i < new_rel->num_tuples; ++i)
-	{
-		new_rel->tuples[i].value = original_array[i][row_to_join];
-		new_rel->tuples[i].row_id = i;
-	}
-	return new_rel;
-}
-
-
 void ReorderArray(relation* rel_array, int n_lsb, reordered_relation** new_rel)
 {
 	//Check the arguments
@@ -82,21 +71,13 @@ void ReorderArray(relation* rel_array, int n_lsb, reordered_relation** new_rel)
 	(*new_rel)->rel_array->tuples = malloc(rel_array->num_tuples * sizeof(tuple));
 	CheckMalloc((*new_rel)->rel_array->tuples, "*new_rel->rel_array->tuples (preprocess.c)");
 
-	//Initialize the array
-	for (i = 0; i < rel_array->num_tuples; ++i)
-	{
-		(*new_rel)->rel_array->tuples[i].value = -1;
-		(*new_rel)->rel_array->tuples[i].row_id = -1;
-	}
-	int InsertPos = 0;
-
 	//Traverse through the original array
 	for (i = 0; i < rel_array->num_tuples; ++i)
 	{
 		//Find the hash value of the current tuple
-		hashed_value = HashFunction1((int32_t) rel_array->tuples[i].value, n_lsb);
+		hashed_value = HashFunction1(rel_array->tuples[i].value, n_lsb);
 		//Using the hash value find the insert position using the temp_psum
-		InsertPos = temp_psum[hashed_value];
+		int InsertPos = temp_psum[hashed_value];
 		(*new_rel)->rel_array->tuples[InsertPos].value = rel_array->tuples[i].value;
 		(*new_rel)->rel_array->tuples[InsertPos].row_id = rel_array->tuples[i].row_id;
 		temp_psum[hashed_value]++;//The InsertPos for the same bucket goes up 1 position

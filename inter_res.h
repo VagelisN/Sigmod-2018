@@ -33,7 +33,8 @@ void FreeInterResults(inter_res* var);
  * Takes the results of a join and the active relation of the two and
  * updates the inter_res. The ex_rel_num is always tuple_R in the result.
  * Can be used when 1 of the 2 relations is in the inter_res already or
- * when the inter_res is empty.
+ * when the inter_res is empty. This function doesn't check if the result is
+ * empty, this check is performed in the ExecuteQuery function.
  */
 int InsertJoinToInterResults(inter_res** head, int ex_rel_num, int new_rel_num, result* res);
 

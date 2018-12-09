@@ -35,13 +35,11 @@ int InitInterResults(inter_res** head, int num_of_rel)
 
 int InsertJoinToInterResults(inter_res** head, int rel1, int rel2, result* res)
 {
-	while(1)
+	do
 	{
 		//If this is the first instance of the inter_res node
 		if ((*head)->data->num_tuples == 0)
 		{
-			/*If the result is empty -> do nothing */
-			if (res == NULL) return 1;
 			//Insert everything from the result to the inter_res
 			(*head)->data->num_tuples = GetResultNum(res);
 			(*head)->data->table[rel1] = malloc((*head)->data->num_tuples * sizeof(uint64_t));
@@ -57,17 +55,6 @@ int InsertJoinToInterResults(inter_res** head, int rel1, int rel2, result* res)
 		// If rel1 is the one active in the intermediate results.
 		else if((*head)->data->table[rel1] != NULL && (*head)->data->table[rel2] == NULL)
 		{
-			/* If the result is empty -> remove the current inter_data variable
-			 * and replace it with an empty one.*/
-			if (res == NULL)
-			{
-				if((*head)->data->num_tuples == 0)return 1;
-				inter_data *temp_array = NULL;
-				InitInterData(&temp_array, (*head)->num_of_relations, 0);
-				FreeInterData((*head)->data, (*head)->num_of_relations);
-				(*head)->data = temp_array;
-				return 1;
-			}
 			//Allocate and initialise the new inter_data variable.
 			(*head)->data->num_tuples = GetResultNum(res);
 			inter_data *temp_array = NULL;
@@ -79,17 +66,15 @@ int InsertJoinToInterResults(inter_res** head, int rel1, int rel2, result* res)
 			temp_array->table[rel2] = malloc((*head)->data->num_tuples * sizeof(uint64_t));
 
 			//Insert the results.
-			result_tuple *temp;
-			int old_pos;
 			for (size_t i = 0; i < (*head)->data->num_tuples; i++)
 			{
 				//Insert the results that are stored in the res variable.
-				temp = FindResultTuples(res, i);
+				result_tuple *temp = FindResultTuples(res, i);
 				/* row_idR is an index of the previous instance of the inter_res.*/
-				old_pos = temp->row_idR;
+				int old_pos = temp->row_idR;
 				temp_array->table[rel2][i] = temp->row_idS;
 				for (size_t j = 0; j < (*head)->num_of_relations; j++)
-					if ((*head)->data->table[j] != NULL && j != rel2) // might need to change rel2
+					if ((*head)->data->table[j] != NULL && j != rel2)
 						temp_array->table[j][i] = (*head)->data->table[j][old_pos];
 			}
 			FreeInterData((*head)->data, (*head)->num_of_relations);
@@ -99,17 +84,6 @@ int InsertJoinToInterResults(inter_res** head, int rel1, int rel2, result* res)
 		// If rel2 is the one active in the intermediate results.
 		else if ((*head)->data->table[rel2] != NULL && (*head)->data->table[rel1] == NULL)
 		{
-			/* If the result is empty -> remove the current inter_data variable
-			 * and replace it with an empty one.*/
-			if (res == NULL)
-			{
-				if((*head)->data->num_tuples == 0)return 1;
-				inter_data *temp_array = NULL;
-				InitInterData(&temp_array, (*head)->num_of_relations, 0);
-				FreeInterData((*head)->data, (*head)->num_of_relations);
-				(*head)->data = temp_array;
-				return 1;
-			}
 			//Allocate and initialise the new inter_data variable.
 			(*head)->data->num_tuples = GetResultNum(res);
 			inter_data *temp_array = NULL;
@@ -121,15 +95,13 @@ int InsertJoinToInterResults(inter_res** head, int rel1, int rel2, result* res)
 			temp_array->table[rel1] = malloc((*head)->data->num_tuples * sizeof(uint64_t));
 
 			//Insert the results.
-			result_tuple *temp;
-			int old_pos;
 			for (size_t i = 0; i < (*head)->data->num_tuples; i++)
 			{
 				//Insert the results that are stored in the res variable.
-				temp = FindResultTuples(res, i);
+				result_tuple *temp = FindResultTuples(res, i);
 
 				/* Old_pos refers to the current result's row_id in the inter_res data table.*/
-				old_pos = temp->row_idS;
+				int old_pos = temp->row_idS;
 				temp_array->table[rel1][i] = temp->row_idR;
 				for (size_t j = 0; j < (*head)->num_of_relations; j++)
 					if ((*head)->data->table[j] != NULL && j != rel1)
@@ -139,9 +111,8 @@ int InsertJoinToInterResults(inter_res** head, int rel1, int rel2, result* res)
 			(*head)->data = temp_array;
 			return 1;
 		}
-		if((*head)->next == NULL)break;
 		(*head) = (*head)->next;
-	}
+	}while((*head) != NULL);
 	//Allocate a new inter_res node
 	InitInterResults(&(*head)->next, (*head)->num_of_relations);
 	//Insert the results to the new node
@@ -211,7 +182,6 @@ relation* ScanInterResults(int given_rel,int column, inter_res* inter, relation_
 relation* GetRelation(int given_rel, int column, inter_res* inter, relation_map* map,int* query_relations)
 {
 	relation *new_rel = NULL;
-	int i;
 
 	// If the relation is in the intermediate results
 	if ((inter != NULL) && (new_rel = ScanInterResults(given_rel, column, inter, map, query_relations)) != NULL)
@@ -224,7 +194,7 @@ relation* GetRelation(int given_rel, int column, inter_res* inter, relation_map*
 		new_rel->tuples = malloc(new_rel->num_tuples * sizeof(tuple));
 
 		uint64_t *col = map[query_relations[given_rel]].columns[column];
-		for (i = 0; i < new_rel->num_tuples; ++i)
+		for (size_t i = 0; i < new_rel->num_tuples; ++i)
 		{
 			new_rel->tuples[i].row_id = i;
 			new_rel->tuples[i].value = col[i];
@@ -418,7 +388,6 @@ void CartesianInterResults(inter_res **inter)
 		if (temp->data->table[z] != NULL || next_node->data->table[z] != NULL)
 			new_data->table[z] = malloc(new_data->num_tuples * sizeof(uint64_t));
 
-	//For every combination insert it either in result or in inter_data directly
 	//For every tuple in current node
 	uint64_t index = 0;
 	for (size_t i = 0; i < temp->data->num_tuples; i++) {

@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <time.h>
 #include "query.h"
 #include "structs.h"
 #include "rhjoin.h"
@@ -45,16 +46,17 @@ int main(void)
 	FreeRelationList(relation_list);
 
 	// Start getting batches of querries
-	fprintf(stderr,"Give queries (or type Exit to quit):\n");
+	//fprintf(stderr,"Give queries (or type Exit to quit):\n");
 	//freopen("/dev/tty", "r", stdin);
 	batch_listnode *batch = NULL, *batch_temp = NULL;
 
+	clock_t time_taken = clock();
 	while (1)
 	{
 		fflush(stdout);
 		if(fgets(buff,250,stdin) == NULL )
 			break;
-		fprintf(stderr, "%s\n",buff );
+		//fprintf(stderr, "%s\n",buff );
  		if(strlen(buff) < 2)
  			fprintf(stderr,"Input too small\n");
  		else
@@ -63,7 +65,7 @@ int main(void)
 			// If F is given the end of the current batch is reached
 			if (strcmp(buff,"F\n") == 0)
 			{
-				fprintf(stderr,"End of the current batch\n");
+				//fprintf(stderr,"End of the current batch\n");
 
 				// EXECUTE THE QUERIES
 				batch_temp = batch;
@@ -80,9 +82,11 @@ int main(void)
 			{
 				InsertToQueryBatch(&batch, buff);
 			}
-			fprintf(stderr,"Give queries or:\n-type F to finish the current batch\n-type Exit to quit\n");
+			//fprintf(stderr,"Give queries or:\n-type F to finish the current batch\n-type Exit to quit\n");
 		}
 	}
+	time_taken = clock() - time_taken;
+	fprintf(stderr, "Total running time is: %.2f seconds.\n", ((double)time_taken)/CLOCKS_PER_SEC);
 	FreeRelationMap(rel_map, relations_count);
 	//printf("EXIT\n");
 	return 0;

@@ -68,13 +68,13 @@ void PrintRelationMap(relation_map *rel_map , int map_size)
 	for (int i = 0; i < map_size; ++i)
 	{
 		printf("Printing Relation: %d\n",i);
-		printf("%ld %ld\n",rel_map[i].num_tuples,rel_map[i].num_columns);
+		printf("%lu %lu\n",rel_map[i].num_tuples,rel_map[i].num_columns);
 		for (int j = 0; j < rel_map[i].num_columns; ++j)
 		{
 			printf("Printing Column: %d\n",j );
 			for (int k = 0; k < rel_map[i].num_tuples; ++k)
 			{
-				printf(" %ld\n",rel_map[i].columns[j][k]);
+				printf(" %lu\n",rel_map[i].columns[j][k]);
 			}
 		}
 	}

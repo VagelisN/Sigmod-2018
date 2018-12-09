@@ -111,7 +111,6 @@ void PrintSelfResult(result* head)
 	printf("Printing results:\n");
 	int temp_curr_load, num_results = 0;
 	uint64_t* data;
-	uint64_t row_id;
 	while(head!=NULL)
 	{
 		data = (uint64_t*)head->buff;
@@ -119,7 +118,7 @@ void PrintSelfResult(result* head)
 		while(temp_curr_load > 0)
 		{
 			num_results++;
-			printf("row_id %2ld",*data);
+			printf("row_id %2lu",*data);
 			data++;
 			temp_curr_load --;
 		}
@@ -209,7 +208,7 @@ void PrintRelation(relation* rel)
 	printf("\nprinting relation:\n\n");
 	for (int i = 0; i < rel->num_tuples; ++i)
 	{
-		printf("Row Id: %ld Value %ld\n",rel->tuples[i].row_id, rel->tuples[i].value );
+		printf("Row Id: %lu Value %lu\n",rel->tuples[i].row_id, rel->tuples[i].value );
 	}
 	printf("\nfinished printing relation\n\n");
 }

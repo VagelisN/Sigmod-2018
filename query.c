@@ -109,7 +109,6 @@ int InsertPredicate(predicates_listnode **head,char* predicate)
 {
 
   char *c = predicate;
-  char tempc;
   int fullstop_count = 0;
 
   // the predicate given can either be a join or a filter
@@ -253,7 +252,7 @@ void TokenizeFilterPredicate(char* predicate, filter_pred **filter_p)
 int InsertToQueryBatch(batch_listnode** batch, char* query_str)
 {
 	if( (*batch) == NULL )
-    ReadQuery(&(*batch),query_str);
+    ReadQuery(batch,query_str);
 	else
 	{
 		batch_listnode *temp = (*batch);
@@ -408,9 +407,8 @@ void ExecuteQuery(batch_listnode* curr_query, relation_map* rel_map)
 
       if(relation1 == relation2)
       {
-        fprintf(stderr, "KALA MPHKA \n");
-        result* self_res = NULL;
-        self_res = SelfJoin(relation1, current->join_p->column1, current->join_p->column2,
+        //fprintf(stderr, "KALA MPHKA \n");
+        result *self_res = SelfJoin(relation1, current->join_p->column1, current->join_p->column2,
                             &intermediate_result,rel_map,curr_query->relations);
         if (self_res == NULL)
         {
