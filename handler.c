@@ -55,19 +55,17 @@ int main(void)
 	{
 		fflush(stdout);
 		if(fgets(buff,250,stdin) == NULL )
+		{
 			break;
-		//fprintf(stderr, "%s\n",buff );
- 		if(strlen(buff) < 2)
- 			fprintf(stderr,"Input too small\n");
+		}
+ 		if(strlen(buff) < 2);
  		else
 		{
 			if (strcmp(buff, "Exit\n") == 0) break;
 			// If F is given the end of the current batch is reached
 			if (strcmp(buff,"F\n") == 0)
 			{
-				//fprintf(stderr,"End of the current batch\n");
-
-				// EXECUTE THE QUERIES
+				//Execute the queries 
 				batch_temp = batch;
 				while(batch_temp!=NULL)
 				{
@@ -88,6 +86,5 @@ int main(void)
 	time_taken = clock() - time_taken;
 	fprintf(stderr, "Total running time is: %.2f seconds.\n", ((double)time_taken)/CLOCKS_PER_SEC);
 	FreeRelationMap(rel_map, relations_count);
-	//printf("EXIT\n");
 	return 0;
 }

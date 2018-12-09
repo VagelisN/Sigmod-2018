@@ -329,7 +329,6 @@ predicates_listnode* ReturnExecPred(batch_listnode* curr_query,inter_res* interm
     {
       int relation1 = current->join_p->relation1;
       int relation2 = current->join_p->relation2;
-      //printf("Rel1: %d Rel2: %d\n", relation1, relation2);
       if(current->next==NULL ||
          intermediate_result->data->table[relation1] != NULL ||
          intermediate_result->data->table[relation2] != NULL
@@ -386,6 +385,7 @@ void ExecuteQuery(batch_listnode* curr_query, relation_map* rel_map)
         PrintNullResults(curr_query);
         FreeRelation(rel);
         FreePredListNode(current);
+        FreePredicateList(curr_query->predicate_list);
         FreeInterResults(intermediate_result);
         return;
         //Free all memory used for this query
@@ -406,7 +406,6 @@ void ExecuteQuery(batch_listnode* curr_query, relation_map* rel_map)
 
       if(relation1 == relation2)
       {
-        //fprintf(stderr, "KALA MPHKA \n");
         result *self_res = SelfJoin(relation1, current->join_p->column1, current->join_p->column2,
                             &intermediate_result,rel_map,curr_query->relations);
         if (self_res == NULL)
@@ -414,6 +413,7 @@ void ExecuteQuery(batch_listnode* curr_query, relation_map* rel_map)
           PrintNullResults(curr_query);
           FreeInterResults(intermediate_result);
           FreePredListNode(current);
+          FreePredicateList(curr_query->predicate_list);
           return;
         }
         InsertSingleRowIdsToInterResult(&intermediate_result, relation1, self_res);
@@ -447,6 +447,8 @@ void ExecuteQuery(batch_listnode* curr_query, relation_map* rel_map)
           if (curr_res == NULL)
           {
               PrintNullResults(curr_query);
+              FreePredListNode(current);
+              FreePredicateList(curr_query->predicate_list);
               FreeRelation(relR);
               FreeRelation(relS);
               FreeInterResults(intermediate_result);

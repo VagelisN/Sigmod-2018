@@ -94,6 +94,8 @@ typedef struct relation_map
 	uint64_t **columns;
 }relation_map;
 
+/* Struct that holds the info for a filter predicate */
+
 typedef struct filter_pred
 {
 	int relation;
@@ -101,6 +103,8 @@ typedef struct filter_pred
 	int value;
 	char comperator;
 }filter_pred;
+
+/* Struct that holds the info for a join predicate */
 
 typedef struct join_pred
 {
@@ -110,11 +114,6 @@ typedef struct join_pred
 	int column2;
 }join_pred;
 
-typedef struct query_string_array
-{
-  char **data;
-  int num_of_elements;
-}query_string_array;
 
 typedef struct predicates_listnode
 {
@@ -122,6 +121,14 @@ typedef struct predicates_listnode
 	join_pred *join_p;
 	struct predicates_listnode *next;
 }predicates_listnode;
+
+typedef struct query_string_array
+{
+  char **data;
+  int num_of_elements;
+}query_string_array;
+
+
 
 typedef struct query_batch_listnode
 {
