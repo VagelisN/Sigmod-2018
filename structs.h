@@ -114,7 +114,12 @@ typedef struct join_pred
 	int column2;
 }join_pred;
 
-
+/*
+ * List that holds the predicates of a query. If a node contains a filter predicate
+ * filter_p holds it and join_p is NULL. Else if it contains a join filter, join_p
+ * holds it and filter_p is NULL. The filter predicates are stored in the head of the list
+ * and join predicates are stored at the end.
+ */
 typedef struct predicates_listnode
 {
 	filter_pred *filter_p;
@@ -122,14 +127,21 @@ typedef struct predicates_listnode
 	struct predicates_listnode *next;
 }predicates_listnode;
 
+/* 
+ * Struct used to hold the predicates or views given in a query in 
+ * the places of data. 
+ */
 typedef struct query_string_array
 {
   char **data;
   int num_of_elements;
 }query_string_array;
 
-
-
+/*
+ * List whose every node holds everything needed for the execution of a batch.
+ * predicate_list holds the predicates, views holds the views and relations, holds
+ * the number of the relations as stored in the relation map.
+ */
 typedef struct query_batch_listnode
 {
 	int num_of_relations;

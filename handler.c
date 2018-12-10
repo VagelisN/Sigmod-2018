@@ -38,7 +38,6 @@ int main(void)
 			else fprintf(stderr, "RelationListInsert Error %s\n",buff);
 		}
 	}
-	//SPrintRelationList(relation_list);
 
 	// From the relations given create a relation map
 	relation_map *rel_map = malloc(relations_count * sizeof(relation_map));

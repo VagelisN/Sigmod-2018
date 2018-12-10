@@ -200,8 +200,6 @@ void TokenizeJoinPredicate(char* predicate, join_pred **join_p)
 
   buffer = strtok_r(NULL, "",&temp);
   (*join_p)->column2 = atoi(buffer);
-
-  //printf("%d %d %d %d \n",(*join_p)->relation1, (*join_p)->relation2, (*join_p)->column1, (*join_p)->column2 );
 }
 
 void TokenizeFilterPredicate(char* predicate, filter_pred **filter_p)
@@ -246,7 +244,6 @@ void TokenizeFilterPredicate(char* predicate, filter_pred **filter_p)
     (*filter_p)->column = atoi(buffer);
     (*filter_p)->value = atoi(left_operand);
   }
-  //printf(%d %d %c %d\n",(*filter_p)->relation, (*filter_p)->column, (*filter_p)->comperator, (*filter_p)->value );
 }
 
 int InsertToQueryBatch(batch_listnode** batch, char* query_str)
@@ -349,7 +346,7 @@ predicates_listnode* ReturnExecPred(batch_listnode* curr_query,inter_res* interm
   }
 }
 
-predicates_listnode* FreePredListNode(predicates_listnode *current)
+void FreePredListNode(predicates_listnode *current)
 {
   // This node is the head of the list
     if (current->filter_p != NULL)
@@ -358,7 +355,6 @@ predicates_listnode* FreePredListNode(predicates_listnode *current)
       free(current->join_p);
     free(current);
 }
-
 
 void ExecuteQuery(batch_listnode* curr_query, relation_map* rel_map)
 {
