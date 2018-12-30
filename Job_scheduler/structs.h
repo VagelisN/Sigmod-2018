@@ -92,16 +92,7 @@ typedef struct relation_map
 	uint64_t num_tuples;
 	uint64_t num_columns;
 	uint64_t **columns;
-	struct column_stats *col_stats;
 }relation_map;
-
-typedef struct column_stats
-{
-	uint64_t l;
-	uint64_t u;
-	uint64_t f;
-	uint64_t d;
-}column_stats;
 
 /* Struct that holds the info for a filter predicate */
 
