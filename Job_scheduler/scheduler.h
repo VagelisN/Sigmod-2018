@@ -1,9 +1,13 @@
-#include <pthread.h>
+#ifndef SCHEDULER_H
+#define SCHEDULER_H
 #include "structs.h"
 
+void HistJob(void *arguments);
 
-int scheduler_init(scheduler** sched, int num_of_threads); 
+int SchedulerInit(scheduler** sched, int num_of_threads);
 
-int push_job(scheduler* sched, int function, void *arguments);
+int PushJob(scheduler* sched, int function, void *arguments);
 
-jobqueue_node* pop_job(jobqueue_node** job_queue);
+jobqueue_node* PopJob(jobqueue_node** job_queue);
+
+#endif

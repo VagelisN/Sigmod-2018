@@ -9,8 +9,8 @@
 result* RadixHashJoin(relation *relR, relation* relS)
 {
 	scheduler* sched = NULL;
-	scheduler_init(&sched,4);
-	
+	SchedulerInit(&sched,4);
+
 	if (relR->num_tuples == 0 || relS->num_tuples == 0)
 		return NULL;
 	int i;
@@ -168,16 +168,13 @@ int InitIndex(bc_index** ind, int bucket_size, int start)
 {
 	//allocate the index
 	(*ind) = malloc(sizeof(bc_index));
-	CheckMalloc((*ind), "*ind (rhjoin.c)");
 
 	//the size of the bucket array  is the next prime after the size of the bucket
 	uint32_t hash_size = FindNextPrime(bucket_size);
 	(*ind)->bucket = malloc(hash_size * sizeof(int32_t));
-	CheckMalloc((*ind)->bucket, "*ind->bucket (rhjoin.c)");
 
 	//the size of the chain is equal to the number of elements in the bucket
 	(*ind)->chain = (int32_t*) malloc(bucket_size * sizeof(int32_t));
-	CheckMalloc((*ind)->chain, "*ind->chain (rhjoin.c)");
 
 	(*ind)->start = start;
 	(*ind)->end = start + bucket_size;

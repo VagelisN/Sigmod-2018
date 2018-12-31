@@ -127,9 +127,9 @@ typedef struct predicates_listnode
 	struct predicates_listnode *next;
 }predicates_listnode;
 
-/* 
- * Struct used to hold the predicates or views given in a query in 
- * the places of data. 
+/*
+ * Struct used to hold the predicates or views given in a query in
+ * the places of data.
  */
 typedef struct query_string_array
 {
@@ -173,7 +173,7 @@ typedef struct scheduler
 	int exit_all;
 	int answers_waiting;
 
-	
+
 }scheduler;
 
 typedef struct hist_arguments
@@ -185,5 +185,17 @@ typedef struct hist_arguments
   uint hist_size;
   relation *rel;
 }hist_arguments;
+
+typedef struct partition_arguments
+{
+	relation *reordered;
+	relation *original;
+	uint start;
+	uint end;
+  uint hist_size;
+	uint n_lsb;
+	int *psum;
+}part_arguments;
+
 
 #endif

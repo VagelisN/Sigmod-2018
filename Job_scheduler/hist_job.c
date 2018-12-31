@@ -29,7 +29,7 @@ for (size_t i = 0; i < thread_num; i++) {
 }
 /* End of code to run before enqueueing hist_jobs */
 
-int* HistJob(void *arguments)
+void* HistJob(void *arguments)
 {
   hist_arguments *args = arguments;
 

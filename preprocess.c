@@ -42,7 +42,7 @@ void ReorderArray(relation* rel_array, int n_lsb, reordered_relation** new_rel)
 	//Run rel_array with the hash function and build the histogram
 	for (i = 0; i < rel_array->num_tuples; ++i)
 	{
-		hashed_value = HashFunction1((int32_t) rel_array->tuples[i].value, n_lsb);
+		hashed_value = HashFunction1(rel_array->tuples[i].value, n_lsb);
 		(*new_rel)->hist[hashed_value]++;
 	}
 

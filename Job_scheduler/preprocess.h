@@ -26,6 +26,8 @@ int CheckMalloc(void* ptr, char* txt);
 
 relation* ToRow(int** original_array, int row_to_join, relation* new_rel);
 
-int* HistJob(void *arguments);
+void HistJob(void *arguments);
+
+void PartitionJob(void *args);
 
 #endif

@@ -2,11 +2,12 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <pthread.h>
+#include "preprocess.h"
 #include "scheduler.h"
 
-void* thread_function();
+void* ThreadFunction();
 
-int scheduler_init(scheduler** sched, int num_of_threads)
+int SchedulerInit(scheduler** sched, int num_of_threads)
 {
 	(*sched) = malloc(sizeof(scheduler));
 	(*sched)-> thread_array = malloc(num_of_threads * sizeof(pthread_t));
@@ -25,15 +26,15 @@ int scheduler_init(scheduler** sched, int num_of_threads)
 
 	for (int i = 0; i < num_of_threads; ++i)
 	{
-		pthread_create(&((*sched)->thread_array[i]),NULL,thread_function,(void*)(*sched));
+		pthread_create(&((*sched)->thread_array[i]),NULL,ThreadFunction,(void*)(*sched));
 	}
 }
 
-int push_job(scheduler* sched, int function, void *arguments)
+int PushJob(scheduler* sched, int function, void *arguments)
 {
 	pthread_mutex_lock(&(sched->queue_access));
 	if( (sched->job_queue) == NULL)
-	{ 
+	{
 		(sched->job_queue) = malloc (sizeof(jobqueue_node));
 		(sched->job_queue)->function = function;
 		(sched->job_queue)->arguments = arguments;
@@ -59,18 +60,18 @@ int push_job(scheduler* sched, int function, void *arguments)
 	pthread_mutex_unlock(&(sched->queue_access));
 }
 
-jobqueue_node* pop_job(jobqueue_node** job_queue)
+jobqueue_node* PopJob(jobqueue_node** job_queue)
 {
 	jobqueue_node* temp = (*job_queue);
 	(*job_queue) = (*job_queue)->next;
 	return temp;
 }
 
-void* thread_function(void* arg)
+void* ThreadFunction(void* arg)
 {
 	scheduler* sched = (scheduler*)arg;
 	while(1)
-	{ 
+	{
 		pthread_mutex_lock(&(sched->queue_access));
 
 		//while the job queue is empty wait
@@ -85,7 +86,7 @@ void* thread_function(void* arg)
 
 
 		jobqueue_node* job = NULL;
-		job = pop_job(&(sched->job_queue));
+		job = PopJob(&(sched->job_queue));
 		sched->active_jobs --;
 		pthread_mutex_unlock(&(sched->queue_access));
 
@@ -93,8 +94,10 @@ void* thread_function(void* arg)
 		//execute job
 		if (job->function == 0)
 			HistJob(job->arguments);
+		else if(job->function == 1)
+			PartitionJob(job->arguments);
 		printf("job done\n");
-		
+
 
 		pthread_mutex_lock(&(sched->barrier_mutex));
 		sched->answers_waiting--;

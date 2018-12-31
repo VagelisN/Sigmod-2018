@@ -1,9 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "structs.h"
+#include "preprocess.h"
 #include "rhjoin.h"
 #include "results.h"
-#include "preprocess.h"
 #include "scheduler.h"
 
 
@@ -51,11 +51,11 @@ int main(void)
 	//Transform the original array to row stored array using relation struct
 
 	/****************** Test case 1*******************/
-	/* 
+	/*
 	 * Both columns have ones
 	 * expected results: num_of_rows*num_of_rows
 	 */
-	
+
 	/*for (int i = 0; i < num_of_rows; ++i)
 	{
 
@@ -67,7 +67,7 @@ int main(void)
 
 	/****************** Test case 2*******************/
 
-	/* 
+	/*
 	 * The first column has odd nubers the second column has even numbers
 	 * expected results: 0
 	 */
@@ -89,7 +89,7 @@ int main(void)
 	 * first half of the first column is equal to the second half of the second column
 	 * expected results : num_of_rows/2 * num_of_rows/2
 	 */
-	
+
 	/*for (int i = 0; i < num_of_rows/2; ++i)
 	{
 		original_array[i][1] = 2;
@@ -102,7 +102,7 @@ int main(void)
 		original_array[i][0] = 2;
 	}*/
 	/****************** Test case 3*******************/
-	
+
 	array_R = ToRow(original_array_R, 0, array_R);
 	array_S = ToRow(original_array_S, 1, array_S);
 
