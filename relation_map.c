@@ -77,6 +77,13 @@ int InitRelationMap(relation_listnode *head,relation_map *rel_map)
 					dist_array[(rel_map[i].columns[j][k] - rel_map[i].col_stats[j].l)%5000000] = 0;
 			}
 
+			rel_map[i].col_stats[j].d = 0;
+
+			for (int k = 0; k < temp_size; ++k)
+			{
+				if (dist_array[k] == 0)
+					rel_map.col_stats[j].d++;
+			}
 
 
 		}

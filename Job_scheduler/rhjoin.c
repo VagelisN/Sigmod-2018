@@ -4,6 +4,7 @@
 #include "rhjoin.h"
 #include "preprocess.h"
 #include "results.h"
+#include "scheduler.h"
 
 result* RadixHashJoin(relation *relR, relation* relS)
 {
@@ -16,8 +17,8 @@ result* RadixHashJoin(relation *relR, relation* relS)
 	reordered_relation* NewR = NULL;
 	reordered_relation* NewS = NULL;
 	//Create histogram,psum,R',S'
-	ReorderArray(relR, N_LSB, &NewR);
-	ReorderArray(relS, N_LSB, &NewS);
+	ReorderArray(relR, N_LSB, &NewR, sched);
+	ReorderArray(relS, N_LSB, &NewS, sched);
 	if (NewR == NULL || NewS == NULL)
 		return NULL;
 	struct result* results= NULL;

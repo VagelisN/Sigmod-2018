@@ -91,7 +91,8 @@ void* thread_function(void* arg)
 
 
 		//execute job
-		sleep(1);
+		if (job->function == 0)
+			HistJob(job->arguments);
 		printf("job done\n");
 		
 

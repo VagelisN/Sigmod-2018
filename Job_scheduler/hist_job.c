@@ -1,15 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-typedef struct hist_arguments
-{
-  int **hist;
-  uint start;
-  uint end;
-  uint n_lsb;
-  uint hist_size;
-  relation *rel;
-}hist_arguments;
+
 
 /* Code to run before enqueueing HistJobs */
 int hist_size = 1;
