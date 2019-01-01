@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <pthread.h>
 #include "preprocess.h"
+#include "rhjoin.h"
 #include "scheduler.h"
 
 void* ThreadFunction();
@@ -96,6 +97,8 @@ void* ThreadFunction(void* arg)
 			HistJob(job->arguments);
 		else if(job->function == 1)
 			PartitionJob(job->arguments);
+		else if(job->function == 2)
+			JoinJob(job->arguments);
 		printf("job done\n");
 
 

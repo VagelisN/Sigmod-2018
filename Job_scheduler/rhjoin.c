@@ -1,10 +1,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <pthread.h>
+#include <stdbool.h>
 #include "rhjoin.h"
 #include "preprocess.h"
 #include "results.h"
 #include "scheduler.h"
+#include "structs.h"
 
 result* RadixHashJoin(relation *relR, relation* relS)
 {
@@ -23,39 +26,50 @@ result* RadixHashJoin(relation *relR, relation* relS)
 		return NULL;
 	struct result* results= NULL;
 
+	//Create an array with hist_size result lists
+
+
+	result **res_array = calloc(NewR->hist_size, sizeof(result*));
+	uint answers = 0;
+	for (size_t i = 0; i < NewR->hist_size; i++) {
+		if (NewR->hist[i] != 0 && NewS->hist[i] != 0)
+			answers++;
+	}
+	sched->answers_waiting = answers;
+
 	//for every bucket
 	for (i = 0; i < NewR->hist_size; ++i)
 	{
 		//if both relations have elements in this bucket
 		if (NewR->hist[i] != 0 && NewS->hist[i] != 0)
 		{
-			bc_index* ind = NULL;
-			//if R is bigger than S
-			if( NewR->hist[i] >= NewS->hist[i])
-			{
+			//Set up the arguments
+			join_arguments *arguments = malloc(sizeof(join_arguments));
+			arguments->NewR = NewR;
+			arguments->NewS = NewS;
+			arguments->res = res_array[i];
+			arguments->bucket_num = i;
 
-				//Create a second layer index for the respective bucket of S
-				InitIndex(&ind, NewS->hist[i], NewS->psum[i]);
-				CreateIndex(NewS,&ind,i);
-				//Get results
-				GetResults(NewR,NewS,ind,&results,i,0);
-			}
-			//if S is bigger than R
-			else
-			{
-				//Create a second layer index for the respective bucket of R
-				InitIndex(&ind, NewR->hist[i], NewR->psum[i]);
-				CreateIndex(NewR,&ind,i);
-				//GetResults
-				GetResults(NewS,NewR,ind,&results,i,1);
-			}
-			DeleteIndex(&ind);
+			//PushJob
+			PushJob(sched, 2, (void*)arguments);
 		}
 	}
+
+	//Wait for all threads to finish building their work(barrier)
+	pthread_mutex_lock(&(sched->queue_access));
+	pthread_cond_wait(&(sched->barrier_cond),&(sched->queue_access));
+	pthread_mutex_unlock(&(sched->queue_access));
+
+	//Join the res_array to a single result list
+	result *final_results = NULL;
+	MergeResults(&final_results, res_array, NewR->hist_size);
+
+	//Free res_array
+	free(res_array);
 	//Free NewS and NewR
 	FreeReorderRelation(NewS);
 	FreeReorderRelation(NewR);
-	return results;
+	return final_results;
 }
 
 
@@ -271,4 +285,53 @@ uint64_t FindNextPrime(uint64_t num)
 uint64_t HashFunction2(uint64_t num, uint64_t prime)
 {
 	return num % prime;
+}
+
+void JoinJob(void *arguments)
+{
+	join_arguments *args = (join_arguments*) arguments;
+	bc_index* ind = NULL;
+	//if R is bigger than S
+	if( args->NewR->hist[args->bucket_num] >= args->NewS->hist[args->bucket_num])
+	{
+
+		//Create a second layer index for the respective bucket of S
+		InitIndex(&ind, args->NewS->hist[args->bucket_num], args->NewS->psum[args->bucket_num]);
+		CreateIndex(args->NewS,&ind,args->bucket_num);
+		//Get results
+		GetResults(args->NewR,args->NewS,ind,&args->res,args->bucket_num,0);
+	}
+	//if S is bigger than R
+	else
+	{
+		//Create a second layer index for the respective bucket of R
+		InitIndex(&ind, args->NewR->hist[args->bucket_num], args->NewR->psum[args->bucket_num]);
+		CreateIndex(args->NewR, &ind, args->bucket_num);
+		//GetResults
+		GetResults(args->NewS, args->NewR, ind, &args->res, args->bucket_num,1);
+	}
+	DeleteIndex(&ind);
+	free(args);
+}
+
+void MergeResults(result **res, result **res_array, int size)
+{
+	bool found = 0;
+	result* previous_tail = NULL;
+	for (size_t i = 0; i < size; i++)
+	{
+		//First active position is the final_results head node
+		if(res_array[i] == NULL)continue;
+		if (!found)
+		{
+				(*res) = res_array[i];
+				found = 1;
+		}
+		//If the previous_tail is active then point it to the current head
+		if (previous_tail != NULL) previous_tail->next = res_array[i];
+		//Find the last node of the res_array[i]
+		while(res_array[i]->next != NULL)res_array[i] = res_array[i]->next;
+		previous_tail = res_array[i];
+	}
+	return;
 }

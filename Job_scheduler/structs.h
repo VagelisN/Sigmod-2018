@@ -5,7 +5,7 @@
 
 #define CACHE_SIZE 32768 //L1 cache is 32 KB
 #define RESULT_MAX_BUFFER 1048576 //number of bits in a result node buffer
-#define N_LSB 5 //number of least significant bits used in H1
+#define N_LSB 8 //number of least significant bits used in H1
 
 /** Type definition for a tuple */
 typedef struct tuple
@@ -196,6 +196,14 @@ typedef struct partition_arguments
 	uint n_lsb;
 	int *psum;
 }part_arguments;
+
+typedef struct join_arguments
+{
+	reordered_relation *NewR;
+	reordered_relation *NewS;
+	result *res;
+	uint bucket_num;
+}join_arguments;
 
 
 #endif

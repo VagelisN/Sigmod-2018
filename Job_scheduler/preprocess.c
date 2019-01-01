@@ -18,7 +18,7 @@ relation* ToRow(int** original_array, int row_to_join, relation* new_rel)
 }
 
 
-void ReorderArray(relation* rel_array, int n_lsb, reordered_relation** new_rel,scheduler *sched)
+void ReorderArray(relation* rel_array, int n_lsb, reordered_relation** new_rel, scheduler *sched)
 {
 	//Check the arguments
 	if ((rel_array == NULL) || (n_lsb <= 0))

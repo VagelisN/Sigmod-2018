@@ -131,3 +131,54 @@ int main(int argc, char const *argv[])
 	printf("Running time: %f\n",(double) (clock() - start_time)/ CLOCKS_PER_SEC );
 	return 0;
 }
+
+
+
+void JoinJob(void *arguments)
+{
+	join_arguments *args = (join_arguments*) arguments;
+	bc_index* ind = NULL;
+	//if R is bigger than S
+	if( args->NewR->hist[args->bucket_num] >= args->NewS->hist[args->bucket_num])
+	{
+
+		//Create a second layer index for the respective bucket of S
+		InitIndex(&ind, args->NewS->hist[args->bucket_num], args->NewS->psum[args->bucket_num]);
+		CreateIndex(args->NewS,&ind,args->bucket_num);
+		//Get results
+		GetResults(args->NewR,args->NewS,ind,&args->res,args->bucket_num,0);
+	}
+	//if S is bigger than R
+	else
+	{
+		//Create a second layer index for the respective bucket of R
+		InitIndex(&ind, args->NewR->hist[args->bucket_num], args->NewR->psum[args->bucket_num]);
+		CreateIndex(NewR,&ind,args->bucket_num);
+		//GetResults
+		GetResults(args->NewS, args->NewR, ind, &args->res, args->bucket_num,1);
+	}
+	DeleteIndex(&ind);
+	free(args);
+}
+
+void MergeResults(result **res, result **res_array, int size)
+{
+	bool found = 0;
+	result* previous_tail = NULL;
+	for (size_t i = 0; i < size; i++)
+	{
+		//First active position is the final_results head node
+		if(res_array[i] == NULL)continue;
+		if (!found)
+		{
+				(*res) = res_array[i];
+				found = 1;
+		}
+		//If the previous_tail is active then point it to the current head
+		if (previous_tail != NULL) previous_tail->next = res_array[i];
+		//Find the last node of the res_array[i]
+		while(res_array[i]->next != NULL)res_array[i] = res_array[i]->next;
+		previous_tail = res_array[i];
+	}
+	return;
+}
