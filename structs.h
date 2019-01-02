@@ -49,8 +49,8 @@ typedef struct result_tuple
 typedef struct reorder_relation
 {
 	int hist_size;
-	int *psum;
-	int *hist;
+	int64_t *psum;
+	uint64_t *hist;
 	relation* rel_array;
 } reordered_relation;
 
@@ -209,7 +209,7 @@ typedef struct join_arguments
 {
 	reordered_relation *NewR;
 	reordered_relation *NewS;
-	result *res;
+	result **res;
 	uint64_t bucket_num;
 }join_arguments;
 

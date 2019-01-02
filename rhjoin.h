@@ -51,7 +51,7 @@ int GetResults(reordered_relation*, reordered_relation* , bc_index *, struct res
 void JoinJob(void *arguments);
 
 /* Takes an array of result lists and merges them to one list. */
-void MergeResults(result **res, result **res_array, int size);
+result* MergeResults(result **res_array, int size);
 
 
 #endif

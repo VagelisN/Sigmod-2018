@@ -29,18 +29,19 @@ void ReorderArray(relation* rel_array, int n_lsb, reordered_relation** new_rel, 
 	int hist_size = 1;
 	for (int i = 0; i < n_lsb; ++i)
 		hist_size *= 2;
-	int thread_num = sched->num_of_threads;
+
+	fprintf(stderr, "Starting HistJobs\n");
 	sched->answers_waiting = sched->num_of_threads;
 
-	int **histograms = malloc(thread_num * sizeof(int *));
-	for (size_t i = 0; i < thread_num; i++)
+	int **histograms = malloc(sched->num_of_threads * sizeof(int *));
+	for (size_t i = 0; i < sched->num_of_threads; i++)
 	  histograms[i] = NULL;
 
 	//Split up the num_tuples so each thread gets the same
-	int tuples_per_thread = (rel_array->num_tuples) /thread_num;
+	int tuples_per_thread = (rel_array->num_tuples) / sched->num_of_threads;
 
 	//For each thread
-	for (size_t i = 0; i < thread_num; i++)
+	for (size_t i = 0; i < sched->num_of_threads; i++)
 	{
 	  //Set the arguments
 	  hist_arguments *arguments = malloc(sizeof(hist_arguments));
@@ -50,7 +51,7 @@ void ReorderArray(relation* rel_array, int n_lsb, reordered_relation** new_rel, 
 	  arguments->rel = rel_array;
 	  arguments->start = i * tuples_per_thread;
 	  //If we are setting up the last thread, end is the end of the relation
-	  if(i != thread_num - 1)arguments->end = (i+1) * tuples_per_thread;
+	  if(i != sched->num_of_threads - 1)arguments->end = (i+1) * tuples_per_thread;
 	  else arguments->end = rel_array->num_tuples;
 
 	  //Enqueue it in the scheduler
@@ -62,22 +63,21 @@ void ReorderArray(relation* rel_array, int n_lsb, reordered_relation** new_rel, 
 	pthread_cond_wait(&(sched->barrier_cond),&(sched->queue_access));
 	pthread_mutex_unlock(&(sched->queue_access));
 
-	//printf("Hist jobs finished\n");
+	fprintf(stderr, "Hist jobs finished\n");
 
 
 	//Allocate the Hist and Psum arrays
-	int *Psum = malloc(hist_size * sizeof(int));
-	int *Hist = calloc(hist_size, sizeof(int));
+	int64_t *Psum = malloc(hist_size * sizeof(int64_t));
+	uint64_t *Hist = calloc(hist_size, sizeof(uint64_t));
 	for (size_t i = 0; i < hist_size; i++)
 	  Psum[i] = -1;
 
 	//Build the whole Histogram from the
-	for (size_t i = 0; i < thread_num; i++)
+	for (size_t i = 0; i < sched->num_of_threads; i++)
 	  for (size_t j = 0; j < hist_size; j++)
 	    Hist[j] += histograms[i][j];
-
 	//Free allocated space
-	for (size_t i = 0; i < thread_num; i++)
+	for (size_t i = 0; i < sched->num_of_threads; i++)
 	  free(histograms[i]);
 	free(histograms);
 
@@ -94,9 +94,9 @@ void ReorderArray(relation* rel_array, int n_lsb, reordered_relation** new_rel, 
 	    new_start += Hist[i];
 	  }
 	}
-	/*for (size_t i = 0; i < hist_size; i++) {
-		printf("Psum[%2lu]: %d\n", i, Psum[i]);
-	}*/
+	//for (size_t i = 0; i < hist_size; i++) {
+	//	fprintf(stderr, "Psum[%3lu]: %ld\n", i, Psum[i]);
+	//}
 	//exit(1);
 
 	/*--------------------Build the reordered array----------------------*/
@@ -112,11 +112,13 @@ void ReorderArray(relation* rel_array, int n_lsb, reordered_relation** new_rel, 
 	(*new_rel)->psum = Psum;
 
 	//Set up the arguments
+	fprintf(stderr, "Starting PartitionJobs\n");
 	sched->answers_waiting = sched->num_of_threads;
 
-	uint64_t *tempPsum = malloc(hist_size * sizeof(int));
+	//int64_t **tempPsum = malloc(thread_num * sizeof(int64_t*));
 	for (size_t i = 0; i < sched->num_of_threads; i++)
 	{
+		int64_t *tempPsum = malloc(hist_size * sizeof(int64_t));
 		part_arguments *arguments = malloc(sizeof(part_arguments));
 		arguments->reordered = (*new_rel)->rel_array;
 		arguments->hist_size = hist_size;
@@ -124,10 +126,10 @@ void ReorderArray(relation* rel_array, int n_lsb, reordered_relation** new_rel, 
 		arguments->n_lsb = n_lsb;
 		//tuples_per_thread is the same for both hist_jobs and partition_jobs
 		arguments->start = i * tuples_per_thread;
-		memcpy(tempPsum, Psum, hist_size * sizeof(int));
+		memcpy(tempPsum, Psum, hist_size * sizeof(int64_t));
 		arguments->psum = tempPsum;
 	  //If we are setting up the last thread, end is the end of the relation
-	  if(i != thread_num - 1)arguments->end = (i+1) * tuples_per_thread;
+	  if(i != sched->num_of_threads - 1)arguments->end = (i+1) * tuples_per_thread;
 	  else arguments->end = rel_array->num_tuples;
 
 		//Enqueue it in the scheduler
@@ -140,8 +142,7 @@ void ReorderArray(relation* rel_array, int n_lsb, reordered_relation** new_rel, 
 	pthread_mutex_lock(&(sched->queue_access));
 	pthread_cond_wait(&(sched->barrier_cond),&(sched->queue_access));
 	pthread_mutex_unlock(&(sched->queue_access));
-	//free(tempPsum);
-	//printf("PartitionJobs jobs finished\n");
+	fprintf(stderr, "PartitionJobs jobs finished\n");
 	/*for (size_t i = 0; i < rel_array->num_tuples; i++) {
 		printf("Reordered[%2lu]: %lu\n", i, (*new_rel)->rel_array->tuples[i].row_id);
 	}*/
@@ -183,6 +184,7 @@ void HistJob(void *arguments)
     (*args->hist)[hashed_value]++;
   }
 	free(args);
+	//fprintf(stderr, "\n\nFinished HistJob\n\n\n" );
   return;
 }
 
@@ -191,10 +193,11 @@ void PartitionJob(void* args)//int start, int end, int size, int* Psum, int modu
 	part_arguments *arguments = (part_arguments*)args;
 
 	int current_bucket;
-	//Find the bucket
+	//Find the starting bucket
 	for (int i = 0; i < arguments->hist_size; ++i)
 	{
 		//printf("Start: %d, psum[%d]: %d\n", arguments->start, i, arguments->psum[i]);
+		if (arguments->psum[i] == -1) continue;
 		if (arguments->start == arguments->psum[i])
 		{
 			current_bucket = i;
@@ -202,7 +205,11 @@ void PartitionJob(void* args)//int start, int end, int size, int* Psum, int modu
 		}
 		if(arguments->start < arguments->psum[i])
 		{
-			current_bucket = i - 1;
+			//fprintf(stderr, "In start: %lu < psum[%d]: %lu\n", arguments->start, i, arguments->psum[i]);
+			int j = i - 1;
+			//Find the previous active bucket
+			while(arguments->psum[j] == -1)j--;
+			current_bucket = j;
 			break;
 		}
 	}
@@ -210,7 +217,7 @@ void PartitionJob(void* args)//int start, int end, int size, int* Psum, int modu
 	//printf("end - start= %d\n", end - start);
 	//To skip_Values den ypologizetai swsta
 	int skip_values = arguments->start - arguments->psum[current_bucket];
-	//printf("Start = %d , skip_values = %d\n", arguments->start, skip_values);
+	//fprintf(stderr, "Start = %lu , skip_values = %d , CurrentBucket = %d, hist_size = %lu\n", arguments->start, skip_values, current_bucket, arguments->hist_size);
 	arguments->psum[current_bucket] = arguments->start;
 	int previous_encounter = 0;
 	/* This thread is responsible to find all the correct values from start to end.*/
@@ -243,7 +250,8 @@ void PartitionJob(void* args)//int start, int end, int size, int* Psum, int modu
 			}
 		}
 	}
+	free(arguments->psum);
 	free(arguments);
+	//fprintf(stderr, "\n\nFinished PartitionJob\n\n\n\n");
 	return;
 }
-

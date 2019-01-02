@@ -12,7 +12,7 @@
 result* RadixHashJoin(relation *relR, relation* relS)
 {
 	scheduler* sched = NULL;
-	SchedulerInit(&sched,4);
+	SchedulerInit(&sched, 4);
 
 	if (relR->num_tuples == 0 || relS->num_tuples == 0)
 		return NULL;
@@ -35,6 +35,7 @@ result* RadixHashJoin(relation *relR, relation* relS)
 		if (NewR->hist[i] != 0 && NewS->hist[i] != 0)
 			answers++;
 	}
+	fprintf(stderr, "Starting JoinJobs\n");
 	sched->answers_waiting = answers;
 
 	//for every bucket
@@ -47,7 +48,7 @@ result* RadixHashJoin(relation *relR, relation* relS)
 			join_arguments *arguments = malloc(sizeof(join_arguments));
 			arguments->NewR = NewR;
 			arguments->NewS = NewS;
-			arguments->res = res_array[i];
+			arguments->res = &res_array[i];
 			arguments->bucket_num = i;
 
 			//PushJob
@@ -60,10 +61,20 @@ result* RadixHashJoin(relation *relR, relation* relS)
 	pthread_cond_wait(&(sched->barrier_cond),&(sched->queue_access));
 	pthread_mutex_unlock(&(sched->queue_access));
 
-	//Join the res_array to a single result list
-	result *final_results = NULL;
-	MergeResults(&final_results, res_array, NewR->hist_size);
+	fprintf(stderr, "JoinJobs finished!\n" );
 
+
+	//Join the res_array to a single result list
+	result *final_results = MergeResults( res_array, NewR->hist_size);
+	//fprintf(stderr, "\n\n\n\n\nfinal_results = %p\n", final_results);
+	//int times = 0;
+	//result *temp = final_results;
+	//while(temp != NULL)
+	//{
+	//	temp = temp->next;
+	//	times++;
+	//}
+	//fprintf(stderr, "Number of nodes in list: %d\n\n\n\n\n\n", times);
 	//Free res_array
 	free(res_array);
 	//Free NewS and NewR
@@ -299,7 +310,7 @@ void JoinJob(void *arguments)
 		InitIndex(&ind, args->NewS->hist[args->bucket_num], args->NewS->psum[args->bucket_num]);
 		CreateIndex(args->NewS,&ind,args->bucket_num);
 		//Get results
-		GetResults(args->NewR,args->NewS,ind,&args->res,args->bucket_num,0);
+		GetResults(args->NewR,args->NewS,ind,args->res,args->bucket_num,0);
 	}
 	//if S is bigger than R
 	else
@@ -308,23 +319,25 @@ void JoinJob(void *arguments)
 		InitIndex(&ind, args->NewR->hist[args->bucket_num], args->NewR->psum[args->bucket_num]);
 		CreateIndex(args->NewR, &ind, args->bucket_num);
 		//GetResults
-		GetResults(args->NewS, args->NewR, ind, &args->res, args->bucket_num,1);
+		GetResults(args->NewS, args->NewR, ind, args->res, args->bucket_num,1);
 	}
 	DeleteIndex(&ind);
 	free(args);
 }
 
-void MergeResults(result **res, result **res_array, int size)
+result* MergeResults(result **res_array, int size)
 {
 	bool found = 0;
 	result* previous_tail = NULL;
+	result *head = NULL;
 	for (size_t i = 0; i < size; i++)
 	{
 		//First active position is the final_results head node
+		//fprintf(stderr, "res_array[%2lu] = %p\n", i, res_array[i]);
 		if(res_array[i] == NULL)continue;
-		if (!found)
+		if (found == 0)
 		{
-				(*res) = res_array[i];
+				head = res_array[i];
 				found = 1;
 		}
 		//If the previous_tail is active then point it to the current head
@@ -333,5 +346,5 @@ void MergeResults(result **res, result **res_array, int size)
 		while(res_array[i]->next != NULL)res_array[i] = res_array[i]->next;
 		previous_tail = res_array[i];
 	}
-	return;
+	return head;
 }

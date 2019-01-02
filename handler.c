@@ -64,7 +64,8 @@ int main(void)
 			// If F is given the end of the current batch is reached
 			if (strcmp(buff,"F\n") == 0)
 			{
-				//Execute the queries 
+				fprintf(stderr, "Batch ended\n");
+				//Execute the queries
 				batch_temp = batch;
 				while(batch_temp!=NULL)
 				{
@@ -79,7 +80,7 @@ int main(void)
 			{
 				InsertToQueryBatch(&batch, buff);
 			}
-			fprintf(stderr,"Give queries or:\n-type F to finish the current batch\n-type Exit to quit\n");
+			//fprintf(stderr,"Give queries or:\n-type F to finish the current batch\n-type Exit to quit\n");
 		}
 	}
 	time_taken = clock() - time_taken;
