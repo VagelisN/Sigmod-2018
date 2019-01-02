@@ -69,8 +69,7 @@ void ReorderArray(relation* rel_array, int n_lsb, reordered_relation** new_rel, 
 	//Allocate the Hist and Psum arrays
 	int64_t *Psum = malloc(hist_size * sizeof(int64_t));
 	uint64_t *Hist = calloc(hist_size, sizeof(uint64_t));
-	for (size_t i = 0; i < hist_size; i++)
-	  Psum[i] = -1;
+	memset(Psum, -1 , hist_size * sizeof(int64_t));
 
 	//Build the whole Histogram from the
 	for (size_t i = 0; i < sched->num_of_threads; i++)

@@ -64,8 +64,7 @@ int main(void)
 			// If F is given the end of the current batch is reached
 			if (strcmp(buff,"F\n") == 0)
 			{
-				fprintf(stderr, "Batch ended\n");
-				//Execute the queries
+				//Execute the queries 
 				batch_temp = batch;
 				while(batch_temp!=NULL)
 				{

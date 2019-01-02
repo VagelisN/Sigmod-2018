@@ -101,6 +101,7 @@ void* ThreadFunction(void* arg)
 
 		pthread_mutex_lock(&(sched->barrier_mutex));
 		sched->answers_waiting--;
+		fprintf(stderr, "Finishing function: %d. Answers waiting: %d\n", job->function, sched->answers_waiting);
 		if (sched->answers_waiting == 0)
 			pthread_cond_signal(&(sched->barrier_cond));
 		pthread_mutex_unlock(&(sched->barrier_mutex));
