@@ -15,6 +15,7 @@ int InitRelationMap(relation_listnode *head,relation_map *rel_map)
 	int i =0;
 	struct stat sb;
 	uint64_t *map;
+	unsigned short int *dist_array = NULL;
 
 	//for every relation text given
 	while(head != NULL)
@@ -38,13 +39,11 @@ int InitRelationMap(relation_listnode *head,relation_map *rel_map)
 		rel_map[i].num_tuples = map[0];
 		rel_map[i].num_columns = map[1];
 
-		rel_map[i].col_stats = malloc(rel_map[i].num_columns * sizeof(column_stats));
+		rel_map[i].col_stats = malloc((rel_map[i].num_columns * sizeof(column_stats)));
 		//alocate num_columns pointers
 		rel_map[i].columns = malloc (rel_map[i].num_columns * sizeof(uint64_t*));
-
 		//make every column pointer point to the right column and keep the stats
 		map = map + 2;
-		uint64_t min, max; 
 		for (int j = 0; j < rel_map[i].num_columns; ++j)
 		{
 			rel_map[i].columns[j] = map;
@@ -55,16 +54,17 @@ int InitRelationMap(relation_listnode *head,relation_map *rel_map)
 			rel_map[i].col_stats[j].l = rel_map[i].col_stats[j].u = rel_map[i].columns[j][0];
 			for (int k = 1; k < rel_map[i].num_tuples ; ++k)
 			{
-				if (rel_map[i].columns[j][k] > max) 
+				if (rel_map[i].columns[j][k] >  rel_map[i].col_stats[j].u) 
 					rel_map[i].col_stats[j].u = rel_map[i].columns[j][k];
-				if(rel_map[i].columns[j][k] < min) 
+				if(rel_map[i].columns[j][k] < rel_map[i].col_stats[j].l) 
 					rel_map[i].col_stats[j].l = rel_map[i].columns[j][k];
 			}
 
 			//create a boolean array to check for distinct values
-			uint64_t temp_size = rel_map[i].col_stats[j].u - rel_map[i].col_stats[j].l;
+			uint64_t temp_size = rel_map[i].col_stats[j].u - rel_map[i].col_stats[j].l +1;
 			if (temp_size > 50000000) temp_size = 50000000;
-				unsigned short int *dist_array = malloc (temp_size *sizeof(unsigned short int));
+				
+			dist_array = malloc (temp_size *sizeof(unsigned short int));
 
 			for (int k = 0; k < temp_size; ++k)
 				dist_array[k] = 1;
@@ -72,11 +72,10 @@ int InitRelationMap(relation_listnode *head,relation_map *rel_map)
 			for (int k = 0; k < rel_map[i].num_tuples ; ++k)
 			{
 				if(temp_size < 50000000)
-					dist_array[rel_map[i].columns[j][k] - rel_map[i].col_stats[j].l] = 0;
+					dist_array[(rel_map[i].columns[j][k] - rel_map[i].col_stats[j].l)] = 0;
 				else 
 					dist_array[(rel_map[i].columns[j][k] - rel_map[i].col_stats[j].l)%5000000] = 0;
 			}
-
 			rel_map[i].col_stats[j].d = 0;
 
 			for (int k = 0; k < temp_size; ++k)
@@ -84,8 +83,7 @@ int InitRelationMap(relation_listnode *head,relation_map *rel_map)
 				if (dist_array[k] == 0)
 					rel_map[i].col_stats[j].d++;
 			}
-
-
+			free(dist_array);
 		}
 
 		head = head->next;

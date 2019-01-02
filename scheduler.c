@@ -6,8 +6,6 @@
 #include "rhjoin.h"
 #include "scheduler.h"
 
-void* ThreadFunction();
-
 int SchedulerInit(scheduler** sched, int num_of_threads)
 {
 	(*sched) = malloc(sizeof(scheduler));

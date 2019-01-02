@@ -114,7 +114,7 @@ void ReorderArray(relation* rel_array, int n_lsb, reordered_relation** new_rel, 
 	//Set up the arguments
 	sched->answers_waiting = sched->num_of_threads;
 
-	int *tempPsum = malloc(hist_size * sizeof(int));
+	uint64_t *tempPsum = malloc(hist_size * sizeof(int));
 	for (size_t i = 0; i < sched->num_of_threads; i++)
 	{
 		part_arguments *arguments = malloc(sizeof(part_arguments));
@@ -140,7 +140,7 @@ void ReorderArray(relation* rel_array, int n_lsb, reordered_relation** new_rel, 
 	pthread_mutex_lock(&(sched->queue_access));
 	pthread_cond_wait(&(sched->barrier_cond),&(sched->queue_access));
 	pthread_mutex_unlock(&(sched->queue_access));
-	free(tempPsum);
+	//free(tempPsum);
 	//printf("PartitionJobs jobs finished\n");
 	/*for (size_t i = 0; i < rel_array->num_tuples; i++) {
 		printf("Reordered[%2lu]: %lu\n", i, (*new_rel)->rel_array->tuples[i].row_id);

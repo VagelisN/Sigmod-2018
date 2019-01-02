@@ -79,7 +79,7 @@ int main(void)
 			{
 				InsertToQueryBatch(&batch, buff);
 			}
-			//fprintf(stderr,"Give queries or:\n-type F to finish the current batch\n-type Exit to quit\n");
+			fprintf(stderr,"Give queries or:\n-type F to finish the current batch\n-type Exit to quit\n");
 		}
 	}
 	time_taken = clock() - time_taken;

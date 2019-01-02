@@ -5,11 +5,11 @@ SRCS = handler.c preprocess.c results.c rhjoin.c query.c inter_res.c filter.c re
 HEADER = preprocess.h results.h rhjoin.h structs.h query.h inter_res.h filter.h relation_list.h relation_map.h scheduler.h
 
 $(PROG): $(OBJS)
-	gcc -g $(OBJS) -o $(PROG)
+	gcc -pthread -g $(OBJS) -o $(PROG)
 
 
 handler.o: handler.c
-	gcc -g3 -c -pthread handler.c
+	gcc -g3 -c  handler.c
 	
 preprocess.o:
 	gcc -g3 -c preprocess.c
@@ -36,7 +36,7 @@ relation_list.o:
 	gcc -g3 -c relation_list.c
 
 scheduler.o:
-	gcc -g3 -c -pthread scheduler.c
+	gcc -g3 -c scheduler.c
 
 clean:
 	rm $(OBJS) $(PROG)

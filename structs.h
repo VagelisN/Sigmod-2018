@@ -82,12 +82,6 @@ typedef struct relation_listnode
 	struct relation_listnode *next;
 }relation_listnode;
 
-
-/* struct that holds the relations after being mapped
- * from the relation files given. it contains
- * the number of rows, the number of comuns
- * and an array that has pointers to the start of each column
- */
 typedef struct column_stats
 {
 	uint64_t l;
@@ -96,12 +90,17 @@ typedef struct column_stats
 	uint64_t d;
 }column_stats;
 
+/* struct that holds the relations after being mapped
+ * from the relation files given. it contains
+ * the number of rows, the number of comuns
+ * and an array that has pointers to the start of each column
+ */
 typedef struct relation_map
 {
 	uint64_t num_tuples;
 	uint64_t num_columns;
 	uint64_t **columns;
-	struct column_stats *col_stats;
+	column_stats *col_stats;
 }relation_map;
 
 /* Struct that holds the info for a filter predicate */
