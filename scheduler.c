@@ -99,7 +99,6 @@ void* ThreadFunction(void* arg)
 			PartitionJob(job->arguments);
 		else if(job->function == 2)
 			JoinJob(job->arguments);
-		printf("job done\n");
 
 
 		pthread_mutex_lock(&(sched->barrier_mutex));
@@ -110,6 +109,6 @@ void* ThreadFunction(void* arg)
 
 		free(job);
 	}
-	printf("Thread %lu exited\n",pthread_self());
+	//printf("Thread %lu exited\n",pthread_self());
 	pthread_exit(NULL);
 }

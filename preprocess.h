@@ -8,7 +8,7 @@
  * same bucket. Stores the ordered array , the histogram and the Psum array in a
  * ReorderedRelation variable.
  */
-void ReorderArray(relation* RelArray, int n_lsb, reordered_relation** NewRel);
+void ReorderArray(relation* rel_array, int n_lsb, reordered_relation** new_rel,scheduler *sched);
 
 /* Free the allocated memory used for ReorderedRelation variables */
 void FreeReorderRelation(reordered_relation *rel);
@@ -23,5 +23,13 @@ int CheckMalloc(void* ptr, char* txt);
  * Prints a warning if a bucket can't fit in L1 cache.
  */
 //void CheckBucketSizes(int* Hist, int hist_size);
+
+relation* ToRow(int** original_array, int row_to_join, relation* new_rel);
+
+void HistJob(void *arguments);
+
+void PartitionJob(void *args);
+
+void JoinJob(void *arguments);
 
 #endif

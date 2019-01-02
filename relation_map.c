@@ -82,7 +82,7 @@ int InitRelationMap(relation_listnode *head,relation_map *rel_map)
 			for (int k = 0; k < temp_size; ++k)
 			{
 				if (dist_array[k] == 0)
-					rel_map.col_stats[j].d++;
+					rel_map[i].col_stats[j].d++;
 			}
 
 

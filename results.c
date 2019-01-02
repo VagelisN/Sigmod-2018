@@ -11,9 +11,9 @@ int InsertResult(result **head, result_tuple *res_tuple)
 	if( (*head) == NULL )
 	{
 		(*head)=malloc(sizeof(result));
-		CheckMalloc((*head), "*head (results.c)");
+		//CheckMalloc((*head), "*head (results.c)");
 		(*head)->buff = malloc(RESULT_MAX_BUFFER * sizeof(char));
-		CheckMalloc((*head)->buff, "*head->buff (results.c)");
+		//CheckMalloc((*head)->buff, "*head->buff (results.c)");
 		(*head)->current_load = 1;
 		(*head)->next = NULL;
 
@@ -31,9 +31,9 @@ int InsertResult(result **head, result_tuple *res_tuple)
 			else
 			{
 				temp->next = malloc(sizeof(result));
-				CheckMalloc(temp->next, "temp->next (results.c)");
+				//CheckMalloc(temp->next, "temp->next (results.c)");
 				temp->next->buff = malloc(RESULT_MAX_BUFFER * sizeof(char));
-				CheckMalloc(temp->next->buff, "temp->next->buff (results.c)");
+				//CheckMalloc(temp->next->buff, "temp->next->buff (results.c)");
 				temp->next->current_load = 1;
 				temp->next->next = NULL;
 				memcpy(temp->next->buff,res_tuple,sizeof(result_tuple));
@@ -162,9 +162,9 @@ int InsertRowIdResult(result **head, uint64_t *row_id)
 	if( (*head) == NULL )
 	{
 		(*head)=malloc(sizeof(result));
-		CheckMalloc((*head), "*head (results.c)");
+		//CheckMalloc((*head), "*head (results.c)");
 		(*head)->buff = malloc(RESULT_MAX_BUFFER * sizeof(char));
-		CheckMalloc((*head)->buff, "*head->buff (results.c)");
+		//CheckMalloc((*head)->buff, "*head->buff (results.c)");
 		(*head)->current_load = 1;
 		(*head)->next = NULL;
 
@@ -182,9 +182,9 @@ int InsertRowIdResult(result **head, uint64_t *row_id)
 			else
 			{
 				temp->next = malloc(sizeof(result));
-				CheckMalloc(temp->next, "temp->next (results.c)");
+				//CheckMalloc(temp->next, "temp->next (results.c)");
 				temp->next->buff = malloc(RESULT_MAX_BUFFER * sizeof(char));
-				CheckMalloc(temp->next->buff, "temp->next->buff (results.c)");
+				//CheckMalloc(temp->next->buff, "temp->next->buff (results.c)");
 				temp->next->current_load = 1;
 				temp->next->next = NULL;
 				memcpy(temp->next->buff,row_id,sizeof(uint64_t));

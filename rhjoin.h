@@ -3,6 +3,8 @@
 
 #include "structs.h"
 
+
+
 /** Radix Hash Join */
 result* RadixHashJoin(relation*, relation*);
 
@@ -13,8 +15,8 @@ uint64_t HashFunction1(uint64_t, uint64_t);
 uint64_t HashFunction2(uint64_t, uint64_t);
 
 /*
- * Given a number, returns the closest prime number 
- * that is greater or equal than the number given 
+ * Given a number, returns the closest prime number
+ * that is greater or equal than the number given
  */
 uint64_t FindNextPrime(uint64_t);
 
@@ -40,9 +42,16 @@ void PrintIndex(bc_index* ind);
 /**
  * Gets two relations. The first one only has a first layer index and the second one
  * also has a second layer index (ind) for a bucket (curr_bucket). For every element
- * of the first relation's bucket it checks for equalityin the second layer index 
- * of the second relation and returns the results 
+ * of the first relation's bucket it checks for equalityin the second layer index
+ * of the second relation and returns the results
 */
 int GetResults(reordered_relation*, reordered_relation* , bc_index *, struct result**, int, int);
+
+/* The function that will perform a join between two buckets. */
+void JoinJob(void *arguments);
+
+/* Takes an array of result lists and merges them to one list. */
+void MergeResults(result **res, result **res_array, int size);
+
 
 #endif

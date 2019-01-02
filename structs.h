@@ -2,10 +2,11 @@
 #define STRUCTS_H
 
 #include <stdint.h>
+#include <pthread.h>
 
 #define CACHE_SIZE 32768 //L1 cache is 32 KB
 #define RESULT_MAX_BUFFER 1048576 //number of bits in a result node buffer
-#define N_LSB 5 //number of least significant bits used in H1
+#define N_LSB 8 //number of least significant bits used in H1
 
 /** Type definition for a tuple */
 typedef struct tuple
@@ -87,14 +88,6 @@ typedef struct relation_listnode
  * the number of rows, the number of comuns
  * and an array that has pointers to the start of each column
  */
-typedef struct relation_map
-{
-	uint64_t num_tuples;
-	uint64_t num_columns;
-	uint64_t **columns;
-	struct column_stats *col_stats;
-}relation_map;
-
 typedef struct column_stats
 {
 	uint64_t l;
@@ -103,8 +96,15 @@ typedef struct column_stats
 	uint64_t d;
 }column_stats;
 
-/* Struct that holds the info for a filter predicate */
+typedef struct relation_map
+{
+	uint64_t num_tuples;
+	uint64_t num_columns;
+	uint64_t **columns;
+	struct column_stats *col_stats;
+}relation_map;
 
+/* Struct that holds the info for a filter predicate */
 typedef struct filter_pred
 {
 	int relation;
@@ -136,9 +136,9 @@ typedef struct predicates_listnode
 	struct predicates_listnode *next;
 }predicates_listnode;
 
-/* 
- * Struct used to hold the predicates or views given in a query in 
- * the places of data. 
+/*
+ * Struct used to hold the predicates or views given in a query in
+ * the places of data.
  */
 typedef struct query_string_array
 {
@@ -159,5 +159,60 @@ typedef struct query_batch_listnode
 	query_string_array *views;
 	struct query_batch_listnode *next;
 }batch_listnode;
+
+typedef struct jobqueue_node
+{
+  int function;
+  void *arguments;
+  struct jobqueue_node* next;
+}jobqueue_node;
+
+typedef struct scheduler
+{
+	int num_of_threads;
+	pthread_t *thread_array;
+	jobqueue_node* job_queue;
+
+	pthread_mutex_t barrier_mutex;
+	pthread_cond_t barrier_cond;
+	pthread_mutex_t queue_access;
+	pthread_cond_t empty;
+
+	int active_jobs;
+	int exit_all;
+	int answers_waiting;
+
+
+}scheduler;
+
+typedef struct hist_arguments
+{
+  int **hist;
+  uint64_t start;
+  uint64_t end;
+  uint64_t n_lsb;
+  uint64_t hist_size;
+  relation *rel;
+}hist_arguments;
+
+typedef struct partition_arguments
+{
+	relation *reordered;
+	relation *original;
+	uint64_t start;
+	uint64_t end;
+  uint64_t hist_size;
+	uint64_t n_lsb;
+	uint64_t *psum;
+}part_arguments;
+
+typedef struct join_arguments
+{
+	reordered_relation *NewR;
+	reordered_relation *NewS;
+	result *res;
+	uint64_t bucket_num;
+}join_arguments;
+
 
 #endif
