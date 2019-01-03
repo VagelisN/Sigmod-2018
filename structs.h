@@ -5,8 +5,8 @@
 #include <pthread.h>
 
 #define CACHE_SIZE 32768 //L1 cache is 32 KB
-#define RESULT_MAX_BUFFER 1048576 //number of bits in a result node buffer
-#define N_LSB 8 //number of least significant bits used in H1
+#define RESULT_MAX_BUFFER 131072 //number of bits in a result node buffer
+#define N_LSB 5 //number of least significant bits used in H1
 
 /** Type definition for a tuple */
 typedef struct tuple
@@ -200,7 +200,7 @@ typedef struct partition_arguments
 	relation *original;
 	uint64_t start;
 	uint64_t end;
-  uint64_t hist_size;
+  	uint64_t hist_size;
 	uint64_t n_lsb;
 	uint64_t *psum;
 }part_arguments;

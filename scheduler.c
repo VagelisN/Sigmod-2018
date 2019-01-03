@@ -99,9 +99,10 @@ void* ThreadFunction(void* arg)
 			JoinJob(job->arguments);
 
 
+
 		pthread_mutex_lock(&(sched->barrier_mutex));
 		sched->answers_waiting--;
-		fprintf(stderr, "Finishing function: %d. Answers waiting: %d\n", job->function, sched->answers_waiting);
+		//fprintf(stderr, "Finishing function: %d. Answers waiting: %d\n", job->function, sched->answers_waiting);
 		if (sched->answers_waiting == 0)
 			pthread_cond_signal(&(sched->barrier_cond));
 		pthread_mutex_unlock(&(sched->barrier_mutex));
@@ -110,4 +111,24 @@ void* ThreadFunction(void* arg)
 	}
 	//printf("Thread %lu exited\n",pthread_self());
 	pthread_exit(NULL);
+}
+
+int SchedulerDestroy(scheduler* sched)
+{
+	pthread_mutex_lock(&(sched->queue_access));
+	sched->exit_all = 1;
+	pthread_cond_broadcast(&(sched->empty));
+	pthread_mutex_unlock(&(sched->queue_access));
+
+	for (int i = 0; i < sched->num_of_threads; i++)
+		pthread_join(sched->thread_array[i], NULL);//wait for workers to shutdown
+
+	pthread_mutex_destroy(&(sched->barrier_mutex));
+	pthread_mutex_destroy(&(sched->queue_access));
+
+	pthread_cond_destroy(&(sched->empty));
+	pthread_cond_destroy(&(sched->barrier_cond));
+
+	free(sched->thread_array);
+	free(sched);
 }

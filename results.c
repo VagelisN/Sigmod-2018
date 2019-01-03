@@ -52,20 +52,21 @@ int InsertResult(result **head, result_tuple *res_tuple)
 
 uint64_t FindResultRowId(result *res, int num)
 {
-  int pos,total_load = 0;
-  uint64_t *row_id;
-  /* Find the right bucket */
-  while( (res != NULL) &&  ((total_load + res->current_load) < num))
-  {
-    total_load += res->current_load;
-    res = res->next;
-  }
-  pos = num - total_load;
-  //Find the right tuple
-  row_id = (uint64_t *) (res->buff + pos * sizeof(uint64_t));
-	return *row_id;
-}
+  uint64_t count = 0;
+  uint64_t *row_id = NULL;
 
+  while(res!=NULL)
+	{
+		//result wanted is in this node's buffer
+		if(res->current_load + count > num)
+		{
+			row_id = (uint64_t*)(res->buff + ( (num-count)*sizeof(uint64_t)));
+			return *row_id;
+		}
+		count += res->current_load;
+		res = res->next;
+	}
+}
 int GetResultNum(result *res)
 {
   uint64_t num_of_results = 0;
@@ -81,8 +82,8 @@ int GetResultNum(result *res)
 
 void PrintResult(result* head)
 {
-	printf("------------------------------\n");
-	printf("Printing results:\n");
+	fprintf(stderr,"------------------------------\n");
+	fprintf(stderr,"Printing results:\n");
 	int num_results = 0;
 	result_tuple res_tuple;
 	while(head!=NULL)
@@ -93,15 +94,15 @@ void PrintResult(result* head)
 		{
 			memcpy(&res_tuple,data,sizeof(result_tuple));
 			num_results++;
-			printf("row_id R %lu value S %lu || " ,res_tuple.row_idR, res_tuple.row_idS);
+			fprintf(stderr,"row_id R %lu value S %lu || \n" ,res_tuple.row_idR, res_tuple.row_idS);
 			data += sizeof(result_tuple);
 			temp_curr_load --;
 		}
 		head = head->next;
 	}
-	printf("Finished printing results!\n");
-	printf("Number of rows in the result: %d\n",num_results );
-	printf("-------------------------------\n");
+	fprintf(stderr,"Finished printing results!\n");
+	fprintf(stderr,"Number of rows in the result: %d\n",num_results );
+	fprintf(stderr,"-------------------------------\n");
 }
 
 void PrintSelfResult(result* head)

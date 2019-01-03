@@ -21,7 +21,7 @@ int main(void)
 	int done_flag = 0;
 	// The list that holds the names of the relation files
 	relation_listnode *relation_list = NULL;
-	fprintf(stderr,"If you've completed adding relation, type Done .\n");
+	//fprintf(stderr,"If you've completed adding relations, type Done .\n");
 	while (done_flag == 0)
 	{
 		if (scanf("%s",buff) == EOF)

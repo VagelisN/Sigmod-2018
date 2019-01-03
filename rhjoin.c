@@ -22,23 +22,29 @@ result* RadixHashJoin(relation *relR, relation* relS)
 	//Create histogram,psum,R',S'
 	ReorderArray(relR, N_LSB, &NewR, sched);
 	ReorderArray(relS, N_LSB, &NewS, sched);
+		
+
 	if (NewR == NULL || NewS == NULL)
+	{
+		SchedulerDestroy(sched);
 		return NULL;
+	}
 	struct result* results= NULL;
 
 	//Create an array with hist_size result lists
 
 
-	result **res_array = calloc(NewR->hist_size, sizeof(result*));
 	uint answers = 0;
 	for (size_t i = 0; i < NewR->hist_size; i++) {
 		if (NewR->hist[i] != 0 && NewS->hist[i] != 0)
 			answers++;
 	}
-	fprintf(stderr, "Starting JoinJobs\n");
+	result **res_array = calloc(answers, sizeof(result*));
+	//fprintf(stderr, "Starting JoinJobs\n");
 	sched->answers_waiting = answers;
 
 	//for every bucket
+	int count = 0;
 	for (i = 0; i < NewR->hist_size; ++i)
 	{
 		//if both relations have elements in this bucket
@@ -48,7 +54,7 @@ result* RadixHashJoin(relation *relR, relation* relS)
 			join_arguments *arguments = malloc(sizeof(join_arguments));
 			arguments->NewR = NewR;
 			arguments->NewS = NewS;
-			arguments->res = &res_array[i];
+			arguments->res = &res_array[count++];
 			arguments->bucket_num = i;
 
 			//PushJob
@@ -57,24 +63,28 @@ result* RadixHashJoin(relation *relR, relation* relS)
 	}
 
 	//Wait for all threads to finish building their work(barrier)
-	pthread_mutex_lock(&(sched->queue_access));
-	pthread_cond_wait(&(sched->barrier_cond),&(sched->queue_access));
-	pthread_mutex_unlock(&(sched->queue_access));
+	pthread_mutex_lock(&(sched->barrier_mutex));
 
-	fprintf(stderr, "JoinJobs finished!\n" );
+	while(sched->answers_waiting != 0)
+		pthread_cond_wait(&(sched->barrier_cond),&(sched->barrier_mutex));
 
+	pthread_mutex_unlock(&(sched->barrier_mutex));
 
+	//fprintf(stderr, "JoinJobs finished!\n" );
+
+	SchedulerDestroy(sched);
 	//Join the res_array to a single result list
-	result *final_results = MergeResults( res_array, NewR->hist_size);
-	//fprintf(stderr, "\n\n\n\n\nfinal_results = %p\n", final_results);
-	//int times = 0;
-	//result *temp = final_results;
-	//while(temp != NULL)
-	//{
-	//	temp = temp->next;
-	//	times++;
-	//}
-	//fprintf(stderr, "Number of nodes in list: %d\n\n\n\n\n\n", times);
+	result *final_results = MergeResults( res_array, answers);
+	/*fprintf(stderr, "\n\n\n\n\nfinal_results = %p\n", final_results);
+	int times = 0;
+	result *temp = final_results;
+	while(temp != NULL)
+	{
+		temp = temp->next;
+		times++;
+	}
+	fprintf(stderr, "Number of nodes in list: %d\n\n\n\n\n\n", times);
+	PrintResult(final_results);*/
 	//Free res_array
 	free(res_array);
 	//Free NewS and NewR
@@ -311,6 +321,7 @@ void JoinJob(void *arguments)
 		CreateIndex(args->NewS,&ind,args->bucket_num);
 		//Get results
 		GetResults(args->NewR,args->NewS,ind,args->res,args->bucket_num,0);
+		//PrintResult(*(args->res));
 	}
 	//if S is bigger than R
 	else
@@ -320,6 +331,7 @@ void JoinJob(void *arguments)
 		CreateIndex(args->NewR, &ind, args->bucket_num);
 		//GetResults
 		GetResults(args->NewS, args->NewR, ind, args->res, args->bucket_num,1);
+		//PrintResult(*(args->res));
 	}
 	DeleteIndex(&ind);
 	free(args);
@@ -335,6 +347,8 @@ result* MergeResults(result **res_array, int size)
 		//First active position is the final_results head node
 		//fprintf(stderr, "res_array[%2lu] = %p\n", i, res_array[i]);
 		if(res_array[i] == NULL)continue;
+		//printf("Eeeeeeeeeeeeepp\n");
+		//PrintResult(res_array[i]);
 		if (found == 0)
 		{
 				head = res_array[i];

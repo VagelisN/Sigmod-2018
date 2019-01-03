@@ -10,4 +10,6 @@ jobqueue_node* PopJob(jobqueue_node** job_queue);
 
 void* ThreadFunction(void* arg);
 
+int SchedulerDestroy(scheduler* sched);
+
 #endif
