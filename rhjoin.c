@@ -22,7 +22,7 @@ result* RadixHashJoin(relation *relR, relation* relS)
 	//Create histogram,psum,R',S'
 	ReorderArray(relR, N_LSB, &NewR, sched);
 	ReorderArray(relS, N_LSB, &NewS, sched);
-		
+
 
 	if (NewR == NULL || NewS == NULL)
 	{
@@ -74,17 +74,37 @@ result* RadixHashJoin(relation *relR, relation* relS)
 
 	SchedulerDestroy(sched);
 	//Join the res_array to a single result list
+	/*
+	uint64_t total_load = 0;
+	for (size_t i = 0; i < answers; i++) {
+		int nodes = 0;
+		int node_load = 0;
+		if (res_array[i] != NULL) {
+			result * temp = res_array[i];
+			while(temp != NULL)
+			{
+				nodes++;
+				node_load += temp->current_load;
+				total_load+= temp->current_load;
+				temp = temp->next;
+			}
+			printf("res_array[%lu]->load = %d . Total list nodes: %d\n", i, node_load, nodes);
+		}
+		else printf("res_array[%lu] = NULL\n", i);
+	}
+	printf("Total result load = %lu\n", total_load);*/
 	result *final_results = MergeResults( res_array, answers);
-	/*fprintf(stderr, "\n\n\n\n\nfinal_results = %p\n", final_results);
-	int times = 0;
+	/*fprintf(stderr, "\n\n\nfinal_results = %p\n", final_results);
+	int times = 1;
 	result *temp = final_results;
-	while(temp != NULL)
+	while(temp->next != NULL)
 	{
 		temp = temp->next;
 		times++;
 	}
-	fprintf(stderr, "Number of nodes in list: %d\n\n\n\n\n\n", times);
-	PrintResult(final_results);*/
+	fprintf(stderr, "Number of nodes in list: %d\n\n\n", times);*/
+	// /PrintResult(final_results);
+
 	//Free res_array
 	free(res_array);
 	//Free NewS and NewR
@@ -340,25 +360,29 @@ void JoinJob(void *arguments)
 result* MergeResults(result **res_array, int size)
 {
 	bool found = 0;
-	result* previous_tail = NULL;
+	result *previous_tail = NULL, *temp = NULL;
 	result *head = NULL;
 	for (size_t i = 0; i < size; i++)
 	{
 		//First active position is the final_results head node
 		//fprintf(stderr, "res_array[%2lu] = %p\n", i, res_array[i]);
 		if(res_array[i] == NULL)continue;
-		//printf("Eeeeeeeeeeeeepp\n");
-		//PrintResult(res_array[i]);
 		if (found == 0)
 		{
 				head = res_array[i];
 				found = 1;
 		}
 		//If the previous_tail is active then point it to the current head
-		if (previous_tail != NULL) previous_tail->next = res_array[i];
+		if (previous_tail != NULL)
+		{
+			previous_tail->next = res_array[i];
+			//printf("Joining two lists!\n");
+			//printf("res_array[%lu] = %p\n", i, res_array[i]);
+		}
 		//Find the last node of the res_array[i]
-		while(res_array[i]->next != NULL)res_array[i] = res_array[i]->next;
-		previous_tail = res_array[i];
+		temp = res_array[i];
+		while(temp->next != NULL)temp = temp->next;
+		previous_tail = temp;
 	}
 	return head;
 }

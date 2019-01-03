@@ -8,17 +8,6 @@
 #include "structs.h"
 #include "rhjoin.h"
 
-relation* ToRow(int** original_array, int row_to_join, relation* new_rel)
-{
-	for (int i = 0; i < new_rel->num_tuples; ++i)
-	{
-		new_rel->tuples[i].value = original_array[i][row_to_join];
-		new_rel->tuples[i].row_id = i;
-	}
-	return new_rel;
-}
-
-
 void ReorderArray(relation* rel_array, int n_lsb, reordered_relation** new_rel, scheduler *sched)
 {
 	//Check the arguments
@@ -114,7 +103,7 @@ void ReorderArray(relation* rel_array, int n_lsb, reordered_relation** new_rel, 
 	/*for (size_t i = 0; i < hist_size; i++) {
 		fprintf(stderr, "Psum[%3lu]: %ld\n", i, Psum[i]);
 	}*/
-	
+
 
 	/*--------------------Build the reordered array----------------------*/
 
@@ -216,9 +205,10 @@ void PartitionJob(void* args)//int start, int end, int size, int* Psum, int modu
 
 	int64_t current_bucket = -3;
 	//Find the starting bucket
+	//printf("---------------------------------------\n" );
 	for (int i = 0; i < arguments->hist_size; ++i)
 	{
-		//printf("Start: %d, psum[%d]: %d\n", arguments->start, i, arguments->psum[i]);
+		//printf("Start: %lu, psum[%d]: %ld\n", arguments->start, i, arguments->psum[i]);
 		if (arguments->psum[i] == -1) continue;
 		if (arguments->start == arguments->psum[i])
 		{
@@ -235,10 +225,22 @@ void PartitionJob(void* args)//int start, int end, int size, int* Psum, int modu
 			break;
 		}
 	}
+	//printf("\tcurrent_bucket: %ld\n", current_bucket);
+	//If no value has been assigned to current_bucket then find the only active node
+	if (current_bucket == -3)
+	{
+		for (size_t i = 0; i < arguments->hist_size; i++) {
+			if (arguments->psum[i] != -1){
+				 current_bucket = i;
+				 break;
+			 }
+		}
+	}
+//	printf("--------------------------------------\n" );
 	//printf("Start: %d and Psum[%d] = %d\n", start, current_bucket, Psum[current_bucket]);
 	//printf("end - start= %d\n", end - start);
 	//To skip_Values den ypologizetai swsta
-	//fprintf(stderr, "Start = %lu , CurrentBucket = %d, hist_size = %lu\n", arguments->start, current_bucket, arguments->hist_size);
+	//fprintf(stderr, "Start = %lu , CurrentBucket = %ld, hist_size = %lu\n", arguments->start, current_bucket, arguments->hist_size);
 	int skip_values = arguments->start - arguments->psum[current_bucket];
 	arguments->psum[current_bucket] = arguments->start;
 	int previous_encounter = 0;
@@ -250,13 +252,11 @@ void PartitionJob(void* args)//int start, int end, int size, int* Psum, int modu
 		for (int j = previous_encounter; j < arguments->original->num_tuples; ++j)
 		{
 			int hash_value = HashFunction1(arguments->original->tuples[j].value, arguments->n_lsb);
-			//printf("HV: %d| CB: %d\n", hash_value,current_bucket);
 			//If the hash value is the one we are looking for
 			if (hash_value == current_bucket)
 			{
 				//If we don't have any more values to skip
 				if(skip_values-- > 0)continue;
-				//printf("Inserting %lu to %d position\n", arguments->original->tuples[j].row_id, i);
 				arguments->reordered->tuples[i].value = arguments->original->tuples[j].value;
 				arguments->reordered->tuples[i].row_id = arguments->original->tuples[j].row_id;
 				arguments->psum[current_bucket]++;
@@ -274,6 +274,5 @@ void PartitionJob(void* args)//int start, int end, int size, int* Psum, int modu
 	}
 	free(arguments->psum);
 	free(arguments);
-	//fprintf(stderr, "\n\nFinished PartitionJob\n\n\n\n");
 	return;
 }
