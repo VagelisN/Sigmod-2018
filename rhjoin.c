@@ -13,7 +13,7 @@
 result* RadixHashJoin(relation *relR, relation* relS)
 {
 	scheduler* sched = NULL;
-	SchedulerInit(&sched, 4);
+	SchedulerInit(&sched, 2);
 
 	if (relR->num_tuples == 0 || relS->num_tuples == 0)
 		return NULL;
@@ -102,7 +102,7 @@ result* RadixHashJoin(relation *relR, relation* relS)
 	//sleep(20);
 	SchedulerDestroy(sched);
 	//Free res_array
-	free(res_array);
+	//free(res_array);
 	//Free NewS and NewR
 	FreeReorderRelation(NewS);
 	FreeReorderRelation(NewR);
@@ -357,7 +357,7 @@ uint64_t HashFunction2(uint64_t num, uint64_t prime)
 
 result* MergeResults(result **res_array, int size)
 {
-	bool found = 0;
+	/*bool found = 0;
 	result *previous_tail = NULL, *temp = NULL;
 	result *head = NULL;
 	for (size_t i = 0; i < size; i++)
@@ -382,5 +382,41 @@ result* MergeResults(result **res_array, int size)
 		while(temp->next != NULL)temp = temp->next;
 		previous_tail = temp;
 	}
+	return head;*/
+	result* head = malloc(sizeof(result));
+	head->current_load = 0;
+	head->next = NULL;
+	head->buff = malloc(RESULT_FINAL_BUFFER);
+	result *head_temp = head;
+	for (size_t i = 0; i < size; i++)
+	{
+		if(res_array[i] == NULL)continue;
+		//Run the result list and copy everything to head
+		result *temp = res_array[i];
+		while(temp != NULL)
+		{
+			//If it fits in the head
+			uint head_load = head_temp->current_load * sizeof(result_tuple);
+			uint temp_load = temp->current_load * sizeof(result_tuple);
+			if(head_load + temp_load < RESULT_FINAL_BUFFER)
+			{
+				memcpy(head_temp->buff + head_load, temp->buff, temp_load);
+				head_temp->current_load += temp->current_load;
+			}
+			else
+			{
+				head_temp->next = malloc(sizeof(result));
+				head_temp = head_temp->next;
+				head_temp->current_load = 0;
+				head_temp->next = NULL;
+				head_temp->buff = malloc(RESULT_FINAL_BUFFER);
+				memcpy(head_temp->buff, temp->buff, temp_load);
+				head_temp->current_load = temp->current_load;
+			}
+			temp = temp->next;
+		}
+		FreeResult(res_array[i]);
+	}
+	free(res_array);
 	return head;
 }
