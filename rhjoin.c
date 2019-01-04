@@ -36,23 +36,14 @@ result* RadixHashJoin(relation *relR, relation* relS)
 
 
 	uint answers = 0;
-	fprintf(stderr, "FORM OUTSIDE\n" );
-	for (int i = 0; i < NewR->hist_size; ++i)
-	{
-		fprintf(stderr, "Hist[%d] %ld\n",i,NewR->hist[i] );
-	}
-	for (int i = 0; i < NewS->hist_size; ++i)
-	{
-		fprintf(stderr, "Hist[%d] %ld\n",i,NewS->hist[i] );
-	}
-	for (size_t i = 0; i < NewR->hist_size; i++) {
+	for (size_t i = 0; i < NewR->hist_size; i++)
 		if (NewR->hist[i] != 0 && NewS->hist[i] != 0)
 			answers++;
-	}
+
 	result **res_array = calloc(answers, sizeof(result*));
 	//fprintf(stderr, "Starting JoinJobs\n");
 	sched->answers_waiting = answers;
-	fprintf(stderr, "COUNT MOUNT %d\n",answers );
+	//fprintf(stderr, "COUNT MOUNT %d\n",answers );
 	//for every bucket
 	int count = 0;
 	for (i = 0; i < NewR->hist_size; ++i)
@@ -136,7 +127,7 @@ void JoinJob(void *arguments)
 		CreateIndex(args->NewS,&ind,args->bucket_num);
 		//Get results
 		GetResults(args->NewR,args->NewS,ind,args->res,args->bucket_num,0);
-		PrintResult(*(args->res));
+		//PrintResult(*(args->res));
 	}
 	//if S is bigger than R
 	else
@@ -146,7 +137,7 @@ void JoinJob(void *arguments)
 		CreateIndex(args->NewR, &ind, args->bucket_num);
 		//GetResults
 		GetResults(args->NewS, args->NewR, ind, args->res, args->bucket_num,1);
-		PrintResult(*(args->res));
+	//	PrintResult(*(args->res));
 	}
 	DeleteIndex(&ind);
 	free(args);

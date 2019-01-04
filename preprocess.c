@@ -80,7 +80,7 @@ void ReorderArray(relation* rel_array, int n_lsb, reordered_relation** new_rel, 
 	if (flag == 1)
 	{
 		(*new_rel) = NULL;
-		printf("exe gousto\n");
+		// /printf("exe gousto\n");
 		return;
 	}
 	//Free allocated space
@@ -100,9 +100,9 @@ void ReorderArray(relation* rel_array, int n_lsb, reordered_relation** new_rel, 
 	    new_start += Hist[i];
 	  }
 	}
-	for (size_t i = 0; i < hist_size; i++) {
+	/*for (size_t i = 0; i < hist_size; i++) {
 		fprintf(stderr, "Psum[%3lu]: %ld\n", i, Psum[i]);
-	}
+	}*/
 
 
 	/*--------------------Build the reordered array----------------------*/
@@ -145,7 +145,6 @@ void ReorderArray(relation* rel_array, int n_lsb, reordered_relation** new_rel, 
 	}
 
 
-	//wait for all jobs to finish
 	//Wait for all threads to finish building their work(barrier)
 	pthread_mutex_lock(&(sched->barrier_mutex));
 
@@ -158,7 +157,6 @@ void ReorderArray(relation* rel_array, int n_lsb, reordered_relation** new_rel, 
 		fprintf(stderr,"Reordered[%2lu]: %lu\n", i, (*new_rel)->rel_array->tuples[i].row_id);
 	}*/
 
-	sleep(20);
 
 }
 
@@ -245,7 +243,7 @@ void PartitionJob(void* args)//int start, int end, int size, int* Psum, int modu
 	//printf("end - start= %d\n", end - start);
 	//To skip_Values den ypologizetai swsta
 	int skip_values = arguments->start - arguments->psum[current_bucket];
-	fprintf(stderr, "Start = %lu , CurrentBucket = %ld, hist_size = %lu skip_values = %d \n", arguments->start, current_bucket, arguments->hist_size,skip_values);
+	//fprintf(stderr, "Start = %lu , CurrentBucket = %ld, hist_size = %lu skip_values = %d \n", arguments->start, current_bucket, arguments->hist_size,skip_values);
 	arguments->psum[current_bucket] = arguments->start;
 	int previous_encounter = 0;
 	/* This thread is responsible to find all the correct values from start to end.*/
@@ -266,13 +264,25 @@ void PartitionJob(void* args)//int start, int end, int size, int* Psum, int modu
 				arguments->psum[current_bucket]++;
 				previous_encounter = j + 1;
 				//If its the last bucket skip the check of bucket change
-				if(current_bucket == arguments->hist_size - 1)break;
-				if (arguments->psum[current_bucket] >= arguments->psum[current_bucket + 1])
+				//Find the next active bucket
+				int next_bucket = current_bucket + 1;
+				short int flag = 0;
+				while(next_bucket < arguments->hist_size)
 				{
-					previous_encounter = 0;
-					current_bucket++;
+					if (arguments->psum[next_bucket] == -1)
+								next_bucket++;
+					else
+					{
+						if (arguments->psum[next_bucket] >= arguments->psum[current_bucket])
+						{
+							flag = 1;
+							previous_encounter = 0;
+							current_bucket = next_bucket;
+						}
+						break;
+					}
 				}
-				break;
+				if(flag == 1)break;
 			}
 		}
 	}

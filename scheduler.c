@@ -99,7 +99,6 @@ void* ThreadFunction(void* arg)
 			JoinJob(job->arguments);
 
 
-
 		pthread_mutex_lock(&(sched->barrier_mutex));
 		sched->answers_waiting--;
 		//fprintf(stderr, "Finishing function: %d. Answers waiting: %d\n", job->function, sched->answers_waiting);
