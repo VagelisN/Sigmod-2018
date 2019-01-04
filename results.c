@@ -133,9 +133,9 @@ result_tuple* FindResultTuples(result* head, int num)
 	int count = 0;
 	result_tuple* res_ptr = NULL;
 	if(num < 0) return NULL;
-	while(head!=NULL)
+	while(head != NULL)
 	{
-		//result wanted is in this node's buffer
+		//If result wanted is in this node's buffer
 		if(head->current_load + count > num)
 		{
 			res_ptr = (result_tuple*)(head->buff + ( (num-count)*sizeof(result_tuple)));

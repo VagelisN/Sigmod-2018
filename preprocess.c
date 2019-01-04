@@ -157,7 +157,6 @@ void ReorderArray(relation* rel_array, int n_lsb, reordered_relation** new_rel, 
 		fprintf(stderr,"Reordered[%2lu]: %lu\n", i, (*new_rel)->rel_array->tuples[i].row_id);
 	}*/
 
-
 }
 
 void HistJob(void *arguments)
@@ -240,8 +239,6 @@ void PartitionJob(void* args)//int start, int end, int size, int* Psum, int modu
 	}
 //	printf("--------------------------------------\n" );
 	//printf("Start: %d and Psum[%d] = %d\n", start, current_bucket, Psum[current_bucket]);
-	//printf("end - start= %d\n", end - start);
-	//To skip_Values den ypologizetai swsta
 	int skip_values = arguments->start - arguments->psum[current_bucket];
 	//fprintf(stderr, "Start = %lu , CurrentBucket = %ld, hist_size = %lu skip_values = %d \n", arguments->start, current_bucket, arguments->hist_size,skip_values);
 	arguments->psum[current_bucket] = arguments->start;
@@ -263,26 +260,22 @@ void PartitionJob(void* args)//int start, int end, int size, int* Psum, int modu
 				arguments->reordered->tuples[i].row_id = arguments->original->tuples[j].row_id;
 				arguments->psum[current_bucket]++;
 				previous_encounter = j + 1;
-				//If its the last bucket skip the check of bucket change
 				//Find the next active bucket
-				int next_bucket = current_bucket + 1;
 				short int flag = 0;
-				while(next_bucket < arguments->hist_size)
+				for (size_t iter = current_bucket+1; iter < arguments->hist_size; iter++)
 				{
-					if (arguments->psum[next_bucket] == -1)
-								next_bucket++;
-					else
+					if(arguments->psum[iter] == -1)continue;
+					if (arguments->psum[iter] <= arguments->psum[current_bucket])
 					{
-						if (arguments->psum[next_bucket] >= arguments->psum[current_bucket])
-						{
-							flag = 1;
-							previous_encounter = 0;
-							current_bucket = next_bucket;
-						}
-						break;
+						current_bucket = iter;
+						previous_encounter = 0;
+						flag = 1;
 					}
+					//When the first active bucket is encountered, break
+					break;
 				}
-				if(flag == 1)break;
+				//Ιf we didn't change bucket, then continue, else break
+				break;
 			}
 		}
 	}
