@@ -7,10 +7,12 @@
 #include <unistd.h>
 #include "structs.h"
 #include "rhjoin.h"
+#include "results.h"
 
 void ReorderArray(relation* rel_array, int n_lsb, reordered_relation** new_rel, scheduler *sched)
 {
 	//Check the arguments
+	//PrintRelation(rel_array);sleep(20);
 	if ((rel_array == NULL) || (n_lsb <= 0))
 	{
 		printf("Error in ReorderArray. Invalid arguments\n");
@@ -75,8 +77,6 @@ void ReorderArray(relation* rel_array, int n_lsb, reordered_relation** new_rel, 
 		}
 		if (Hist[i] != 0)flag = 0;
 	}
-
-
 	if (flag == 1)
 	{
 		(*new_rel) = NULL;
@@ -100,9 +100,9 @@ void ReorderArray(relation* rel_array, int n_lsb, reordered_relation** new_rel, 
 	    new_start += Hist[i];
 	  }
 	}
-	/*for (size_t i = 0; i < hist_size; i++) {
+	for (size_t i = 0; i < hist_size; i++) {
 		fprintf(stderr, "Psum[%3lu]: %ld\n", i, Psum[i]);
-	}*/
+	}
 
 
 	/*--------------------Build the reordered array----------------------*/
@@ -158,6 +158,24 @@ void ReorderArray(relation* rel_array, int n_lsb, reordered_relation** new_rel, 
 		fprintf(stderr,"Reordered[%2lu]: %lu\n", i, (*new_rel)->rel_array->tuples[i].row_id);
 	}*/
 
+	sleep(20);
+
+}
+
+void HistJob(void *arguments)
+{
+  hist_arguments *args = arguments;
+
+  //Allocate memory for the thread's histogram and set each value to 0.
+  (*(args->hist)) = calloc(args->hist_size, sizeof(int));
+
+  for (size_t i = args->start; i < args->end; i++) {
+    uint64_t hashed_value = HashFunction1(args->rel->tuples[i].value, args->n_lsb);
+    (*(args->hist))[hashed_value]++;
+  }
+	free(args);
+	//fprintf(stderr, "\n\nFinished HistJob\n\n\n" );
+  return;
 }
 
 
@@ -183,21 +201,7 @@ void FreeRelation(relation *rel)
 	free(rel);
 }
 
-void HistJob(void *arguments)
-{
-  hist_arguments *args = arguments;
 
-  //Allocate memory for the thread's histogram and set each value to 0.
-  (*(args->hist)) = calloc(args->hist_size, sizeof(int));
-
-  for (size_t i = args->start; i < args->end; i++) {
-    uint64_t hashed_value = HashFunction1(args->rel->tuples[i].value, args->n_lsb);
-    (*(args->hist))[hashed_value]++;
-  }
-	free(args);
-	//fprintf(stderr, "\n\nFinished HistJob\n\n\n" );
-  return;
-}
 
 void PartitionJob(void* args)//int start, int end, int size, int* Psum, int modulo, int **reordered, int *original)
 {
@@ -240,8 +244,8 @@ void PartitionJob(void* args)//int start, int end, int size, int* Psum, int modu
 	//printf("Start: %d and Psum[%d] = %d\n", start, current_bucket, Psum[current_bucket]);
 	//printf("end - start= %d\n", end - start);
 	//To skip_Values den ypologizetai swsta
-	//fprintf(stderr, "Start = %lu , CurrentBucket = %ld, hist_size = %lu\n", arguments->start, current_bucket, arguments->hist_size);
 	int skip_values = arguments->start - arguments->psum[current_bucket];
+	fprintf(stderr, "Start = %lu , CurrentBucket = %ld, hist_size = %lu skip_values = %d \n", arguments->start, current_bucket, arguments->hist_size,skip_values);
 	arguments->psum[current_bucket] = arguments->start;
 	int previous_encounter = 0;
 	/* This thread is responsible to find all the correct values from start to end.*/
