@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <pthread.h>
+#include <semaphore.h>
 
 #define CACHE_SIZE 32768 //L1 cache is 32 KB
 #define RESULT_MAX_BUFFER 131072 //number of bits in a result node buffer
@@ -172,15 +173,13 @@ typedef struct scheduler
 	pthread_t *thread_array;
 	jobqueue_node* job_queue;
 
-	pthread_mutex_t barrier_mutex;
 	pthread_cond_t barrier_cond;
 	pthread_mutex_t queue_access;
 	pthread_cond_t empty;
+	sem_t queue_sem;
 
-	int active_jobs;
 	int exit_all;
 	int answers_waiting;
-
 
 }scheduler;
 

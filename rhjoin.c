@@ -64,12 +64,7 @@ result* RadixHashJoin(relation *relR, relation* relS)
 	}
 
 	//Wait for all threads to finish building their work(barrier)
-	pthread_mutex_lock(&(sched->barrier_mutex));
-
-	while(sched->answers_waiting != 0)
-		pthread_cond_wait(&(sched->barrier_cond),&(sched->barrier_mutex));
-
-	pthread_mutex_unlock(&(sched->barrier_mutex));
+	Barrier(sched);
 
 	//fprintf(stderr, "JoinJobs finished!\n" );
 

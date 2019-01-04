@@ -51,15 +51,8 @@ void ReorderArray(relation* rel_array, int n_lsb, reordered_relation** new_rel, 
 	}
 
 	//Wait for all threads to finish building their work(barrier)
-	pthread_mutex_lock(&(sched->barrier_mutex));
-
-	while(sched->answers_waiting != 0)
-		pthread_cond_wait(&(sched->barrier_cond), &(sched->barrier_mutex));
-
-	pthread_mutex_unlock(&(sched->barrier_mutex));
-
+	Barrier(sched);
 	//fprintf(stderr, "Hist jobs finished\n");
-
 
 	//Allocate the Hist and Psum arrays
 	int64_t *Psum = malloc(hist_size * sizeof(int64_t));
@@ -146,12 +139,7 @@ void ReorderArray(relation* rel_array, int n_lsb, reordered_relation** new_rel, 
 
 
 	//Wait for all threads to finish building their work(barrier)
-	pthread_mutex_lock(&(sched->barrier_mutex));
-
-	while(sched->answers_waiting != 0)
-		pthread_cond_wait(&(sched->barrier_cond),&(sched->barrier_mutex));
-
-	pthread_mutex_unlock(&(sched->barrier_mutex));
+	Barrier(sched);
 	//fprintf(stderr, "PartitionJobs jobs finished\n");
 	/*for (size_t i = 0; i < rel_array->num_tuples; i++) {
 		fprintf(stderr,"Reordered[%2lu]: %lu\n", i, (*new_rel)->rel_array->tuples[i].row_id);
