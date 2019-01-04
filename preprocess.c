@@ -117,10 +117,6 @@ void ReorderArray(relation* rel_array, int n_lsb, reordered_relation** new_rel, 
 	//int64_t **tempPsum = malloc(thread_num * sizeof(int64_t*));
 	for (size_t i = 0; i < sched->num_of_threads; i++)
 	{
-		int64_t *tempPsum = malloc(hist_size * sizeof(int64_t));
-		memcpy(tempPsum, Psum, hist_size * sizeof(int64_t));
-		//for (int i = 0; i < hist_size; ++i)
-		//	fprintf(stderr, "tempPsum[%d] = %ld\n", i, tempPsum[i]);
 		part_arguments *arguments = malloc(sizeof(part_arguments));
 		arguments->reordered = (*new_rel)->rel_array;
 		arguments->hist_size = hist_size;
@@ -128,7 +124,7 @@ void ReorderArray(relation* rel_array, int n_lsb, reordered_relation** new_rel, 
 		arguments->n_lsb = n_lsb;
 		//tuples_per_thread is the same for both hist_jobs and partition_jobs
 		arguments->start = i * tuples_per_thread;
-		arguments->psum = tempPsum;
+		arguments->psum = Psum;
 	  //If we are setting up the last thread, end is the end of the relation
 	  if(i != sched->num_of_threads - 1)arguments->end = (i+1) * tuples_per_thread;
 	  else arguments->end = rel_array->num_tuples;
@@ -191,13 +187,10 @@ void FreeRelation(relation *rel)
 void PartitionJob(void* args)//int start, int end, int size, int* Psum, int modulo, int **reordered, int *original)
 {
 	part_arguments *arguments = (part_arguments*)args;
-
 	int64_t current_bucket = -3;
 	//Find the starting bucket
-	//printf("---------------------------------------\n" );
 	for (int i = 0; i < arguments->hist_size; ++i)
 	{
-		//printf("Start: %lu, psum[%d]: %ld\n", arguments->start, i, arguments->psum[i]);
 		if (arguments->psum[i] == -1) continue;
 		if (arguments->start == arguments->psum[i])
 		{
@@ -214,7 +207,6 @@ void PartitionJob(void* args)//int start, int end, int size, int* Psum, int modu
 			break;
 		}
 	}
-	//printf("\tcurrent_bucket: %ld\n", current_bucket);
 	//If no value has been assigned to current_bucket then find the only active node
 	if (current_bucket == -3)
 	{
@@ -225,17 +217,14 @@ void PartitionJob(void* args)//int start, int end, int size, int* Psum, int modu
 			 }
 		}
 	}
-//	printf("--------------------------------------\n" );
-	//printf("Start: %d and Psum[%d] = %d\n", start, current_bucket, Psum[current_bucket]);
 	int skip_values = arguments->start - arguments->psum[current_bucket];
 	//fprintf(stderr, "Start = %lu , CurrentBucket = %ld, hist_size = %lu skip_values = %d \n", arguments->start, current_bucket, arguments->hist_size,skip_values);
-	arguments->psum[current_bucket] = arguments->start;
+	uint64_t checked_values = skip_values;
 	int previous_encounter = 0;
 	/* This thread is responsible to find all the correct values from start to end.*/
 	for (int i = arguments->start; i < arguments->end; ++i)
 	{
 		//printf("i = [%d], current_bucket = %d\n", i, current_bucket);
-		//printf("hist_size: %d\n", arguments->hist_size);
 		for (int j = previous_encounter; j < arguments->original->num_tuples; ++j)
 		{
 			int hash_value = HashFunction1(arguments->original->tuples[j].value, arguments->n_lsb);
@@ -246,17 +235,18 @@ void PartitionJob(void* args)//int start, int end, int size, int* Psum, int modu
 				if(skip_values-- > 0)continue;
 				arguments->reordered->tuples[i].value = arguments->original->tuples[j].value;
 				arguments->reordered->tuples[i].row_id = arguments->original->tuples[j].row_id;
-				arguments->psum[current_bucket]++;
+				checked_values++;
 				previous_encounter = j + 1;
 				//Find the next active bucket
 				short int flag = 0;
 				for (size_t iter = current_bucket+1; iter < arguments->hist_size; iter++)
 				{
 					if(arguments->psum[iter] == -1)continue;
-					if (arguments->psum[iter] <= arguments->psum[current_bucket])
+					if (arguments->psum[iter] <= (arguments->psum[current_bucket] + checked_values))
 					{
 						current_bucket = iter;
 						previous_encounter = 0;
+						checked_values = 0;
 						flag = 1;
 					}
 					//When the first active bucket is encountered, break
@@ -267,7 +257,6 @@ void PartitionJob(void* args)//int start, int end, int size, int* Psum, int modu
 			}
 		}
 	}
-	free(arguments->psum);
 	free(arguments);
 	return;
 }
