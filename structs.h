@@ -176,7 +176,6 @@ typedef struct scheduler
 
 	pthread_cond_t barrier_cond;
 	pthread_mutex_t queue_access;
-	pthread_cond_t empty;
 	sem_t queue_sem;
 
 	int exit_all;

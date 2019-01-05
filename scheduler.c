@@ -82,13 +82,10 @@ void Barrier(scheduler *sched)
 
 int SchedulerDestroy(scheduler* sched)
 {
-	pthread_mutex_lock(&(sched->queue_access));
 	sched->exit_all = 1;
 
 	for (int i = 0; i < sched->num_of_threads; ++i)
 		sem_post(&(sched->queue_sem));
-
-	pthread_mutex_unlock(&(sched->queue_access));
 
 	for (int i = 0; i < sched->num_of_threads; i++)
 		pthread_join(sched->thread_array[i], NULL);//wait for workers to shutdown

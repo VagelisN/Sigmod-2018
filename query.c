@@ -9,6 +9,7 @@
 #include "inter_res.h"
 #include "filter.h"
 #include "rhjoin.h"
+#include "stats.h"
 
 int InitialiseQueryString(query_string_array** my_var, int elements, char* str, char* delimeter)
 {
@@ -144,8 +145,8 @@ int InsertPredicate(predicates_listnode **head,char* predicate)
   }
   else
   {
-    // if filter -> insert at beginning
-    if (fullstop_count == 1)
+    // if filter or self join insert at beginning
+    if (fullstop_count == 1 || (fullstop_count == 2 && join_p->relation1 == join_p->relation2))
     {
       predicates_listnode *new_head = malloc(sizeof(predicates_listnode));
       new_head->filter_p = filter_p;
@@ -313,35 +314,28 @@ predicates_listnode* ReturnExecPred(batch_listnode* curr_query,inter_res* interm
 {
   predicates_listnode* current =curr_query->predicate_list;
   predicates_listnode* prev =curr_query->predicate_list;
-  if(current->filter_p != NULL)
+
+  //Execute Join
+  //if either of the relations is in the intermediate result or we reached the end
+  while(1)
   {
-    curr_query->predicate_list=current->next;
-    return current;
-  }
-  else
-  {
-    //Execute Join
-    //if either of the relations is in the intermediate result or we reached the end
-    while(1)
+    int relation1 = current->join_p->relation1;
+    int relation2 = current->join_p->relation2;
+    if(current->next==NULL ||
+       intermediate_result->data->table[relation1] != NULL ||
+       intermediate_result->data->table[relation2] != NULL
+      )
     {
-      int relation1 = current->join_p->relation1;
-      int relation2 = current->join_p->relation2;
-      if(current->next==NULL ||
-         intermediate_result->data->table[relation1] != NULL ||
-         intermediate_result->data->table[relation2] != NULL
-        )
-      {
-        prev->next=current->next;
-        if(current == prev)
-          curr_query->predicate_list = current->next;
-        return current;
-      }
-      else
-      {
-        //check if a relation is in the intermediate result
-        prev=current;
-        current = current->next;
-      }
+      prev->next=current->next;
+      if(current == prev)
+        curr_query->predicate_list = current->next;
+      return current;
+    }
+    else
+    {
+      //check if a relation is in the intermediate result
+      prev=current;
+      current = current->next;
     }
   }
 }
@@ -360,51 +354,59 @@ void ExecuteQuery(batch_listnode* curr_query, relation_map* rel_map)
 {
   // Initialize an intermediate result
   inter_res* intermediate_result = NULL;
+  column_stats **query_stats = calloc(curr_query->num_of_relations,sizeof(column_stats*));
+  InitQueryStats(query_stats,curr_query,rel_map);
+  predicates_listnode* current =NULL;
+
+
   InitInterResults(&intermediate_result, curr_query->num_of_relations);
 
   // Execute the predicates
   while(curr_query->predicate_list != NULL)
   {
-    // First execute all filters
+    // First execute all filters and self joins
     // All filters are int the beginning of the list
-    predicates_listnode* current = ReturnExecPred(curr_query,intermediate_result);
-    // Found a filter
-    if(current->filter_p != NULL)
+
+    current = curr_query->predicate_list;
+    if(current->filter_p != NULL || 
+      (current->join_p != NULL && current->join_p->relation1 == current->join_p->relation2))
     {
-      relation* rel = NULL;
-      result *filter_res = Filter(intermediate_result, current->filter_p,
+      current = curr_query->predicate_list;
+      curr_query->predicate_list=current->next;
+
+      result *res =NULL;
+ 
+      // filter
+      if(current->filter_p != NULL)
+      {
+        relation* rel = NULL;
+        res = Filter(intermediate_result, current->filter_p,
                                   rel_map,curr_query->relations);
 
-      /*If a result is NULL then all the query results are NULL */
-      if (filter_res == NULL)
-      {
-        PrintNullResults(curr_query);
+        /*If a result is NULL then all the query results are NULL */
+        if (res == NULL)
+        {
+          PrintNullResults(curr_query);
+          FreeRelation(rel);
+          FreePredListNode(current);
+          FreePredicateList(curr_query->predicate_list);
+          FreeInterResults(intermediate_result);
+          return;
+          //Free all memory used for this query
+          //Exit query
+        }
+        InsertSingleRowIdsToInterResult(&intermediate_result, current->filter_p->relation, res);
         FreeRelation(rel);
-        FreePredListNode(current);
-        FreePredicateList(curr_query->predicate_list);
-        FreeInterResults(intermediate_result);
-        return;
-        //Free all memory used for this query
-        //Exit query
       }
-      InsertSingleRowIdsToInterResult(&intermediate_result, current->filter_p->relation, filter_res);
-      FreeResult(filter_res);
-      FreeRelation(rel);
-      FreePredListNode(current);
-    }
-    else
-    {
-      //Execute Join
-      //if either of the relations is in the intermediate result or we reached the end
-      int relation1 = current->join_p->relation1;
-      int relation2 = current->join_p->relation2;
-      result* curr_res = NULL;
 
-      if(relation1 == relation2)
+      // self join
+      else
       {
-        result *self_res = SelfJoin(relation1, current->join_p->column1, current->join_p->column2,
+        int relation1 = current->join_p->relation1;
+        int relation2 = current->join_p->relation2;
+        res = SelfJoin(relation1, current->join_p->column1, current->join_p->column2,
                             &intermediate_result,rel_map,curr_query->relations);
-        if (self_res == NULL)
+        if (res == NULL)
         {
           PrintNullResults(curr_query);
           FreeInterResults(intermediate_result);
@@ -412,53 +414,60 @@ void ExecuteQuery(batch_listnode* curr_query, relation_map* rel_map)
           FreePredicateList(curr_query->predicate_list);
           return;
         }
-        InsertSingleRowIdsToInterResult(&intermediate_result, relation1, self_res);
-        PrintInterResults(intermediate_result);
-      	FreeResult(self_res);
-        exit(1);
+        InsertSingleRowIdsToInterResult(&intermediate_result, relation1, res);
+      }
+      FreeResult(res);
+      FreePredListNode(current);
+    }
+    else
+    {
+      current = ReturnExecPred(curr_query,intermediate_result);
+      //Execute Join
+      //if either of the relations is in the intermediate result or we reached the end
+      int relation1 = current->join_p->relation1;
+      int relation2 = current->join_p->relation2;
+      result* curr_res = NULL;
+
+      //Check whether or not the relations are both active in the same node
+      if (AreActiveInInter(intermediate_result, current->join_p->relation1, current->join_p->relation2) == 1)
+      {
+        if(JoinInterNode(&intermediate_result, rel_map, current->join_p->relation1, current->join_p->column1,
+                         current->join_p->relation2, current->join_p->column2,curr_query->relations) == 0)
+        {
+          fprintf(stderr, "Error in JoinInterNode()\n");
+          exit(2);
+        }
       }
       else
       {
-        //Check whether or not the relations are both active in the same node
-        if (AreActiveInInter(intermediate_result, current->join_p->relation1, current->join_p->relation2) == 1)
+        relation* relR = GetRelation(current->join_p->relation1,
+                                     current->join_p->column1 ,
+                                     intermediate_result,rel_map,
+                                     curr_query->relations);
+        relation* relS = GetRelation(current->join_p->relation2,
+                                    current->join_p->column2,
+                                    intermediate_result, rel_map,
+                                    curr_query->relations);
+        result* curr_res = RadixHashJoin(relR, relS);
+        if (curr_res == NULL)
         {
-          if(JoinInterNode(&intermediate_result, rel_map, current->join_p->relation1, current->join_p->column1,
-                           current->join_p->relation2, current->join_p->column2,curr_query->relations) == 0)
-          {
-            fprintf(stderr, "Error in JoinInterNode()\n");
-            exit(2);
-          }
+            PrintNullResults(curr_query);
+            FreePredListNode(current);
+            FreePredicateList(curr_query->predicate_list);
+            FreeRelation(relR);
+            FreeRelation(relS);
+            FreeInterResults(intermediate_result);
+            return;
         }
-        else
-        {
-          relation* relR = GetRelation(current->join_p->relation1,
-                                       current->join_p->column1 ,
-                                       intermediate_result,rel_map,
-                                       curr_query->relations);
-          relation* relS = GetRelation(current->join_p->relation2,
-                                      current->join_p->column2,
-                                      intermediate_result, rel_map,
-                                      curr_query->relations);
-          result* curr_res = RadixHashJoin(relR, relS);
-          if (curr_res == NULL)
-          {
-              PrintNullResults(curr_query);
-              FreePredListNode(current);
-              FreePredicateList(curr_query->predicate_list);
-              FreeRelation(relR);
-              FreeRelation(relS);
-              FreeInterResults(intermediate_result);
-              return;
-          }
-          InsertJoinToInterResults(&intermediate_result,
-                                   relation1, relation2, curr_res);
+        InsertJoinToInterResults(&intermediate_result,
+                                 relation1, relation2, curr_res);
 
-          if(intermediate_result->next != NULL) MergeInterNodes(&intermediate_result);
-          FreeRelation(relR);
-          FreeRelation(relS);
-          FreeResult(curr_res);
-        }
+        if(intermediate_result->next != NULL) MergeInterNodes(&intermediate_result);
+        FreeRelation(relR);
+        FreeRelation(relS);
+        FreeResult(curr_res);
       }
+      
       FreePredListNode(current);
       FreeResult(curr_res);
     }
@@ -466,4 +475,5 @@ void ExecuteQuery(batch_listnode* curr_query, relation_map* rel_map)
   if(intermediate_result->next != NULL)CartesianInterResults(&intermediate_result);
   CalculateQueryResults(intermediate_result, rel_map, curr_query);
   FreeInterResults(intermediate_result);
+  FreeQueryStats(query_stats,curr_query);
 }

@@ -64,26 +64,24 @@ int InitRelationMap(relation_listnode *head,relation_map *rel_map)
 			uint64_t temp_size = rel_map[i].col_stats[j].u - rel_map[i].col_stats[j].l +1;
 			if (temp_size > 50000000) temp_size = 50000000;
 
-			dist_array = malloc (temp_size *sizeof(unsigned short int));
-
-			for (int k = 0; k < temp_size; ++k)
-				dist_array[k] = 1;
+			dist_array = calloc (temp_size ,sizeof(unsigned short int));
 
 			for (int k = 0; k < rel_map[i].num_tuples ; ++k)
 			{
 				if(temp_size < 50000000)
-					dist_array[(rel_map[i].columns[j][k] - rel_map[i].col_stats[j].l)] = 0;
+					dist_array[(rel_map[i].columns[j][k] - rel_map[i].col_stats[j].l)] = 1;
 				else
-					dist_array[(rel_map[i].columns[j][k] - rel_map[i].col_stats[j].l)%5000000] = 0;
+					dist_array[(rel_map[i].columns[j][k] - rel_map[i].col_stats[j].l)%5000000] = 1;
 			}
 			rel_map[i].col_stats[j].d = 0;
 
 			for (int k = 0; k < temp_size; ++k)
 			{
-				if (dist_array[k] == 0)
+				if (dist_array[k] == 1)
 					rel_map[i].col_stats[j].d++;
 			}
 			free(dist_array);
+			//fprintf(stderr, "distint values of relation %d callumn %d :  %ld\n",i,j,rel_map[i].col_stats[j].d  );
 		}
 
 		head = head->next;
