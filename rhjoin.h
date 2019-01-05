@@ -9,10 +9,11 @@
 result* RadixHashJoin(relation*, relation*);
 
 /** Hash function that returns the n last bits of a given number */
-uint64_t HashFunction1(uint64_t, uint64_t);
+uint64_t HashFunction1(uint64_t num, uint64_t n);
 
 /** Hash function that returns the modulo of a number and a given prime number */
-uint64_t HashFunction2(uint64_t, uint64_t);
+uint64_t HashFunction2(uint64_t num, uint64_t prime);
+
 
 /*
  * Given a number, returns the closest prime number

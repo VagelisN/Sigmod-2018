@@ -41,14 +41,12 @@ result* RadixHashJoin(relation *relR, relation* relS)
 			answers++;
 
 	result **res_array = calloc(answers, sizeof(result*));
-	//fprintf(stderr, "Starting JoinJobs\n");
 	sched->answers_waiting = answers;
-	//fprintf(stderr, "COUNT MOUNT %d\n",answers );
-	//for every bucket
+	//For every bucket
 	int count = 0;
 	for (i = 0; i < NewR->hist_size; ++i)
 	{
-		//if both relations have elements in this bucket
+		//If both relations have elements in this bucket
 		if (NewR->hist[i] != 0 && NewS->hist[i] != 0)
 		{
 			//Set up the arguments
@@ -66,43 +64,9 @@ result* RadixHashJoin(relation *relR, relation* relS)
 	//Wait for all threads to finish building their work(barrier)
 	Barrier(sched);
 
-	//fprintf(stderr, "JoinJobs finished!\n" );
-
-	//Join the res_array to a single result list
-	/*
-	uint64_t total_load = 0;
-	for (size_t i = 0; i < answers; i++) {
-		int nodes = 0;
-		int node_load = 0;
-		if (res_array[i] != NULL) {
-			result * temp = res_array[i];
-			while(temp != NULL)
-			{
-				nodes++;
-				node_load += temp->current_load;
-				total_load+= temp->current_load;
-				temp = temp->next;
-			}
-			printf("res_array[%lu]->load = %d . Total list nodes: %d\n", i, node_load, nodes);
-		}
-		else printf("res_array[%lu] = NULL\n", i);
-	}
-	printf("Total result load = %lu\n", total_load);*/
 	result *final_results = MergeResults( res_array, answers);
-	/*fprintf(stderr, "\n\n\nfinal_results = %p\n", final_results);
-	int times = 1;
-	result *temp = final_results;
-	while(temp->next != NULL)
-	{
-		temp = temp->next;
-		times++;
-	}
-	fprintf(stderr, "Number of nodes in list: %d\n\n\n", times);*/
-	//PrintResult(final_results);
-	//sleep(20);
 	SchedulerDestroy(sched);
-	//Free res_array
-	//free(res_array);
+
 	//Free NewS and NewR
 	FreeReorderRelation(NewS);
 	FreeReorderRelation(NewR);
@@ -116,7 +80,6 @@ void JoinJob(void *arguments)
 	//if R is bigger than S
 	if( args->NewR->hist[args->bucket_num] >= args->NewS->hist[args->bucket_num])
 	{
-
 		//Create a second layer index for the respective bucket of S
 		InitIndex(&ind, args->NewS->hist[args->bucket_num], args->NewS->psum[args->bucket_num]);
 		CreateIndex(args->NewS,&ind,args->bucket_num);
@@ -218,15 +181,12 @@ int CreateIndex(reordered_relation *rel, bc_index** ind,int curr_bucket)
 	for (i = (rel->hist[curr_bucket]-1); i >= 0; i--)
 	{
 		uint64_t hash_value = HashFunction2(rel->rel_array->tuples[start+i].value,(*ind)->index_size);
-
 		//last encounter
 		if ((*ind)->bucket[hash_value] == -1 )
 		{
-
 			(*ind)->bucket[hash_value] = i+1;
 			(*ind)->chain[i] = 0;
 		}
-
 		//second or later encounter ->also need to adjust chain
 		else
 		{
@@ -321,32 +281,23 @@ uint64_t HashFunction1(uint64_t num, uint64_t n)
 
 uint64_t FindNextPrime(uint64_t num)
 {
-	if(num == 1) return 1;
-	if(num == 2) return 2;
-
-	uint64_t next_prime;
-	if (num % 2 == 0) next_prime = num + 1;
-	else next_prime = num;
-
-	int found = 0 , i,is_prime = 1;
-	while ( found == 0 )
+	short int found;
+	if (num % 2 == 0)num++;
+	while(1)
 	{
-    	for (i = 3; i <= next_prime / 2; i += 2)
-	    {
-	        if (next_prime % i == 0)
-	        {
-	        	is_prime = 0;
-	        	break;
-	        }
-	    }
-	    if (is_prime == 1)found = 1;
-	    else
+		found = 1;
+		for (int i = 3; i*i < num; ++i)
 		{
-			next_prime += 2;
-			is_prime =1;
+			if(num % i == 0)
+			{
+				found = 0;
+				num += 2;
+				break;
+			}
 		}
+		if (found)break;
 	}
-	return next_prime;
+	return num;
 }
 
 uint64_t HashFunction2(uint64_t num, uint64_t prime)
@@ -357,32 +308,6 @@ uint64_t HashFunction2(uint64_t num, uint64_t prime)
 
 result* MergeResults(result **res_array, int size)
 {
-	/*bool found = 0;
-	result *previous_tail = NULL, *temp = NULL;
-	result *head = NULL;
-	for (size_t i = 0; i < size; i++)
-	{
-		//First active position is the final_results head node
-		//fprintf(stderr, "res_array[%2lu] = %p\n", i, res_array[i]);
-		if(res_array[i] == NULL)continue;
-		if (found == 0)
-		{
-				head = res_array[i];
-				found = 1;
-		}
-		//If the previous_tail is active then point it to the current head
-		if (previous_tail != NULL)
-		{
-			previous_tail->next = res_array[i];
-			//printf("Joining two lists!\n");
-			//printf("res_array[%lu] = %p\n", i, res_array[i]);
-		}
-		//Find the last node of the res_array[i]
-		temp = res_array[i];
-		while(temp->next != NULL)temp = temp->next;
-		previous_tail = temp;
-	}
-	return head;*/
 	result* head = malloc(sizeof(result));
 	head->current_load = 0;
 	head->next = NULL;
