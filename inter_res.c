@@ -44,9 +44,24 @@ int InsertJoinToInterResults(inter_res** head, int rel1, int rel2, result* res)
 			(*head)->data->num_tuples = GetResultNum(res);
 			(*head)->data->table[rel1] = malloc((*head)->data->num_tuples * sizeof(uint64_t));
 			(*head)->data->table[rel2] = malloc((*head)->data->num_tuples * sizeof(uint64_t));
+			result *cur_node = res;
+			uint relative_i = 0;
 			for (size_t i = 0; i < (*head)->data->num_tuples; i++)
 			{
-				result_tuple *temp = FindResultTuples(res, i);
+				//result_tuple *temp = FindResultTuples(res, i)
+				//If our result is in the current node
+				result_tuple *temp = NULL;
+				if ((i - relative_i) < cur_node->current_load)
+					temp = (result_tuple*)(cur_node->buff + ( (i - relative_i)*sizeof(result_tuple)));
+				//Else go to the next node
+				else
+				{
+					relative_i += cur_node->current_load ;
+					cur_node = cur_node->next;
+					temp = (result_tuple*)(cur_node->buff + ( (i - relative_i)*sizeof(result_tuple)));
+				}
+
+
 				(*head)->data->table[rel1][i] = temp->row_idR;
 				(*head)->data->table[rel2][i] = temp->row_idS;
 			}
@@ -66,12 +81,32 @@ int InsertJoinToInterResults(inter_res** head, int rel1, int rel2, result* res)
 			temp_array->table[rel2] = malloc((*head)->data->num_tuples * sizeof(uint64_t));
 
 			//Insert the results.
+			result *cur_node = res;
+			uint64_t relative_i = 0;
 			for (size_t i = 0; i < (*head)->data->num_tuples; i++)
 			{
 				//Insert the results that are stored in the res variable.
-				result_tuple *temp = FindResultTuples(res, i);
+
+				//If our result is in the current node
+				result_tuple *temp = NULL;
+				if ((i - relative_i) < cur_node->current_load)
+				{
+					temp = (result_tuple*)(cur_node->buff + ( (i - relative_i)*sizeof(result_tuple)));
+				}
+				//Else go to the next node
+				else
+				{
+					//fprintf(stderr, "Changing node with i: %lu and relative_i: %lu\n", i, relative_i);
+					relative_i += cur_node->current_load ;
+					cur_node = cur_node->next;
+					if((i - relative_i) <= cur_node->current_load)
+					{
+						temp = (result_tuple*)(cur_node->buff + ( (i - relative_i)*sizeof(result_tuple)));
+					}
+				}
 				/* row_idR is an index of the previous instance of the inter_res.*/
 				int old_pos = temp->row_idR;
+				//fprintf(stderr, "temp: %p | old_pos = %d\n", temp, old_pos);
 				temp_array->table[rel2][i] = temp->row_idS;
 				for (size_t j = 0; j < (*head)->num_of_relations; j++)
 					if ((*head)->data->table[j] != NULL && j != rel2)
@@ -95,10 +130,22 @@ int InsertJoinToInterResults(inter_res** head, int rel1, int rel2, result* res)
 			temp_array->table[rel1] = malloc((*head)->data->num_tuples * sizeof(uint64_t));
 
 			//Insert the results.
+			result *cur_node = res;
+			uint relative_i = 0;
 			for (size_t i = 0; i < (*head)->data->num_tuples; i++)
 			{
 				//Insert the results that are stored in the res variable.
-				result_tuple *temp = FindResultTuples(res, i);
+				//If our result is in the current node
+				result_tuple *temp = NULL;
+				if ((i - relative_i) < cur_node->current_load)
+					temp = (result_tuple*)(cur_node->buff + ( (i - relative_i)*sizeof(result_tuple)));
+				//Else go to the next node
+				else
+				{
+					relative_i += cur_node->current_load;
+					cur_node = cur_node->next;
+					temp = (result_tuple*)(cur_node->buff + ( (i - relative_i)*sizeof(result_tuple)));
+				}
 
 				/* Old_pos refers to the current result's row_id in the inter_res data table.*/
 				int old_pos = temp->row_idS;

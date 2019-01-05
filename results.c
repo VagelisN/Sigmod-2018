@@ -49,51 +49,6 @@ int InsertResult(result **head, result_tuple *res_tuple)
 	}
 }
 
-int InsertFinalResult(result **head, result_tuple *res_tuple)
-{
-	//if the list is empty create the first node and insert the first result
-	if( (*head) == NULL )
-	{
-		(*head)=malloc(sizeof(result));
-		//CheckMalloc((*head), "*head (results.c)");
-		(*head)->buff = malloc(RESULT_FINAL_BUFFER * sizeof(char));
-		//CheckMalloc((*head)->buff, "*head->buff (results.c)");
-		(*head)->current_load = 1;
-		(*head)->next = NULL;
-
-		memcpy((*head)->buff,res_tuple,sizeof(result_tuple));
-
-	}
-	//else find the first node with available space
-	else
-	{
-		result *temp = (*head);
-		while( ((temp->current_load*sizeof(result_tuple)) + sizeof(result_tuple)) > RESULT_FINAL_BUFFER)
-		{
-			if ( temp->next != NULL) temp = temp->next;
-			//if all nodes are full create a new one
-			else
-			{
-				temp->next = malloc(sizeof(result));
-				//CheckMalloc(temp->next, "temp->next (results.c)");
-				temp->next->buff = malloc(RESULT_FINAL_BUFFER * sizeof(char));
-				//CheckMalloc(temp->next->buff, "temp->next->buff (results.c)");
-				temp->next->current_load = 1;
-				temp->next->next = NULL;
-				memcpy(temp->next->buff,res_tuple,sizeof(result_tuple));
-				return 0;
-			}
-		}
-		//found the last, make the insertion
-		void* data = temp->buff;
-		data += (temp->current_load*sizeof(result_tuple));
-		memcpy(data, res_tuple, sizeof(result_tuple));
-		temp->current_load ++;
-		return 0;
-	}
-}
-
-
 uint64_t FindResultRowId(result *res, int num)
 {
   uint64_t count = 0;

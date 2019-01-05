@@ -411,7 +411,7 @@ result* MergeResults(result **res_array, int size)
 				head_temp->next = NULL;
 				head_temp->buff = malloc(RESULT_FINAL_BUFFER);
 				memcpy(head_temp->buff, temp->buff, temp_load);
-				head_temp->current_load = temp->current_load;
+				head_temp->current_load += temp->current_load;
 			}
 			temp = temp->next;
 		}
