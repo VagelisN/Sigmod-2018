@@ -63,7 +63,7 @@ int InsertSingleRowIdsToInterResult(inter_res** head, int relation_num, result* 
 					cur_node = cur_node->next;
         }
         temp = (uint64_t*)(cur_node->buff + ( (i - relative_i)*sizeof(uint64_t)));
-		
+
     		/* temp is a rowId which refers to the current result's row_id in the inter_res data table.*/
     		temp_array->table[relation_num][i] = (*head)->data->table[relation_num][(*temp)];
     		for (size_t j = 0; j < (*head)->num_of_relations; j++)
@@ -98,6 +98,7 @@ result* Filter(inter_res* head,filter_pred* filter_p, relation_map* map,int *que
   }
 
   uint64_t i;
+  result *cur_node = NULL;
   switch(filter_p->comperator)
   {
     case '>':
@@ -107,13 +108,23 @@ result* Filter(inter_res* head,filter_pred* filter_p, relation_map* map,int *que
       {
         for (i = 0; i < map[query_relations[relation]].num_tuples; i++)
           if (col[i] > filter_p->value)
-            InsertRowIdResult(&res, &i);
+          {
+            if (cur_node == NULL)
+              cur_node = InsertRowIdResult(&res, &i);
+            else
+              cur_node = InsertRowIdResult(&cur_node, &i);
+          }
       }
       else
       {
         for (i = 0; i < head->data->num_tuples; ++i)
         if ( col[head->data->table[relation][i]] > filter_p->value)
-        InsertRowIdResult(&res, &i);
+        {
+          if (cur_node == NULL)
+            cur_node = InsertRowIdResult(&res, &i);
+          else
+            cur_node = InsertRowIdResult(&cur_node, &i);
+        }
       }
       break;
     case '<':
@@ -121,13 +132,23 @@ result* Filter(inter_res* head,filter_pred* filter_p, relation_map* map,int *que
       {
         for (i = 0; i < map[query_relations[relation]].num_tuples; i++)
           if (col[i] < filter_p->value)
-            InsertRowIdResult(&res, &i);
+          {
+            if (cur_node == NULL)
+              cur_node = InsertRowIdResult(&res, &i);
+            else
+              cur_node = InsertRowIdResult(&cur_node, &i);
+          }
       }
       else
       {
         for (i = 0; i < head->data->num_tuples; ++i)
         if ( col[head->data->table[relation][i]] < filter_p->value)
-        InsertRowIdResult(&res, &i);
+        {
+          if (cur_node == NULL)
+            cur_node = InsertRowIdResult(&res, &i);
+          else
+            cur_node = InsertRowIdResult(&cur_node, &i);
+        }
       }
       break;
     case '=':
@@ -135,13 +156,23 @@ result* Filter(inter_res* head,filter_pred* filter_p, relation_map* map,int *que
       {
         for (i = 0; i < map[query_relations[relation]].num_tuples; i++)
           if (col[i] == filter_p->value)
-            InsertRowIdResult(&res, &i);
+          {
+            if (cur_node == NULL)
+              cur_node = InsertRowIdResult(&res, &i);
+            else
+              cur_node = InsertRowIdResult(&cur_node, &i);
+          }
       }
       else
       {
         for (i = 0; i < head->data->num_tuples; ++i)
         if ( col[head->data->table[relation][i]] == filter_p->value)
-        InsertRowIdResult(&res, &i);
+        {
+          if (cur_node == NULL)
+            cur_node = InsertRowIdResult(&res, &i);
+          else
+            cur_node = InsertRowIdResult(&cur_node, &i);
+        }
       }
       break;
     default:

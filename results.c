@@ -5,7 +5,7 @@
 #include <string.h>
 
 
-int InsertResult(result **head, result_tuple *res_tuple)
+result* InsertResult(result **head, result_tuple *res_tuple)
 {
 	//if the list is empty create the first node and insert the first result
 	if( (*head) == NULL )
@@ -16,7 +16,7 @@ int InsertResult(result **head, result_tuple *res_tuple)
 		(*head)->next = NULL;
 
 		memcpy((*head)->buff,res_tuple,sizeof(result_tuple));
-
+		return (*head);
 	}
 	//else find the first node with available space
 	else
@@ -33,7 +33,7 @@ int InsertResult(result **head, result_tuple *res_tuple)
 				temp->next->current_load = 1;
 				temp->next->next = NULL;
 				memcpy(temp->next->buff,res_tuple,sizeof(result_tuple));
-				return 0;
+				return temp;
 			}
 		}
 		//found the last, make the insertion
@@ -41,7 +41,7 @@ int InsertResult(result **head, result_tuple *res_tuple)
 		data += (temp->current_load*sizeof(result_tuple));
 		memcpy(data, res_tuple, sizeof(result_tuple));
 		temp->current_load ++;
-		return 0;
+		return temp;
 	}
 }
 
@@ -152,7 +152,7 @@ void FreeResult(result* head)
 	}
 }
 
-int InsertRowIdResult(result **head, uint64_t *row_id)
+result* InsertRowIdResult(result **head, uint64_t *row_id)
 {
 	//if the list is empty create the first node and insert the first result
 	if( (*head) == NULL )
@@ -162,6 +162,7 @@ int InsertRowIdResult(result **head, uint64_t *row_id)
 		(*head)->current_load = 1;
 		(*head)->next = NULL;
 		memcpy((*head)->buff, row_id, sizeof(uint64_t));
+		return (*head);
 	}
 	//else find the first node with available space
 	else
@@ -178,7 +179,7 @@ int InsertRowIdResult(result **head, uint64_t *row_id)
 				temp->next->current_load = 1;
 				temp->next->next = NULL;
 				memcpy(temp->next->buff,row_id,sizeof(uint64_t));
-				return 0;
+				return temp;
 			}
 		}
 		//found the last, make the insertion
@@ -186,7 +187,7 @@ int InsertRowIdResult(result **head, uint64_t *row_id)
 		data += (temp->current_load*sizeof(uint64_t));
 		memcpy(data, row_id, sizeof(uint64_t));
 		temp->current_load ++;
-		return 0;
+		return temp;
 	}
 }
 

@@ -115,6 +115,7 @@ int GetResults(reordered_relation* full_rel,reordered_relation* indexed_rel,bc_i
 	tuple* ind_tuples = indexed_rel->rel_array->tuples;
 
 	//for every element of the non indexed relation's bucket
+	result *cur_node = NULL;
 	for (i = 0; i < full_rel->hist[curr_bucket]; i++)
 	{
 		//check the index of the second relation
@@ -140,7 +141,12 @@ int GetResults(reordered_relation* full_rel,reordered_relation* indexed_rel,bc_i
 					curr_res.row_idS = full_tuples[start_full + i].row_id;
 					curr_res.row_idR = ind_tuples[(ind->start + (ind->bucket[hash_value])-1)].row_id;
 				}
-				InsertResult(res,&curr_res);
+				if(cur_node == NULL)
+					cur_node = InsertResult(res,&curr_res);
+				else
+				{
+					cur_node = InsertResult(&cur_node, &curr_res);
+				}
 			}
 
 			//follow the chain
@@ -162,7 +168,12 @@ int GetResults(reordered_relation* full_rel,reordered_relation* indexed_rel,bc_i
 						curr_res.row_idS = full_tuples[start_full + i].row_id;
 						curr_res.row_idR = ind_tuples[(ind->start + (ind->chain[sp]-1))].row_id;
 					}
-					InsertResult(res, &curr_res);
+					if(cur_node == NULL)
+						cur_node = InsertResult(res, &curr_res);
+					else
+					{
+						cur_node = InsertResult(&cur_node, &curr_res);
+					}
 				}
 				sp = (ind->chain[sp]-1);
 			}
