@@ -22,8 +22,19 @@ int InsertSingleRowIdsToInterResult(inter_res** head, int relation_num, result* 
       (*head)->data->num_tuples = num_of_results;
       (*head)->data->table[relation_num] = malloc(num_of_results * sizeof(uint64_t));
       // Insert results one by one
+      result *cur_node = res;
+      uint64_t relative_i = 0;
       for (uint64_t i = 0; i < num_of_results; i++)
-        (*head)->data->table[relation_num][i] = FindResultRowId(res, i);
+      {
+        uint64_t *temp;
+        if ((i - relative_i) >= cur_node->current_load)
+        {
+          relative_i += cur_node->current_load ;
+					cur_node = cur_node->next;
+        }
+        temp = (uint64_t*)(cur_node->buff + ( (i - relative_i)*sizeof(uint64_t)));
+        (*head)->data->table[relation_num][i] = (*temp);
+      }
       return 1;
     }
     else if((*head)->data->table[relation_num] != NULL)
@@ -40,15 +51,24 @@ int InsertSingleRowIdsToInterResult(inter_res** head, int relation_num, result* 
     			temp_array->table[i] = malloc((*head)->data->num_tuples * sizeof(uint64_t));
     	}
     	//Insert the results.
+      result *cur_node = res;
+      uint64_t relative_i = 0;
     	for (size_t i = 0; i < (*head)->data->num_tuples; i++)
     	{
     		//Insert the results that are stored in the res variable.
-    		uint64_t temp = FindResultRowId(res, i);
+    		uint64_t *temp;
+        if ((i - relative_i) >= cur_node->current_load)
+        {
+          relative_i += cur_node->current_load ;
+					cur_node = cur_node->next;
+        }
+        temp = (uint64_t*)(cur_node->buff + ( (i - relative_i)*sizeof(uint64_t)));
+		
     		/* temp is a rowId which refers to the current result's row_id in the inter_res data table.*/
-    		temp_array->table[relation_num][i] = (*head)->data->table[relation_num][temp];
+    		temp_array->table[relation_num][i] = (*head)->data->table[relation_num][(*temp)];
     		for (size_t j = 0; j < (*head)->num_of_relations; j++)
     			if ((relation_num != j) && (*head)->data->table[j] != NULL)
-    				temp_array->table[j][i] = (*head)->data->table[j][temp];
+    				temp_array->table[j][i] = (*head)->data->table[j][(*temp)];
     	}
       FreeInterData((*head)->data, (*head)->num_of_relations);
       (*head)->data = temp_array;
