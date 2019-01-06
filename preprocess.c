@@ -25,9 +25,7 @@ void ReorderArray(relation* rel_array, int n_lsb, reordered_relation** new_rel, 
 	//fprintf(stderr, "Starting HistJobs\n");
 	sched->answers_waiting = sched->num_of_threads;
 
-	int **histograms = malloc(sched->num_of_threads * sizeof(int *));
-	for (size_t i = 0; i < sched->num_of_threads; i++)
-	  histograms[i] = NULL;
+	int **histograms = calloc(sched->num_of_threads , sizeof(int *));
 
 	//Split up the num_tuples so each thread gets the same
 	int tuples_per_thread = (rel_array->num_tuples) / sched->num_of_threads;
@@ -62,13 +60,17 @@ void ReorderArray(relation* rel_array, int n_lsb, reordered_relation** new_rel, 
 
 	//Build the whole Histogram from the
 	short int flag = 1;
+	int new_start = 0;
 	for (size_t i = 0; i < hist_size; ++i)
 	{
 		for (size_t j = 0; j < sched->num_of_threads; ++j)
-		{
 			Hist[i] += histograms[j][i];
-		}
-		if (Hist[i] != 0)flag = 0;
+		if (Hist[i] > 0)
+	  {
+			flag = 0;
+	    Psum[i] = new_start;
+	    new_start += Hist[i];
+	  }
 	}
 	if (flag == 1)
 	{
@@ -80,23 +82,6 @@ void ReorderArray(relation* rel_array, int n_lsb, reordered_relation** new_rel, 
 	for (size_t i = 0; i < sched->num_of_threads; i++)
 	  free(histograms[i]);
 	free(histograms);
-
-	//Build the Psum array
-	int new_start = 0;
-	for (int i = 0; i < hist_size; ++i)
-	{
-	  /*If the current bucket has 0 values allocated to it then leave
-	   *psum[CurrentBucket][1] to -1.	*/
-	  if (Hist[i] > 0)
-	  {
-	    Psum[i] = new_start;
-	    new_start += Hist[i];
-	  }
-	}
-	/*for (size_t i = 0; i < hist_size; i++) {
-		fprintf(stderr, "Psum[%3lu]: %ld\n", i, Psum[i]);
-	}*/
-
 
 	/*--------------------Build the reordered array----------------------*/
 
