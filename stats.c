@@ -119,7 +119,7 @@ void ValuePredicate(column_stats ***query_stats,batch_listnode *curr_query,predi
 					k1 = fil->value;
 				k2 = stats->u;
 			}
-			fprintf(stderr, "k1 %ld k2 %ld \n",k1 ,k2 );
+			//fprintf(stderr, "k1 %ld k2 %ld \n",k1 ,k2 );
 			if(stats->u - stats->l == 0)
 			{
 				stats->d = 0;
