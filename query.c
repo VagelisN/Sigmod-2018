@@ -354,7 +354,7 @@ void ExecuteQuery(batch_listnode* curr_query, relation_map* rel_map)
 {
   // Initialize an intermediate result
   inter_res* intermediate_result = NULL;
-  column_stats **query_stats = calloc(curr_query->num_of_relations,sizeof(column_stats*));
+  column_stats ***query_stats = calloc(curr_query->num_of_relations,sizeof(column_stats**));
   InitQueryStats(query_stats,curr_query,rel_map);
   predicates_listnode* current =NULL;
 
@@ -372,6 +372,7 @@ void ExecuteQuery(batch_listnode* curr_query, relation_map* rel_map)
       (current->join_p != NULL && current->join_p->relation1 == current->join_p->relation2))
     {
       current = curr_query->predicate_list;
+      ValuePredicate(query_stats,curr_query,current,rel_map);
       curr_query->predicate_list=current->next;
 
       result *res =NULL;
@@ -475,5 +476,5 @@ void ExecuteQuery(batch_listnode* curr_query, relation_map* rel_map)
   if(intermediate_result->next != NULL)CartesianInterResults(&intermediate_result);
   CalculateQueryResults(intermediate_result, rel_map, curr_query);
   FreeInterResults(intermediate_result);
-  FreeQueryStats(query_stats,curr_query);
+  FreeQueryStats(query_stats,curr_query,rel_map);
 }

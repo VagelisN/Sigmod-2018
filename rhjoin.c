@@ -222,11 +222,11 @@ int InitIndex(bc_index** ind, int bucket_size, int start)
 	(*ind) = malloc(sizeof(bc_index));
 
 	//the size of the bucket array  is the next prime after the size of the bucket
-	uint32_t hash_size = FindNextPrime(bucket_size);
-	(*ind)->bucket = malloc(hash_size * sizeof(int32_t));
+	uint64_t hash_size = FindNextPrime(bucket_size);
+	(*ind)->bucket = malloc(hash_size * sizeof(int64_t));
 
 	//the size of the chain is equal to the number of elements in the bucket
-	(*ind)->chain = (int32_t*) malloc(bucket_size * sizeof(int32_t));
+	(*ind)->chain = (int64_t*) malloc(bucket_size * sizeof(int64_t));
 
 	(*ind)->start = start;
 	(*ind)->end = start + bucket_size;
@@ -262,11 +262,11 @@ void PrintIndex(bc_index* ind)
 	{
 		if (ind->bucket[i] != -1)
 		{
-			printf("bucket[%d] = %d\n",i , ind->bucket[i] );
+			printf("bucket[%d] = %ld\n",i , ind->bucket[i] );
 			sp = (ind->bucket[i]-1);
 			while( ind->chain[sp] != 0)
 			{
-				printf("chain[%d] = %d\n",ind->bucket[i]-1, ind->chain[ind->bucket[i]-1]);
+				printf("chain[%ld] = %ld\n",ind->bucket[i]-1, ind->chain[ind->bucket[i]-1]);
 				if(sp != 0)sp = (ind->chain[sp]-1);
 				else break;
 			}

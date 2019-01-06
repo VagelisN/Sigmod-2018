@@ -8,7 +8,7 @@
 #define CACHE_SIZE 32768 //L1 cache is 32 KB
 #define RESULT_MAX_BUFFER 131072 //number of bits in a result node buffer
 #define RESULT_FINAL_BUFFER 1048576
-#define N_LSB 5 //number of least significant bits used in H1
+#define N_LSB 2 //number of least significant bits used in H1
 
 /** Type definition for a tuple */
 typedef struct tuple
@@ -69,8 +69,8 @@ typedef struct bc_index
 	int index_size;
 	int start;
 	int end;
-	int* bucket;
-	int* chain;
+	int64_t* bucket;
+	int64_t* chain;
 }bc_index;
 
 /* list that holds the names of the files containing the relations
@@ -88,8 +88,8 @@ typedef struct column_stats
 {
 	uint64_t l;
 	uint64_t u;
-	uint64_t f;
-	uint64_t d;
+	double f;
+	double d;
 }column_stats;
 
 /* struct that holds the relations after being mapped
