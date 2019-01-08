@@ -75,7 +75,7 @@ void ValuePredicate(column_stats ***query_stats,batch_listnode *curr_query,predi
 		// Estimate = filter predicate
 		if (fil->comperator == '=')
 		{
-			fprintf(stderr, "relation %d cloumn %d l %ld u %ld f %lf d %lf\n",fil->relation,fil->column,stats->l,stats->u,stats->f,stats->d);
+			//fprintf(stderr, "relation %d cloumn %d l %ld u %ld f %lf d %lf\n",fil->relation,fil->column,stats->l,stats->u,stats->f,stats->d);
 			uint64_t prev_d = stats->d;
 			uint64_t prev_f = stats->f;
 			if (fil->value >= stats->l && 
@@ -196,4 +196,3 @@ void ValuePredicate(column_stats ***query_stats,batch_listnode *curr_query,predi
 		}
 	}
 }
-
