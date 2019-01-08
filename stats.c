@@ -78,7 +78,7 @@ void ValuePredicate(column_stats ***query_stats,batch_listnode *curr_query,predi
 			//fprintf(stderr, "relation %d cloumn %d l %ld u %ld f %lf d %lf\n",fil->relation,fil->column,stats->l,stats->u,stats->f,stats->d);
 			uint64_t prev_d = stats->d;
 			uint64_t prev_f = stats->f;
-			if (fil->value >= stats->l && 
+			if (fil->value >= stats->l &&
 				fil->value <= stats->u)
 			{
 				stats->d = 1;
@@ -87,7 +87,7 @@ void ValuePredicate(column_stats ***query_stats,batch_listnode *curr_query,predi
 				else
 					stats->f = 0;
 			}
-			else 
+			else
 			{
 				stats->d = 0;
 				stats->f = 0;
@@ -115,7 +115,7 @@ void ValuePredicate(column_stats ***query_stats,batch_listnode *curr_query,predi
 			{
 				if(fil->value < stats->l)
 					k1 = stats->l;
-				else 
+				else
 					k1 = fil->value;
 				k2 = stats->u;
 			}
@@ -164,7 +164,7 @@ void ValuePredicate(column_stats ***query_stats,batch_listnode *curr_query,predi
 
 		if (stats1->l >= stats2->l)
 			stats2->l = stats1->l;
-		else 
+		else
 			stats1->l = stats2->l;
 
 		column_stats *rest_stats = NULL;

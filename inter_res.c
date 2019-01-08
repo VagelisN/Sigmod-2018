@@ -11,9 +11,7 @@ int InitInterData(inter_data** head, int num_of_relations, int num_tuples)
 {
 	(*head) = malloc(sizeof(struct inter_data));
 	(*head)->num_tuples = num_tuples;
-	(*head)->table = malloc(num_of_relations * sizeof(uint64_t *));
-	for (int i = 0; i < num_of_relations; ++i)
-		(*head)->table[i] = NULL;
+	(*head)->table = calloc(num_of_relations , sizeof(uint64_t *));
 }
 
 void FreeInterData(inter_data *head, int num_of_relations)

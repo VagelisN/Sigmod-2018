@@ -158,7 +158,7 @@ result* InsertRowIdResult(result **head, uint64_t *row_id)
 	if( (*head) == NULL )
 	{
 		(*head)=malloc(sizeof(result));
-		(*head)->buff = malloc(RESULT_MAX_BUFFER * sizeof(char));
+		(*head)->buff = malloc(RESULT_FINAL_BUFFER * sizeof(char));
 		(*head)->current_load = 1;
 		(*head)->next = NULL;
 		memcpy((*head)->buff, row_id, sizeof(uint64_t));
@@ -168,14 +168,14 @@ result* InsertRowIdResult(result **head, uint64_t *row_id)
 	else
 	{
 		result *temp = (*head);
-		while( ((temp->current_load*sizeof(uint64_t)) + sizeof(uint64_t)) > RESULT_MAX_BUFFER)
+		while( ((temp->current_load*sizeof(uint64_t)) + sizeof(uint64_t)) > RESULT_FINAL_BUFFER)
 		{
 			if ( temp->next != NULL) temp = temp->next;
 			//if all nodes are full create a new one
 			else
 			{
 				temp->next = malloc(sizeof(result));
-				temp->next->buff = malloc(RESULT_MAX_BUFFER * sizeof(char));
+				temp->next->buff = malloc(RESULT_FINAL_BUFFER * sizeof(char));
 				temp->next->current_load = 1;
 				temp->next->next = NULL;
 				memcpy(temp->next->buff,row_id,sizeof(uint64_t));

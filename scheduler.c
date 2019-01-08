@@ -104,7 +104,7 @@ void* ThreadFunction(void* arg)
 	while(1)
 	{
 		sem_wait(&(sched->queue_sem));
-	
+
 		if(sched->exit_all == 1)
 			break;
 
@@ -112,16 +112,21 @@ void* ThreadFunction(void* arg)
 		jobqueue_node* job = NULL;
 		job = PopJob(sched);
 
-		if (job->function == 0)
-			HistJob(job->arguments);
-		else if(job->function == 1)
-			PartitionJob(job->arguments);
-		else if(job->function == 2)
-			JoinJob(job->arguments);
+		switch(job->function)
+		{
+			case 0:
+				HistJob(job->arguments);
+				break;
+			case 1:
+				PartitionJob(job->arguments);
+				break;
+			case 2:
+				JoinJob(job->arguments);
+				break;
+		}
 		JobDone(sched);
 		free(job);
 	}
 	//printf("Thread %lu exited\n",pthread_self());
 	pthread_exit(NULL);
 }
-

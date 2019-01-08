@@ -49,7 +49,7 @@ int main(void)
 	//freopen("/dev/tty", "r", stdin);
 	batch_listnode *batch = NULL, *batch_temp = NULL;
 
-	clock_t time_taken = clock();
+	//clock_t time_taken = clock();
 	while (1)
 	{
 		fflush(stdout);
@@ -82,8 +82,8 @@ int main(void)
 			//fprintf(stderr,"Give queries or:\n-type F to finish the current batch\n-type Exit to quit\n");
 		}
 	}
-	time_taken = clock() - time_taken;
-	fprintf(stderr, "Total running time is: %.2f seconds.\n", ((double)time_taken)/CLOCKS_PER_SEC);
+	//time_taken = clock() - time_taken;
+	//fprintf(stderr, "Total running time is: %.2f seconds.\n", ((double)time_taken)/CLOCKS_PER_SEC);
 	FreeRelationMap(rel_map, relations_count);
 	return 0;
 }
