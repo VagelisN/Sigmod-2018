@@ -51,12 +51,23 @@ predicates_listnode* Connected(best_tree_node **best_tree, int num_of_relations,
   //Traverse through the query predicates
   while(list != NULL)
   {
-    if(list->join_p->relation1 == R || list->join_p->relation2 == R)
-      return list;
+    if(list->join_p->relation1 == R ) {
+      if(active_rel[list->join_p->relation2] == 1){
+        free(active_rel);
+        return list;
+      }
+    }
+    else if (list->join_p->relation2 == R)
+    {
+      if(active_rel[list->join_p->relation1] == 1){
+        free(active_rel);
+        return list;
+      }
+    }
     list = list->next;
   }
-  return NULL;
   free(active_rel);
+  return NULL;
 }
 
 void FreeBestTree(best_tree_node **best_tree, int num_of_relations)
