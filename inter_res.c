@@ -31,20 +31,20 @@ int InitInterResults(inter_res** head, int num_of_rel)
 	InitInterData(&(*head)->data, num_of_rel, 0);
 }
 
-int InsertJoinToInterResults(inter_res** head, int rel1, int rel2, result* res)
+int InsertJoinToInterResults(inter_res* head, int rel1, int rel2, result* res)
 {
 	do
 	{
 		//If this is the first instance of the inter_res node
-		if ((*head)->data->num_tuples == 0)
+		if (head->data->num_tuples == 0)
 		{
 			//Insert everything from the result to the inter_res
-			(*head)->data->num_tuples = GetResultNum(res);
-			(*head)->data->table[rel1] = malloc((*head)->data->num_tuples * sizeof(uint64_t));
-			(*head)->data->table[rel2] = malloc((*head)->data->num_tuples * sizeof(uint64_t));
+			head->data->num_tuples = GetResultNum(res);
+			head->data->table[rel1] = malloc(head->data->num_tuples * sizeof(uint64_t));
+			head->data->table[rel2] = malloc(head->data->num_tuples * sizeof(uint64_t));
 			result *cur_node = res;
 			uint relative_i = 0;
-			for (size_t i = 0; i < (*head)->data->num_tuples; i++)
+			for (size_t i = 0; i < head->data->num_tuples; i++)
 			{
 				result_tuple *temp = NULL;
 				//If the result isn't in the current node then go to the next one
@@ -55,28 +55,28 @@ int InsertJoinToInterResults(inter_res** head, int rel1, int rel2, result* res)
 				}
 				temp = (result_tuple*)(cur_node->buff + ( (i - relative_i)*sizeof(result_tuple)));
 
-				(*head)->data->table[rel1][i] = temp->row_idR;
-				(*head)->data->table[rel2][i] = temp->row_idS;
+				head->data->table[rel1][i] = temp->row_idR;
+				head->data->table[rel2][i] = temp->row_idS;
 			}
 			return 1;
 		}
 		// If rel1 is the one active in the intermediate results.
-		else if((*head)->data->table[rel1] != NULL && (*head)->data->table[rel2] == NULL)
+		else if(head->data->table[rel1] != NULL && head->data->table[rel2] == NULL)
 		{
 			//Allocate and initialise the new inter_data variable.
-			(*head)->data->num_tuples = GetResultNum(res);
+			head->data->num_tuples = GetResultNum(res);
 			inter_data *temp_array = NULL;
-			InitInterData(&temp_array, (*head)->num_of_relations, (*head)->data->num_tuples);
-			for (size_t i = 0; i < (*head)->num_of_relations; i++)
-				if((*head)->data->table[i] != NULL)
-					temp_array->table[i] = malloc(((*head)->data->num_tuples) * sizeof(uint64_t));
+			InitInterData(&temp_array, head->num_of_relations, head->data->num_tuples);
+			for (size_t i = 0; i < head->num_of_relations; i++)
+				if(head->data->table[i] != NULL)
+					temp_array->table[i] = malloc((head->data->num_tuples) * sizeof(uint64_t));
 			// [rel2] is still inactive , so we have to manually alocate it
-			temp_array->table[rel2] = malloc((*head)->data->num_tuples * sizeof(uint64_t));
+			temp_array->table[rel2] = malloc(head->data->num_tuples * sizeof(uint64_t));
 
 			//Insert the results.
 			result *cur_node = res;
 			uint64_t relative_i = 0;
-			for (size_t i = 0; i < (*head)->data->num_tuples; i++)
+			for (size_t i = 0; i < head->data->num_tuples; i++)
 			{
 				//Insert the results that are stored in the res variable.
 
@@ -93,31 +93,31 @@ int InsertJoinToInterResults(inter_res** head, int rel1, int rel2, result* res)
 				int old_pos = temp->row_idR;
 				//fprintf(stderr, "temp: %p | old_pos = %d\n", temp, old_pos);
 				temp_array->table[rel2][i] = temp->row_idS;
-				for (size_t j = 0; j < (*head)->num_of_relations; j++)
-					if ((*head)->data->table[j] != NULL && j != rel2)
-						temp_array->table[j][i] = (*head)->data->table[j][old_pos];
+				for (size_t j = 0; j < head->num_of_relations; j++)
+					if (head->data->table[j] != NULL && j != rel2)
+						temp_array->table[j][i] = head->data->table[j][old_pos];
 			}
-			FreeInterData((*head)->data, (*head)->num_of_relations);
-			(*head)->data = temp_array;
+			FreeInterData(head->data, head->num_of_relations);
+			head->data = temp_array;
 			return 1;
 		}
 		// If rel2 is the one active in the intermediate results.
-		else if ((*head)->data->table[rel2] != NULL && (*head)->data->table[rel1] == NULL)
+		else if (head->data->table[rel2] != NULL && head->data->table[rel1] == NULL)
 		{
 			//Allocate and initialise the new inter_data variable.
-			(*head)->data->num_tuples = GetResultNum(res);
+			head->data->num_tuples = GetResultNum(res);
 			inter_data *temp_array = NULL;
-			InitInterData(&temp_array, (*head)->num_of_relations, (*head)->data->num_tuples);
-			for (size_t i = 0; i < (*head)->num_of_relations; i++)
-				if((*head)->data->table[i] != NULL)
-					temp_array->table[i] = malloc(((*head)->data->num_tuples) * sizeof(uint64_t));
+			InitInterData(&temp_array, head->num_of_relations, head->data->num_tuples);
+			for (size_t i = 0; i < head->num_of_relations; i++)
+				if(head->data->table[i] != NULL)
+					temp_array->table[i] = malloc((head->data->num_tuples) * sizeof(uint64_t));
 			// [rel2] is still inactive , so we have to manually alocate it
-			temp_array->table[rel1] = malloc((*head)->data->num_tuples * sizeof(uint64_t));
+			temp_array->table[rel1] = malloc(head->data->num_tuples * sizeof(uint64_t));
 
 			//Insert the results.
 			result *cur_node = res;
 			uint relative_i = 0;
-			for (size_t i = 0; i < (*head)->data->num_tuples; i++)
+			for (size_t i = 0; i < head->data->num_tuples; i++)
 			{
 				//Insert the results that are stored in the res variable.
 				result_tuple *temp = NULL;
@@ -132,20 +132,22 @@ int InsertJoinToInterResults(inter_res** head, int rel1, int rel2, result* res)
 				/* Old_pos refers to the current result's row_id in the inter_res data table.*/
 				int old_pos = temp->row_idS;
 				temp_array->table[rel1][i] = temp->row_idR;
-				for (size_t j = 0; j < (*head)->num_of_relations; j++)
-					if ((*head)->data->table[j] != NULL && j != rel1)
-						temp_array->table[j][i] = (*head)->data->table[j][old_pos];
+				for (size_t j = 0; j < head->num_of_relations; j++)
+					if (head->data->table[j] != NULL && j != rel1)
+						temp_array->table[j][i] = head->data->table[j][old_pos];
 			}
-			FreeInterData((*head)->data, (*head)->num_of_relations);
-			(*head)->data = temp_array;
+			FreeInterData(head->data, head->num_of_relations);
+			head->data = temp_array;
 			return 1;
 		}
-		(*head) = (*head)->next;
-	}while((*head) != NULL);
+		if(head->next == NULL)
+			break;
+		head = head->next;
+	}while(1);
 	//Allocate a new inter_res node
-	InitInterResults(&(*head)->next, (*head)->num_of_relations);
+	InitInterResults(&(head->next), head->num_of_relations);
 	//Insert the results to the new node
-	InsertJoinToInterResults(&(*head)->next, rel1, rel2, res);
+	InsertJoinToInterResults(head->next, rel1, rel2, res);
 	return 0;
 }
 

@@ -36,7 +36,7 @@ void FreeInterResults(inter_res* var);
  * when the inter_res is empty. This function doesn't check if the result is
  * empty, this check is performed in the ExecuteQuery function.
  */
-int InsertJoinToInterResults(inter_res** head, int ex_rel_num, int new_rel_num, result* res);
+int InsertJoinToInterResults(inter_res* head, int ex_rel_num, int new_rel_num, result* res);
 
 /*
  * Calls ScanInterResult to check if a relation is in the intermediate result

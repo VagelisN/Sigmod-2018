@@ -112,7 +112,7 @@ int InserPredAtEnd(best_tree_node* tree, predicates_listnode* pred,column_stats 
   tree->num_predicates++;
   if (tree->tree_stats[pred->join_p->relation1] == NULL)
   {
-      tree->tree_stats[pred->join_p->relation1] = 
+      tree->tree_stats[pred->join_p->relation1] =
     calloc(rel_map[curr_query->relations[pred->join_p->relation1]].num_columns , sizeof(column_stats*));
 
     for (int i = 0; i < rel_map[curr_query->relations[pred->join_p->relation1]].num_columns ; ++i)
@@ -129,7 +129,7 @@ int InserPredAtEnd(best_tree_node* tree, predicates_listnode* pred,column_stats 
   }
   if (tree->tree_stats[pred->join_p->relation2] == NULL)
   {
-      tree->tree_stats[pred->join_p->relation2] = 
+      tree->tree_stats[pred->join_p->relation2] =
     calloc(rel_map[curr_query->relations[pred->join_p->relation2]].num_columns , sizeof(column_stats*));
 
     for (int i = 0; i < rel_map[curr_query->relations[pred->join_p->relation2]].num_columns ; ++i)
@@ -404,7 +404,7 @@ void ExecuteQuery(batch_listnode* curr_query, relation_map* rel_map)
     // All filters are int the beginning of the list
 
     current = curr_query->predicate_list;
-    if(current->filter_p != NULL || 
+    if(current->filter_p != NULL ||
       (current->join_p != NULL && current->join_p->relation1 == current->join_p->relation2))
     {
       current = curr_query->predicate_list;
@@ -412,7 +412,7 @@ void ExecuteQuery(batch_listnode* curr_query, relation_map* rel_map)
       curr_query->predicate_list=current->next;
 
       result *res =NULL;
- 
+
       // filter
       if(current->filter_p != NULL)
       {
@@ -537,7 +537,7 @@ void ExecuteQuery(batch_listnode* curr_query, relation_map* rel_map)
             FreeInterResults(intermediate_result);
             return;
         }
-        InsertJoinToInterResults(&intermediate_result,
+        InsertJoinToInterResults(intermediate_result,
                                  relation1, relation2, curr_res);
 
         if(intermediate_result->next != NULL) MergeInterNodes(&intermediate_result);
@@ -545,7 +545,7 @@ void ExecuteQuery(batch_listnode* curr_query, relation_map* rel_map)
         FreeRelation(relS);
         FreeResult(curr_res);
       }
-      
+
       FreePredListNode(current);
       FreeResult(curr_res);
     }
