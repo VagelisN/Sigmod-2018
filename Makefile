@@ -1,8 +1,8 @@
 
 PROG = ./submission/build/release/radixhash
-OBJS = handler.o preprocess.o results.o rhjoin.o query.o inter_res.o filter.o relation_list.o relation_map.o scheduler.o stats.o
-SRCS = handler.c preprocess.c results.c rhjoin.c query.c inter_res.c filter.c relation_list.c relation_map.c scheduler.c stats.c
-HEADER = preprocess.h results.h rhjoin.h structs.h query.h inter_res.h filter.h relation_list.h relation_map.h scheduler.h stats.h
+OBJS = handler.o preprocess.o results.o rhjoin.o query.o inter_res.o filter.o relation_list.o relation_map.o scheduler.o stats.o best_tree.o
+SRCS = handler.c preprocess.c results.c rhjoin.c query.c inter_res.c filter.c relation_list.c relation_map.c scheduler.c stats.c best_tree.c
+HEADER = preprocess.h results.h rhjoin.h structs.h query.h inter_res.h filter.h relation_list.h relation_map.h scheduler.h stats.h best_tree.h
 
 $(PROG): $(OBJS)
 	gcc -g $(OBJS) -o $(PROG) -lpthread -lrt -lm
@@ -40,6 +40,9 @@ scheduler.o:
 
 stats.o:
 	gcc -g3 -c stats.c
+
+best_tree.o:
+	gcc -g3 -c best_tree.c
 
 clean:
 	rm $(OBJS) $(PROG)

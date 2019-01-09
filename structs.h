@@ -212,5 +212,14 @@ typedef struct join_arguments
 	uint64_t bucket_num;
 }join_arguments;
 
+typedef struct best_tree_node
+{
+	predicates_listnode* best_tree;
+	int single_relation;
+	int active_bits;
+	double cost;
+	column_stats ***tree_stats;
+}best_tree_node;
+
 
 #endif

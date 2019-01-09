@@ -4,6 +4,7 @@
 #include "structs.h"
 #include "best_tree.h"
 #include "query.h"
+#include "stats.h"
 
 
 void InitBestTree(best_tree_node*** best_tree, int num_of_relations)
@@ -104,22 +105,23 @@ predicates_listnode* JoinEnum(batch_listnode* curr_query, column_stats*** query_
 					if (temp_pred == NULL)continue;
 
 					CreateJoinTree(&curr_tree,best_tree[s],curr_query,rel_map);
-					InserPredAtEnd(curr_tree->best_tree,temp_pred,query_stats,rel_map,curr_query);
+					InserPredAtEnd(curr_tree,temp_pred,query_stats,rel_map,curr_query);
 					CostTree(curr_tree,curr_query,temp_pred,rel_map);
 
-					s_new = (s | k);
+					s_new = (s | j);
 					if(best_tree[s_new]->best_tree == NULL || best_tree[s_new]->cost > curr_tree->cost)
 					{
-						best_tree[s_new]->best_tree = curr_tree;
+						free(best_tree[s_new]);
+						best_tree[s_new] = curr_tree;
 					}
 				}
 			}
 		}
 	}
-	return best_tree[num_of_relations-1];
+	return best_tree[curr_query->num_of_relations-1]->best_tree;
 }
 
-CreateJoinTree(best_tree_node **dest, best_tree_node* source ,batch_listnode* curr_query,relation_map* rel_map)
+int CreateJoinTree(best_tree_node **dest, best_tree_node* source ,batch_listnode* curr_query,relation_map* rel_map)
 {
 	(*dest) = malloc(sizeof(best_tree_node));
     (*dest)->best_tree = NULL;
@@ -130,9 +132,9 @@ CreateJoinTree(best_tree_node **dest, best_tree_node* source ,batch_listnode* cu
     else (*dest)->single_relation = -1;
 
     //Set the column stats here
-    if(bit_num != 1)
+    if((*dest)->active_bits != 1)
     {
-    	(*dest)->tree_stats = calloc(num_of_relations,sizeof(column_stats**));
+    	(*dest)->tree_stats = calloc(curr_query->num_of_relations,sizeof(column_stats**));
     }
     predicates_listnode* source_tree = source->best_tree;
     while(source_tree!=NULL)
@@ -143,14 +145,14 @@ CreateJoinTree(best_tree_node **dest, best_tree_node* source ,batch_listnode* cu
     (*dest)->cost = source->cost;
 }
 
-CostTree(best_tree **curr_tree, batch_listnode* curr_query, predicates_listnode* pred,relation_map *rel_map)
+void CostTree(best_tree_node *curr_tree, batch_listnode* curr_query, predicates_listnode* pred,relation_map *rel_map)
 {
 	ValuePredicate(curr_tree->tree_stats,curr_query,pred,rel_map);
-	curr_tree->cost = curr_tree->tree_stats[pred->relation1]->f;
+	curr_tree->cost = curr_tree->tree_stats[pred->join_p->relation1][pred->join_p->column1]->f;
 }
 
 
-int main(int argc, char const *argv[]) {
+/*int main(int argc, char const *argv[]) {
   best_tree_node **best_tree = NULL;
   InitBestTree(&best_tree, 3);
   for (size_t i = 0; i < pow(2, 3); i++) {
@@ -158,4 +160,4 @@ int main(int argc, char const *argv[]) {
   }
   FreeBestTree(best_tree, 3);
   return 0;
-}
+}*/

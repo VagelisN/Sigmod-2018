@@ -10,6 +10,7 @@
 #include "filter.h"
 #include "rhjoin.h"
 #include "stats.h"
+#include "best_tree.h"
 
 int InitialiseQueryString(query_string_array** my_var, int elements, char* str, char* delimeter)
 {
@@ -106,7 +107,7 @@ int ReadQuery(batch_listnode** curr_query, char* buffer)
   return 0;
 }
 
-int InserPredAtEnd(best_tree* tree, predicates_listnode* pred,column_stats ***query_stats,relation_map* rel_map,batch_listnode* curr_query)
+int InserPredAtEnd(best_tree_node* tree, predicates_listnode* pred,column_stats ***query_stats,relation_map* rel_map,batch_listnode* curr_query)
 {
   predicates_listnode *head = tree->best_tree;
 
@@ -121,10 +122,10 @@ int InserPredAtEnd(best_tree* tree, predicates_listnode* pred,column_stats ***qu
 
       tree->tree_stats[pred->join_p->relation1][i] =  malloc(sizeof(column_stats));
       column_stats* stats = tree->tree_stats[pred->join_p->relation1][i];
-      stats.l = query_stats[pred->join_p->relation1][i].l;
-      stats.u = query_stats[pred->join_p->relation1][i].u;
-      stats.f = query_stats[pred->join_p->relation1][i].f;
-      stats.d = query_stats[pred->join_p->relation1][i].d;
+      stats->l = query_stats[pred->join_p->relation1][i]->l;
+      stats->u = query_stats[pred->join_p->relation1][i]->u;
+      stats->f = query_stats[pred->join_p->relation1][i]->f;
+      stats->d = query_stats[pred->join_p->relation1][i]->d;
     }
   }
   if (tree->tree_stats[pred->join_p->relation2] == NULL)
@@ -138,10 +139,10 @@ int InserPredAtEnd(best_tree* tree, predicates_listnode* pred,column_stats ***qu
 
       tree->tree_stats[pred->join_p->relation2][i] =  malloc(sizeof(column_stats));
       column_stats* stats = tree->tree_stats[pred->join_p->relation2][i];
-      stats.l = query_stats[pred->join_p->relation2][i].l;
-      stats.u = query_stats[pred->join_p->relation2][i].u;
-      stats.f = query_stats[pred->join_p->relation2][i].f;
-      stats.d = query_stats[pred->join_p->relation2][i].d;
+      stats->l = query_stats[pred->join_p->relation2][i]->l;
+      stats->u = query_stats[pred->join_p->relation2][i]->u;
+      stats->f = query_stats[pred->join_p->relation2][i]->f;
+      stats->d = query_stats[pred->join_p->relation2][i]->d;
     }
   }
   if(head== NULL )
@@ -157,7 +158,7 @@ int InserPredAtEnd(best_tree* tree, predicates_listnode* pred,column_stats ***qu
   }
   else
   {
-    predicates_listnode *temp = (*head);
+    predicates_listnode *temp = head;
     while(temp->next != NULL)
        temp = temp->next;
 
@@ -375,36 +376,6 @@ void PrintBatch(batch_listnode* batch)
   }
 }
 
-predicates_listnode* ReturnExecPred(batch_listnode* curr_query,inter_res* intermediate_result)
-{
-  predicates_listnode* current =curr_query->predicate_list;
-  predicates_listnode* prev =curr_query->predicate_list;
-
-  //Execute Join
-  //if either of the relations is in the intermediate result or we reached the end
-  while(1)
-  {
-    int relation1 = current->join_p->relation1;
-    int relation2 = current->join_p->relation2;
-    if(current->next==NULL ||
-       intermediate_result->data->table[relation1] != NULL ||
-       intermediate_result->data->table[relation2] != NULL
-      )
-    {
-      prev->next=current->next;
-      if(current == prev)
-        curr_query->predicate_list = current->next;
-      return current;
-    }
-    else
-    {
-      //check if a relation is in the intermediate result
-      prev=current;
-      current = current->next;
-    }
-  }
-}
-
 void FreePredListNode(predicates_listnode *current)
 {
   // This node is the head of the list
@@ -487,7 +458,10 @@ void ExecuteQuery(batch_listnode* curr_query, relation_map* rel_map)
     }
     else
     {
-      current = ReturnExecPred(curr_query,intermediate_result);
+      //all filters have been executed so we need to optimize the order of the joins
+      curr_query->predicate_list = JoinEnum(curr_query,query_stats,rel_map);
+      current = curr_query->predicate_list;
+      curr_query->predicate_list=current->next;
       //Execute Join
       //if either of the relations is in the intermediate result or we reached the end
       int relation1 = current->join_p->relation1;

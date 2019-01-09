@@ -1,19 +1,18 @@
 #ifndef BEST_TREE_H
 #define BEST_TREE_H
 
-typedef struct best_tree_node
-{
-	predicates_listnode* best_tree;
-	int single_relation;
-	int active_bits;
-	double cost;
-	column_stats ***tree_stats;
-}best_tree_node;
+#include "structs.h"
 
 void InitBestTree(best_tree_node*** best_tree, int num_of_relations);
 
 void FreeBestTree(best_tree_node **best_tree, int num_of_relations);
 
 predicates_listnode* Connected(best_tree_node **best_tree, int rel_num, int S, int R, predicates_listnode *list);
+
+predicates_listnode* JoinEnum(batch_listnode* curr_query, column_stats*** query_stats,relation_map* rel_map);
+
+int CreateJoinTree(best_tree_node **dest, best_tree_node* source ,batch_listnode* curr_query,relation_map* rel_map);
+
+void CostTree(best_tree_node *curr_tree, batch_listnode* curr_query, predicates_listnode* pred,relation_map *rel_map);
 
 #endif
