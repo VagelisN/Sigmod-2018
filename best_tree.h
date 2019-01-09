@@ -6,8 +6,8 @@ typedef struct best_tree_node
 	predicates_listnode* best_tree;
 	int single_relation;
 	int active_bits;
-	uint cost;
-	column_stats *** tree_stats;
+	double cost;
+	column_stats ***tree_stats;
 }best_tree_node;
 
 void InitBestTree(best_tree_node*** best_tree, int num_of_relations);

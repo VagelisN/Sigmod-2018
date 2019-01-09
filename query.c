@@ -106,6 +106,71 @@ int ReadQuery(batch_listnode** curr_query, char* buffer)
   return 0;
 }
 
+int InserPredAtEnd(best_tree* tree, predicates_listnode* pred,column_stats ***query_stats,relation_map* rel_map,batch_listnode* curr_query)
+{
+  predicates_listnode *head = tree->best_tree;
+
+  if (tree->tree_stats[pred->join_p->relation1] == NULL)
+  {
+      tree->tree_stats[pred->join_p->relation1] = 
+    calloc(rel_map[curr_query->relations[pred->join_p->relation1]].num_columns , sizeof(column_stats*));
+
+    for (int i = 0; i < rel_map[curr_query->relations[pred->join_p->relation1]].num_columns ; ++i)
+    {
+      if(query_stats[pred->join_p->relation1][i] == NULL)continue;
+
+      tree->tree_stats[pred->join_p->relation1][i] =  malloc(sizeof(column_stats));
+      column_stats* stats = tree->tree_stats[pred->join_p->relation1][i];
+      stats.l = query_stats[pred->join_p->relation1][i].l;
+      stats.u = query_stats[pred->join_p->relation1][i].u;
+      stats.f = query_stats[pred->join_p->relation1][i].f;
+      stats.d = query_stats[pred->join_p->relation1][i].d;
+    }
+  }
+  if (tree->tree_stats[pred->join_p->relation2] == NULL)
+  {
+      tree->tree_stats[pred->join_p->relation2] = 
+    calloc(rel_map[curr_query->relations[pred->join_p->relation2]].num_columns , sizeof(column_stats*));
+
+    for (int i = 0; i < rel_map[curr_query->relations[pred->join_p->relation2]].num_columns ; ++i)
+    {
+      if(query_stats[pred->join_p->relation2][i] == NULL)continue;
+
+      tree->tree_stats[pred->join_p->relation2][i] =  malloc(sizeof(column_stats));
+      column_stats* stats = tree->tree_stats[pred->join_p->relation2][i];
+      stats.l = query_stats[pred->join_p->relation2][i].l;
+      stats.u = query_stats[pred->join_p->relation2][i].u;
+      stats.f = query_stats[pred->join_p->relation2][i].f;
+      stats.d = query_stats[pred->join_p->relation2][i].d;
+    }
+  }
+  if(head== NULL )
+  {
+    head = malloc(sizeof(predicates_listnode));
+    head->next = NULL;
+    head->filter_p = NULL;
+    head->join_p = malloc(sizeof(predicates_listnode));
+    head->join_p->relation1 = pred->join_p->relation1;
+    head->join_p->relation2 = pred->join_p->relation2;
+    head->join_p->column1 = pred->join_p->column1;
+    head->join_p->column2 = pred->join_p->column2;
+  }
+  else
+  {
+    predicates_listnode *temp = (*head);
+    while(temp->next != NULL)
+       temp = temp->next;
+
+    temp->next = malloc(sizeof(predicates_listnode));
+    temp->next->filter_p = NULL;
+    temp->next->join_p = malloc(sizeof(predicates_listnode));
+    temp->join_p->relation1 = pred->join_p->relation1;
+    temp->join_p->relation2 = pred->join_p->relation2;
+    temp->join_p->column1 = pred->join_p->column1;
+    temp->join_p->column2 = pred->join_p->column2;
+  }
+}
+
 int InsertPredicate(predicates_listnode **head,char* predicate)
 {
 

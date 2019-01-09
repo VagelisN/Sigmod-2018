@@ -27,6 +27,8 @@ int ReadQuery(batch_listnode **, char* );
  */
 int InsertPredicate(predicates_listnode**,char*);
 
+int InserPredAtEnd(best_tree** tree,predicates_listnode* pred, column_stats ***query_stats);
+
 /* 
  * Gets a filter predicate as a string, tokenizes and sets a struct 
  * filter_pred appropriately
