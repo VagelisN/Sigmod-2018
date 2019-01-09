@@ -216,6 +216,7 @@ typedef struct best_tree_node
 {
 	predicates_listnode* best_tree;
 	int single_relation;
+	int num_predicates;
 	int active_bits;
 	double cost;
 	column_stats ***tree_stats;
