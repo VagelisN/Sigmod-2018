@@ -12,6 +12,7 @@
 #include "filter.h"
 #include "relation_map.h"
 #include "relation_list.h"
+#include "scheduler.h"
 
 int main(void)
 {
@@ -49,6 +50,10 @@ int main(void)
 	//freopen("/dev/tty", "r", stdin);
 	batch_listnode *batch = NULL, *batch_temp = NULL;
 
+	//Create the job scheduler as well as the threads
+	scheduler* sched = NULL;
+	SchedulerInit(&sched, THREADS);
+
 	//clock_t time_taken = clock();
 	while (1)
 	{
@@ -68,7 +73,7 @@ int main(void)
 				batch_temp = batch;
 				while(batch_temp!=NULL)
 				{
-					ExecuteQuery(batch_temp,rel_map);
+					ExecuteQuery(batch_temp,rel_map, sched);
 					batch_temp = batch_temp->next;
 				}
 				FreeBatch(batch);
@@ -85,5 +90,6 @@ int main(void)
 	//time_taken = clock() - time_taken;
 	//fprintf(stderr, "Total running time is: %.2f seconds.\n", ((double)time_taken)/CLOCKS_PER_SEC);
 	FreeRelationMap(rel_map, relations_count);
+	SchedulerDestroy(sched);
 	return 0;
 }
