@@ -48,6 +48,11 @@ typedef struct result_tuple
 	uint64_t row_idS;
 }result_tuple;
 
+/*
+ * Struct that contains reordered relation as returned from ReorderArray 
+ * from preprocess.c. it contains the histogram the psum and the reorder relation
+ * stored in a relation struct
+ */
 typedef struct reorder_relation
 {
 	int hist_size;
@@ -84,6 +89,13 @@ typedef struct relation_listnode
 	struct relation_listnode *next;
 }relation_listnode;
 
+/*
+ * struct that holds statistics for every relation's columns.
+ * l is the lowest value
+ * u is the highest value
+ * d is the number of distinct values
+ * f is the number of tuples
+ */
 typedef struct column_stats
 {
 	uint64_t l;
@@ -161,6 +173,7 @@ typedef struct query_batch_listnode
 	struct query_batch_listnode *next;
 }batch_listnode;
 
+/** struct that represents a job as stored in the scheduler's job queue*/
 typedef struct jobqueue_node
 {
   int function;
@@ -168,6 +181,13 @@ typedef struct jobqueue_node
   struct jobqueue_node* next;
 }jobqueue_node;
 
+/*
+ * struct that holds everything needed to implement the scheduler.
+ * it has an array of threads, a job queue, a condition variable (barier_cond)
+ * used when the scheduler is waiting answers from the threads, a mutex (queue access)
+ * used for separate thread access to the queue and a semaphore (queue_sem) that is > 0
+ * when there are jobs in the queue. exit_all is used to terminate the threads.
+ */
 typedef struct scheduler
 {
 	int num_of_threads;
@@ -183,6 +203,9 @@ typedef struct scheduler
 
 }scheduler;
 
+/*
+ * 
+ */
 typedef struct hist_arguments
 {
   int **hist;
@@ -193,6 +216,9 @@ typedef struct hist_arguments
   relation *rel;
 }hist_arguments;
 
+/*
+ *
+ */
 typedef struct partition_arguments
 {
 	relation *reordered;
@@ -204,6 +230,9 @@ typedef struct partition_arguments
 	uint64_t *psum;
 }part_arguments;
 
+/*
+ *
+ */
 typedef struct join_arguments
 {
 	reordered_relation *NewR;
@@ -212,6 +241,13 @@ typedef struct join_arguments
 	uint64_t bucket_num;
 }join_arguments;
 
+/*
+ * struct that holds the info needed to implement the BestTree
+ * hash table that is used for Join Enumeration (JoinEnum).
+ * the left deep tree of predicates is stored in best_tree.
+ * tree stats holds the stats of the columns of the relations
+ *  that take part in the predicates of best_tree.
+ */
 typedef struct best_tree_node
 {
 	predicates_listnode* best_tree;

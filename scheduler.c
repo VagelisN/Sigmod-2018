@@ -49,15 +49,19 @@ int PushJob(scheduler* sched, int function, void *arguments)
 		temp->next->arguments = arguments;
 		temp->next->next = NULL;
 	}
+	// signal a thread that waits at the semaphore to take the job
 	sem_post(&(sched->queue_sem));
+
 	pthread_mutex_unlock(&(sched->queue_access));
 }
 
 jobqueue_node* PopJob(scheduler* sched)
 {
 	pthread_mutex_lock(&(sched->queue_access));
+
 	jobqueue_node* temp = sched->job_queue;
 	sched->job_queue = sched->job_queue->next;
+
 	pthread_mutex_unlock(&(sched->queue_access));
 	return temp;
 }
@@ -65,15 +69,21 @@ jobqueue_node* PopJob(scheduler* sched)
 void JobDone(scheduler *sched)
 {
 	pthread_mutex_lock(&(sched->queue_access));
+
 	sched->answers_waiting--;
+	//if this was the last job signal the barier condition
 	if (sched->answers_waiting == 0)
 		pthread_cond_signal(&(sched->barrier_cond));
+
 	pthread_mutex_unlock(&(sched->queue_access));
 }
 
 void Barrier(scheduler *sched)
 {
+
 	pthread_mutex_lock(&(sched->queue_access));
+	// waits until all the jobs are done. 
+	// the thread that finishes the last job will signal the barrier cond
 	while(sched->answers_waiting != 0)
 		pthread_cond_wait(&(sched->barrier_cond),&(sched->queue_access));
 
@@ -82,11 +92,14 @@ void Barrier(scheduler *sched)
 
 int SchedulerDestroy(scheduler* sched)
 {
+	// when the threads pass the semaphore will see exit_all and exit
 	sched->exit_all = 1;
 
+	// wake all the threads waiting at the semaphore
 	for (int i = 0; i < sched->num_of_threads; ++i)
 		sem_post(&(sched->queue_sem));
 
+	// wait for all the threads to exit
 	for (int i = 0; i < sched->num_of_threads; i++)
 		pthread_join(sched->thread_array[i], NULL);//wait for workers to shutdown
 
@@ -103,13 +116,17 @@ void* ThreadFunction(void* arg)
 	scheduler* sched = (scheduler*)arg;
 	while(1)
 	{
+		// wait until a job is available at the queue of the scheduler
 		sem_wait(&(sched->queue_sem));
 
+		// all jobs are done exit
 		if(sched->exit_all == 1)
 			break;
 
 
 		jobqueue_node* job = NULL;
+
+		//get a job from the queue 
 		job = PopJob(sched);
 
 		switch(job->function)
@@ -127,6 +144,5 @@ void* ThreadFunction(void* arg)
 		JobDone(sched);
 		free(job);
 	}
-	//printf("Thread %lu exited\n",pthread_self());
 	pthread_exit(NULL);
 }
