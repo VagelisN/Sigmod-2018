@@ -6,7 +6,7 @@
 
 
 /** Radix Hash Join */
-result* RadixHashJoin(relation*, relation*);
+result* RadixHashJoin(relation*, relation*, scheduler*);
 
 /** Hash function that returns the n last bits of a given number */
 uint64_t HashFunction1(uint64_t num, uint64_t n);

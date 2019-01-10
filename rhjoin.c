@@ -10,11 +10,8 @@
 #include "scheduler.h"
 #include "structs.h"
 
-result* RadixHashJoin(relation *relR, relation* relS)
+result* RadixHashJoin(relation *relR, relation* relS, scheduler* sched)
 {
-	scheduler* sched = NULL;
-	SchedulerInit(&sched, THREADS);
-
 	if (relR->num_tuples == 0 || relS->num_tuples == 0)
 		return NULL;
 	int i;
@@ -65,7 +62,6 @@ result* RadixHashJoin(relation *relR, relation* relS)
 	Barrier(sched);
 
 	result *final_results = MergeResults( res_array, answers);
-	SchedulerDestroy(sched);
 
 	//Free NewS and NewR
 	FreeReorderRelation(NewS);

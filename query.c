@@ -386,7 +386,7 @@ void FreePredListNode(predicates_listnode *current)
     free(current);
 }
 
-void ExecuteQuery(batch_listnode* curr_query, relation_map* rel_map)
+void ExecuteQuery(batch_listnode* curr_query, relation_map* rel_map, scheduler* sched)
 {
   // Initialize an intermediate result
   inter_res* intermediate_result = NULL;
@@ -533,7 +533,7 @@ void ExecuteQuery(batch_listnode* curr_query, relation_map* rel_map)
                                   current->join_p->column2,
                                   intermediate_result, rel_map,
                                   curr_query->relations);
-      result* curr_res = RadixHashJoin(relR, relS);
+      result* curr_res = RadixHashJoin(relR, relS, sched);
       if (curr_res == NULL)
       {
           PrintNullResults(curr_query);
