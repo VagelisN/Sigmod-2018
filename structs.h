@@ -9,6 +9,7 @@
 #define RESULT_MAX_BUFFER 131072 //number of bits in a result node buffer
 #define RESULT_FINAL_BUFFER 1048576
 #define N_LSB 2 //number of least significant bits used in H1
+#define THREADS 2 // Number of threads used by the scheduler
 
 /** Type definition for a tuple */
 typedef struct tuple
@@ -185,7 +186,7 @@ typedef struct scheduler
 
 typedef struct hist_arguments
 {
-  int **hist;
+  uint64_t **hist;
   uint64_t start;
   uint64_t end;
   uint64_t n_lsb;

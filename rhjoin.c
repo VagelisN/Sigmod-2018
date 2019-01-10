@@ -13,7 +13,7 @@
 result* RadixHashJoin(relation *relR, relation* relS)
 {
 	scheduler* sched = NULL;
-	SchedulerInit(&sched, 2);
+	SchedulerInit(&sched, THREADS);
 
 	if (relR->num_tuples == 0 || relS->num_tuples == 0)
 		return NULL;

@@ -25,7 +25,7 @@ void ReorderArray(relation* rel_array, int n_lsb, reordered_relation** new_rel, 
 	//fprintf(stderr, "Starting HistJobs\n");
 	sched->answers_waiting = sched->num_of_threads;
 
-	int **histograms = calloc(sched->num_of_threads , sizeof(int *));
+	uint64_t **histograms = calloc(sched->num_of_threads , sizeof(uint64_t *));
 
 	//Split up the num_tuples so each thread gets the same
 	int tuples_per_thread = (rel_array->num_tuples) / sched->num_of_threads;
@@ -133,11 +133,12 @@ void HistJob(void *arguments)
   hist_arguments *args = arguments;
 
   //Allocate memory for the thread's histogram and set each value to 0.
-  (*(args->hist)) = calloc(args->hist_size, sizeof(int));
+	uint64_t **hist = args->hist;
+  (*hist) = calloc(args->hist_size , sizeof(uint64_t));
 
   for (size_t i = args->start; i < args->end; i++) {
     uint64_t hashed_value = HashFunction1(args->rel->tuples[i].value, args->n_lsb);
-    (*(args->hist))[hashed_value]++;
+    (*hist)[hashed_value]++;
   }
 	free(args);
 	//fprintf(stderr, "\n\nFinished HistJob\n\n\n" );
