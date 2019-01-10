@@ -5,7 +5,7 @@
 
 void InitBestTree(best_tree_node*** best_tree, int num_of_relations);
 
-void FreeBestTree(best_tree_node **best_tree, int num_of_relations);
+void FreeBestTree(best_tree_node **best_tree,batch_listnode *curr_query,relation_map* rel_map);
 
 predicates_listnode* Connected(best_tree_node **best_tree, int rel_num, int S, int R, predicates_listnode *list);
 

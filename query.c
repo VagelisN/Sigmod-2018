@@ -112,7 +112,7 @@ int InserPredAtEnd(best_tree_node* tree, predicates_listnode* pred,column_stats 
   tree->num_predicates++;
   if (tree->tree_stats[pred->join_p->relation1] == NULL)
   {
-      tree->tree_stats[pred->join_p->relation1] =
+      tree->tree_stats[pred->join_p->relation1] = 
     calloc(rel_map[curr_query->relations[pred->join_p->relation1]].num_columns , sizeof(column_stats*));
 
     for (int i = 0; i < rel_map[curr_query->relations[pred->join_p->relation1]].num_columns ; ++i)
@@ -129,7 +129,7 @@ int InserPredAtEnd(best_tree_node* tree, predicates_listnode* pred,column_stats 
   }
   if (tree->tree_stats[pred->join_p->relation2] == NULL)
   {
-      tree->tree_stats[pred->join_p->relation2] =
+      tree->tree_stats[pred->join_p->relation2] = 
     calloc(rel_map[curr_query->relations[pred->join_p->relation2]].num_columns , sizeof(column_stats*));
 
     for (int i = 0; i < rel_map[curr_query->relations[pred->join_p->relation2]].num_columns ; ++i)
@@ -404,7 +404,7 @@ void ExecuteQuery(batch_listnode* curr_query, relation_map* rel_map)
     // All filters are int the beginning of the list
 
     current = curr_query->predicate_list;
-    if(current->filter_p != NULL ||
+    if(current->filter_p != NULL || 
       (current->join_p != NULL && current->join_p->relation1 == current->join_p->relation2))
     {
       current = curr_query->predicate_list;
@@ -412,7 +412,7 @@ void ExecuteQuery(batch_listnode* curr_query, relation_map* rel_map)
       curr_query->predicate_list=current->next;
 
       result *res =NULL;
-
+ 
       // filter
       if(current->filter_p != NULL)
       {
@@ -457,101 +457,106 @@ void ExecuteQuery(batch_listnode* curr_query, relation_map* rel_map)
       FreePredListNode(current);
     }
     else
+      break;
+  }
+
+  //all filters have been executed so we need to optimize the order of the joins
+  if( curr_query->predicate_list->next!=NULL)
+  {
+    predicates_listnode* pred_list = JoinEnum(curr_query,query_stats,rel_map);
+    predicates_listnode* temp_old = curr_query->predicate_list;
+    predicates_listnode* temp_new = curr_query->predicate_list;
+    int found;
+    while(temp_old!=NULL)
     {
-      //all filters have been executed so we need to optimize the order of the joins
-      if( curr_query->predicate_list->next!=NULL)
+      found = 0;
+      temp_new = pred_list;
+      while(temp_new!=NULL)
       {
-        predicates_listnode* pred_list = JoinEnum(curr_query,query_stats,rel_map);
-        predicates_listnode* temp_old = curr_query->predicate_list;
-        predicates_listnode* temp_new = curr_query->predicate_list;
-        int found;
-        while(temp_old!=NULL)
+        if(temp_old->join_p->relation1 == temp_new->join_p->relation1&&
+           temp_old->join_p->relation2 == temp_new->join_p->relation2&&
+           temp_old->join_p->column1 ==temp_new->join_p->column1&&
+           temp_old->join_p->column2 ==temp_new->join_p->column2)
         {
-          found = 0;
-          temp_new = pred_list;
-          while(temp_new!=NULL)
-          {
-            if(temp_old->join_p->relation1 == temp_new->join_p->relation1&&
-               temp_old->join_p->relation2 == temp_new->join_p->relation2&&
-               temp_old->join_p->column1 ==temp_new->join_p->column1&&
-               temp_old->join_p->column2 ==temp_new->join_p->column2)
-            {
-              found =1;
-              break;
-            }
-            if(temp_new->next == NULL)break;
-            temp_new = temp_new->next;
-          }
-          if(found == 0)
-          {
-            temp_new->next = malloc (sizeof(predicates_listnode));
-            temp_new->next->next = NULL;
-            temp_new->next->filter_p = NULL;
-            temp_new ->next->join_p = malloc(sizeof(join_pred));
-            temp_new->next->join_p->relation1=temp_old->join_p->relation1;
-            temp_new->next->join_p->relation2=temp_old->join_p->relation2;
-            temp_new->next->join_p->column1=temp_old->join_p->column1;
-            temp_new->next->join_p->column2=temp_old->join_p->column2;
-          }
-          temp_old = temp_old->next;
+          found =1;
+          break;
         }
-        curr_query->predicate_list = pred_list;
+        if(temp_new->next == NULL)break;
+        temp_new = temp_new->next;
       }
-      PrintPredList(curr_query->predicate_list);
-      current = curr_query->predicate_list;
-      curr_query->predicate_list=current->next;
-      //Execute Join
-      //if either of the relations is in the intermediate result or we reached the end
-      int relation1 = current->join_p->relation1;
-      int relation2 = current->join_p->relation2;
-      result* curr_res = NULL;
-
-      //Check whether or not the relations are both active in the same node
-      if (AreActiveInInter(intermediate_result, current->join_p->relation1, current->join_p->relation2) == 1)
+      if(found == 0)
       {
-        if(JoinInterNode(&intermediate_result, rel_map, current->join_p->relation1, current->join_p->column1,
-                         current->join_p->relation2, current->join_p->column2,curr_query->relations) == 0)
-        {
-          fprintf(stderr, "Error in JoinInterNode()\n");
-          exit(2);
-        }
+        temp_new->next = malloc (sizeof(predicates_listnode));
+        temp_new->next->next = NULL;
+        temp_new->next->filter_p = NULL;
+        temp_new ->next->join_p = malloc(sizeof(join_pred));
+        temp_new->next->join_p->relation1=temp_old->join_p->relation1;
+        temp_new->next->join_p->relation2=temp_old->join_p->relation2;
+        temp_new->next->join_p->column1=temp_old->join_p->column1;
+        temp_new->next->join_p->column2=temp_old->join_p->column2;
       }
-      else
+      temp_old = temp_old->next;
+    }
+    FreePredicateList(curr_query->predicate_list);
+    curr_query->predicate_list = pred_list;
+  }
+
+  while(curr_query->predicate_list != NULL)
+  {
+    current = curr_query->predicate_list;
+    curr_query->predicate_list=current->next;
+    //Execute Join
+    //if either of the relations is in the intermediate result or we reached the end
+    int relation1 = current->join_p->relation1;
+    int relation2 = current->join_p->relation2;
+    result* curr_res = NULL;
+
+    //Check whether or not the relations are both active in the same node
+    if (AreActiveInInter(intermediate_result, current->join_p->relation1, current->join_p->relation2) == 1)
+    {
+      if(JoinInterNode(&intermediate_result, rel_map, current->join_p->relation1, current->join_p->column1,
+                       current->join_p->relation2, current->join_p->column2,curr_query->relations) == 0)
       {
-        relation* relR = GetRelation(current->join_p->relation1,
-                                     current->join_p->column1 ,
-                                     intermediate_result,rel_map,
-                                     curr_query->relations);
-        relation* relS = GetRelation(current->join_p->relation2,
-                                    current->join_p->column2,
-                                    intermediate_result, rel_map,
-                                    curr_query->relations);
-        result* curr_res = RadixHashJoin(relR, relS);
-        if (curr_res == NULL)
-        {
-            PrintNullResults(curr_query);
-            FreePredListNode(current);
-            FreePredicateList(curr_query->predicate_list);
-            FreeRelation(relR);
-            FreeRelation(relS);
-            FreeInterResults(intermediate_result);
-            return;
-        }
-        InsertJoinToInterResults(intermediate_result,
-                                 relation1, relation2, curr_res);
-
-        if(intermediate_result->next != NULL) MergeInterNodes(&intermediate_result);
-        FreeRelation(relR);
-        FreeRelation(relS);
-        FreeResult(curr_res);
+        fprintf(stderr, "Error in JoinInterNode()\n");
+        exit(2);
       }
+    }
+    else
+    {
+      relation* relR = GetRelation(current->join_p->relation1,
+                                   current->join_p->column1 ,
+                                   intermediate_result,rel_map,
+                                   curr_query->relations);
+      relation* relS = GetRelation(current->join_p->relation2,
+                                  current->join_p->column2,
+                                  intermediate_result, rel_map,
+                                  curr_query->relations);
+      result* curr_res = RadixHashJoin(relR, relS);
+      if (curr_res == NULL)
+      {
+          PrintNullResults(curr_query);
+          FreePredListNode(current);
+          FreePredicateList(curr_query->predicate_list);
+          FreeRelation(relR);
+          FreeRelation(relS);
+          FreeInterResults(intermediate_result);
+          return;
+      }
+      InsertJoinToInterResults(intermediate_result,
+                               relation1, relation2, curr_res);
 
-      FreePredListNode(current);
+      if(intermediate_result->next != NULL) MergeInterNodes(&intermediate_result);
+      FreeRelation(relR);
+      FreeRelation(relS);
       FreeResult(curr_res);
     }
+    
+    FreePredListNode(current);
+    FreeResult(curr_res);
   }
   if(intermediate_result->next != NULL)CartesianInterResults(&intermediate_result);
   CalculateQueryResults(intermediate_result, rel_map, curr_query);
   FreeInterResults(intermediate_result);
   FreeQueryStats(query_stats,curr_query,rel_map);
+  query_stats = NULL;
 }

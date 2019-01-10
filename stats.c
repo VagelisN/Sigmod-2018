@@ -50,16 +50,36 @@ void InitQueryStats(column_stats ***query_stats,batch_listnode *curr_query, rela
 	}
 }
 
+void PrintQueryStats(column_stats ***query_stats,batch_listnode *curr_query,relation_map*rel_map)
+{
+	for (int i = 0; i <curr_query->num_of_relations ; ++i)
+	{
+		if(query_stats[i] !=NULL)
+		{
+			for (int j = 0; j < rel_map[curr_query->relations[i]].num_columns; ++j)
+			{
+					if(query_stats[i][j] != NULL)
+						fprintf(stderr, "i %d j %d f %lf\n",i,j,query_stats[i][j]->f );
+			}
+		}	
+	}
+}
+
 void FreeQueryStats(column_stats ***query_stats,batch_listnode *curr_query,relation_map* rel_map)
 {
 	for (int i = 0; i < curr_query->num_of_relations; ++i)
 	{
-		for (int j = 0; j < rel_map[curr_query->relations[i]].num_columns; ++j)
+		if(query_stats[i] !=NULL)
 		{
-			if(query_stats[i][j] != NULL)
-				free(query_stats[i][j]);
-		}
-		free(query_stats[i]);
+			for (int j = 0; j < rel_map[curr_query->relations[i]].num_columns; ++j)
+			{
+					if(query_stats[i][j] != NULL)
+					{
+						free(query_stats[i][j]);
+					}
+			}
+		}	
+		free(query_stats[i]);	
 	}
 	free(query_stats);
 }
@@ -78,8 +98,8 @@ void ValuePredicate(column_stats ***query_stats,batch_listnode *curr_query,predi
 		if (fil->comperator == '=')
 		{
 			//fprintf(stderr, "relation %d cloumn %d l %ld u %ld f %lf d %lf\n",fil->relation,fil->column,stats->l,stats->u,stats->f,stats->d);
-			uint64_t prev_d = stats->d;
-			uint64_t prev_f = stats->f;
+			prev_d = stats->d;
+			prev_f = stats->f;
 			if (fil->value >= stats->l && 
 				fil->value <= stats->u)
 			{
@@ -103,7 +123,7 @@ void ValuePredicate(column_stats ***query_stats,batch_listnode *curr_query,predi
 		{
 			//fprintf(stderr, "relation %d cloumn %d l %ld u %ld f %lf d %lf\n",fil->relation,fil->column,stats->l,stats->u,stats->f,stats->d);
 			uint64_t k1, k2;
-			uint64_t prev_f = stats->f;
+			prev_f = stats->f;
 			if (fil->comperator == '<')
 			{
 				if(fil->value > stats->u)
@@ -201,9 +221,12 @@ void ValuePredicate(column_stats ***query_stats,batch_listnode *curr_query,predi
 	//Estimate a Join predicate
 	else
 	{
-		join_pred* join= pred->join_p;
+				join_pred* join= pred->join_p;
+
+
 		column_stats *stats1 = query_stats[join->relation1][join->column1];
 		column_stats *stats2 = query_stats[join->relation2][join->column2];
+
 		double prev_d1 = stats1->d;
 		double prev_d2 = stats2->d;
 		if (stats1->l > stats2-> l)
@@ -216,8 +239,14 @@ void ValuePredicate(column_stats ***query_stats,batch_listnode *curr_query,predi
 		else 
 			stats1->u = stats2->u;
 
-		stats1->f = stats2->f = (stats1->f * stats2->f)/(stats1->u - stats1->l +1);
-		stats1->d = stats2->d = (stats1->d * stats2->d)/(stats1->u - stats1->l +1);
+		//fprintf(stderr, "relation1 %d cloumn1 %d l %ld u %ld f %lf d %lf\n",join->relation1,join->column1,stats1->l,stats1->u,stats1->f,stats1->d);
+		//fprintf(stderr, "relation2 %d cloumn2 %d l %ld u %ld f %lf d %lf\n",join->relation2,join->column2,stats2->l,stats2->u,stats2->f,stats2->d);
+
+		stats1->f = stats2->f = ((stats1->f * stats2->f)/(double)((stats1->u - stats1->l) +1));
+		stats1->d = stats2->d = (stats1->d * stats2->d)/(double)((stats1->u - stats1->l) +1);
+
+		//fprintf(stderr, "relation1 %d cloumn1 %d l' %ld u' %ld f' %lf d' %lf\n",join->relation1,join->column1,stats1->l,stats1->u,stats1->f,stats1->d);
+		//fprintf(stderr, "relation2 %d cloumn2 %d l' %ld u' %ld f' %lf d' %lf\n",join->relation2,join->column2,stats2->l,stats2->u,stats2->f,stats2->d);
 		column_stats *rest_stats = NULL;
 		for (int i = 0; i < rel_map[curr_query->relations[join->relation1]].num_columns; ++i)
 		{
