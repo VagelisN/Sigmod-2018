@@ -59,7 +59,7 @@ int InitRelationMap(relation_listnode *head,relation_map *rel_map)
 				if(rel_map[i].columns[j][k] < rel_map[i].col_stats[j].l)
 					rel_map[i].col_stats[j].l = rel_map[i].columns[j][k];
 			}
-			//fprintf(stderr, "rel %d col %d l %ld u %ld \n",i,j,rel_map[i].col_stats[j].l,rel_map[i].col_stats[j].u );
+
 			//create a boolean array to check for distinct values
 			uint64_t temp_size = rel_map[i].col_stats[j].u - rel_map[i].col_stats[j].l +1;
 			if (temp_size > 50000000) temp_size = 50000000;
@@ -81,9 +81,7 @@ int InitRelationMap(relation_listnode *head,relation_map *rel_map)
 					rel_map[i].col_stats[j].d++;
 			}
 			free(dist_array);
-			//fprintf(stderr, "distint values of relation %d callumn %d :  %ld\n",i,j,rel_map[i].col_stats[j].d  );
 		}
-
 		head = head->next;
 		i++;
 	}

@@ -10,13 +10,13 @@
  */
 void ReorderArray(relation* rel_array, int n_lsb, reordered_relation** new_rel,scheduler *sched);
 
-/* Free the allocated memory used for ReorderedRelation variables */
+/** Free the allocated memory used for ReorderedRelation variables */
 void FreeReorderRelation(reordered_relation *rel);
 
-/* Free the allocated memory used for relation variables. */
+/** Free the allocated memory used for relation variables. */
 void FreeRelation(relation *rel);
 
-/* Checks if the return value of a malloc is NULL */
+/** Checks if the return value of a malloc is NULL */
 int CheckMalloc(void* ptr, char* txt);
 
 /* Checks whether a bucket size exceeds L1 cache (32 KB).
@@ -26,10 +26,13 @@ int CheckMalloc(void* ptr, char* txt);
 
 relation* ToRow(int** original_array, int row_to_join, relation* new_rel);
 
+/** */
 void HistJob(void *arguments);
 
+/** */
 void PartitionJob(void *args);
 
+/** */
 void JoinJob(void *arguments);
 
 #endif

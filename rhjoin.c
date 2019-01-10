@@ -17,7 +17,8 @@ result* RadixHashJoin(relation *relR, relation* relS, scheduler* sched)
 	int i;
 	reordered_relation* NewR = NULL;
 	reordered_relation* NewS = NULL;
-	//Create histogram,psum,R',S'
+
+	// Create histogram,psum,R',S'
 	ReorderArray(relR, N_LSB, &NewR, sched);
 	ReorderArray(relS, N_LSB, &NewS, sched);
 
@@ -29,41 +30,41 @@ result* RadixHashJoin(relation *relR, relation* relS, scheduler* sched)
 	}
 	struct result* results= NULL;
 
-	//Create an array with hist_size result lists
-
-
+	// Create an array with hist_size result lists
 	uint answers = 0;
 	for (size_t i = 0; i < NewR->hist_size; i++)
 		if (NewR->hist[i] != 0 && NewS->hist[i] != 0)
 			answers++;
 
 	result **res_array = calloc(answers, sizeof(result*));
+
+	// Set the number of jobs that need to be finished
 	sched->answers_waiting = answers;
-	//For every bucket
+	// For every bucket
 	int count = 0;
 	for (i = 0; i < NewR->hist_size; ++i)
 	{
-		//If both relations have elements in this bucket
+		// If both relations have elements in this bucket
 		if (NewR->hist[i] != 0 && NewS->hist[i] != 0)
 		{
-			//Set up the arguments
+			// Set up the arguments
 			join_arguments *arguments = malloc(sizeof(join_arguments));
 			arguments->NewR = NewR;
 			arguments->NewS = NewS;
 			arguments->res = &res_array[count++];
 			arguments->bucket_num = i;
 
-			//PushJob
+			// PushJob
 			PushJob(sched, 2, (void*)arguments);
 		}
 	}
 
-	//Wait for all threads to finish building their work(barrier)
+	// Wait for all threads to finish building their work(barrier)
 	Barrier(sched);
 
 	result *final_results = MergeResults( res_array, answers);
 
-	//Free NewS and NewR
+	// Free NewS and NewR
 	FreeReorderRelation(NewS);
 	FreeReorderRelation(NewR);
 	return final_results;
@@ -81,17 +82,15 @@ void JoinJob(void *arguments)
 		CreateIndex(args->NewS,&ind,args->bucket_num);
 		//Get results
 		GetResults(args->NewR,args->NewS,ind,args->res,args->bucket_num,0);
-		//PrintResult(*(args->res));
 	}
-	//if S is bigger than R
+	// if S is bigger than R
 	else
 	{
-		//Create a second layer index for the respective bucket of R
+		// Create a second layer index for the respective bucket of R
 		InitIndex(&ind, args->NewR->hist[args->bucket_num], args->NewR->psum[args->bucket_num]);
 		CreateIndex(args->NewR, &ind, args->bucket_num);
-		//GetResults
+		// GetResults
 		GetResults(args->NewS, args->NewR, ind, args->res, args->bucket_num,1);
-	//	PrintResult(*(args->res));
 	}
 	DeleteIndex(&ind);
 	free(args);
@@ -104,23 +103,23 @@ int GetResults(reordered_relation* full_rel,reordered_relation* indexed_rel,bc_i
 {
 	uint64_t i, start_full, sp, value1, value2;
 
-	//the start of the non indexed current bucket
+	// the start of the non indexed current bucket
 	start_full = full_rel->psum[curr_bucket];
 
 	tuple* full_tuples = full_rel->rel_array->tuples;
 	tuple* ind_tuples = indexed_rel->rel_array->tuples;
 
-	//for every element of the non indexed relation's bucket
+	// for every element of the non indexed relation's bucket
 	result *cur_node = NULL;
 	for (i = 0; i < full_rel->hist[curr_bucket]; i++)
 	{
-		//check the index of the second relation
+		// check the index of the second relation
 		uint64_t hash_value = HashFunction2((full_tuples[(start_full + i)].value), ind->index_size);
 
-		//if there are elements in this bucket of the indexed relation
+		// if there are elements in this bucket of the indexed relation
 		if( ind->bucket[hash_value] != -1)
 		{
-			//scan the values starting from the bucket and following the chain for equality
+			// scan the values starting from the bucket and following the chain for equality
 			value1 =ind_tuples[(ind->start + (ind->bucket[hash_value])-1)].value;
 			value2 =full_tuples[(start_full + i)].value;
 			if(value1 == value2)
@@ -145,7 +144,7 @@ int GetResults(reordered_relation* full_rel,reordered_relation* indexed_rel,bc_i
 				}
 			}
 
-			//follow the chain
+			// follow the chain
 			sp = (ind->bucket[hash_value]-1);
 			while( ind->chain[sp] != 0)
 			{
@@ -181,23 +180,23 @@ int CreateIndex(reordered_relation *rel, bc_index** ind,int curr_bucket)
 {
 	int start, i;
 
-	//the start of the current bucket is in psum
+	// the start of the current bucket is in psum
 	start = rel->psum[curr_bucket];
 
-	//Hash every value of the bucket from last to first with H2 and set up bucket and chain
+	// Hash every value of the bucket from last to first with H2 and set up bucket and chain
 	for (i = (rel->hist[curr_bucket]-1); i >= 0; i--)
 	{
 		uint64_t hash_value = HashFunction2(rel->rel_array->tuples[start+i].value,(*ind)->index_size);
-		//last encounter
+		// last encounter
 		if ((*ind)->bucket[hash_value] == -1 )
 		{
 			(*ind)->bucket[hash_value] = i+1;
 			(*ind)->chain[i] = 0;
 		}
-		//second or later encounter ->also need to adjust chain
+		// second or later encounter ->also need to adjust chain
 		else
 		{
-			//while chain is not 0 go to the next
+			// while chain is not 0 go to the next
 			int sp = (*ind)->bucket[hash_value] - 1;
 			while( (*ind)->chain[sp] != 0)
 			{
@@ -207,21 +206,20 @@ int CreateIndex(reordered_relation *rel, bc_index** ind,int curr_bucket)
 			(*ind)->chain[i] = 0;
 		}
 	}
-	//PrintIndex((*ind));
 	return 0;
 }
 
 
 int InitIndex(bc_index** ind, int bucket_size, int start)
 {
-	//allocate the index
+	// allocate the index
 	(*ind) = malloc(sizeof(bc_index));
 
-	//the size of the bucket array  is the next prime after the size of the bucket
+	// the size of the bucket array  is the next prime after the size of the bucket
 	uint64_t hash_size = FindNextPrime(bucket_size);
 	(*ind)->bucket = malloc(hash_size * sizeof(int64_t));
 
-	//the size of the chain is equal to the number of elements in the bucket
+	// the size of the chain is equal to the number of elements in the bucket
 	(*ind)->chain = (int64_t*) malloc(bucket_size * sizeof(int64_t));
 
 	(*ind)->start = start;
@@ -272,15 +270,15 @@ void PrintIndex(bc_index* ind)
 
 uint64_t HashFunction1(uint64_t num, uint64_t n)
 {
-	//mask is 64 ones
+	// mask is 64 ones
 	uint64_t mask =
 	0b1111111111111111111111111111111111111111111111111111111111111111;
 
-	//keep only n ones on the right
+	// keep only n ones on the right
 	mask = mask << 64-n;
 	mask = mask >> 64-n;
 
-	//num AND mask only keeps the n rightmost bits of num
+	// num AND mask only keeps the n rightmost bits of num
 	uint64_t hash_value = num & mask;
 
 	return hash_value;
