@@ -131,6 +131,7 @@ predicates_listnode* JoinEnum(batch_listnode* curr_query, column_stats*** query_
 					s_new = ( (s | (int)pow(2,j-1)));
 					CreateJoinTree(&curr_tree,best_tree[s],curr_query,rel_map,s_new);
 					InserPredAtEnd(curr_tree,temp_pred,query_stats,rel_map,curr_query);
+          if(s_new != best_tree_size-1)
 					CostTree(curr_tree,curr_query,temp_pred,rel_map);
 				  //fprintf(stderr, "join _pred %d %d \n",temp_pred->join_p->relation1,temp_pred->join_p->relation2 );
 					//fprintf(stderr, "s_new %d\n",s_new );
