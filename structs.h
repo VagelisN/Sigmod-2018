@@ -8,8 +8,8 @@
 #define CACHE_SIZE 32768 //L1 cache is 32 KB
 #define RESULT_MAX_BUFFER 131072 //number of bits in a result node buffer
 #define RESULT_FINAL_BUFFER 1048576
-#define N_LSB 3 //number of least significant bits used in H1
-#define THREADS 3 // Number of threads used by the scheduler
+#define N_LSB 6 //number of least significant bits used in H1
+#define THREADS 4 // Number of threads used by the scheduler
 
 /** Type definition for a tuple */
 typedef struct tuple
@@ -50,7 +50,7 @@ typedef struct result_tuple
 }result_tuple;
 
 /*
- * Struct that contains reordered relation as returned from ReorderArray 
+ * Struct that contains reordered relation as returned from ReorderArray
  * from preprocess.c. it contains the histogram the psum and the reorder relation
  * stored in a relation struct
  */
@@ -79,7 +79,7 @@ typedef struct bc_index
 	int64_t* chain;
 }bc_index;
 
-/* 
+/*
  * list that holds the names of the files containing the relations
  * and their respective file descriptors
  */
@@ -225,7 +225,7 @@ typedef struct scheduler
 }scheduler;
 
 /*
- * 
+ *
  */
 typedef struct hist_arguments
 {
@@ -272,7 +272,6 @@ typedef struct join_arguments
 typedef struct best_tree_node
 {
 	predicates_listnode* best_tree;
-	int single_relation;
 	int num_predicates;
 	int active_bits;
 	double cost;
