@@ -24,7 +24,7 @@ int SchedulerInit(scheduler** sched, int num_of_threads)
 		pthread_create(&((*sched)->thread_array[i]),NULL,ThreadFunction,(void*)(*sched));
 }
 
-int PushJob(scheduler* sched, int function, void *arguments)
+int PushJob(scheduler* sched, void *function, void *arguments)
 {
 	pthread_mutex_lock(&(sched->queue_access));
 	if( (sched->job_queue) == NULL)
@@ -35,19 +35,14 @@ int PushJob(scheduler* sched, int function, void *arguments)
 		(sched->job_queue)->next = NULL;
 	}
 
-	// Insert at end
+	// Insert at front
 	else
 	{
-		jobqueue_node* temp = (sched->job_queue);
-		while( temp->next != NULL)
-		{
-			temp = temp->next;
-		}
-
-		temp->next = malloc (sizeof(jobqueue_node));
-		temp->next->function = function;
-		temp->next->arguments = arguments;
-		temp->next->next = NULL;
+		jobqueue_node* temp = malloc (sizeof(jobqueue_node));
+		temp->function = function;
+		temp->arguments = arguments;
+		temp->next = sched->job_queue;
+		sched->job_queue = temp;
 	}
 	// signal a thread that waits at the semaphore to take the job
 	sem_post(&(sched->queue_sem));
@@ -129,18 +124,7 @@ void* ThreadFunction(void* arg)
 		//get a job from the queue 
 		job = PopJob(sched);
 
-		switch(job->function)
-		{
-			case 0:
-				HistJob(job->arguments);
-				break;
-			case 1:
-				PartitionJob(job->arguments);
-				break;
-			case 2:
-				JoinJob(job->arguments);
-				break;
-		}
+		(*(job->function))(job->arguments);
 		JobDone(sched);
 		free(job);
 	}

@@ -39,7 +39,7 @@ void ReorderArray(relation* rel_array, int n_lsb, reordered_relation** new_rel, 
 	  else arguments->end = rel_array->num_tuples;
 
 	  // Enqueue it in the scheduler
-	  PushJob(sched, 0,(void*)arguments);
+	  PushJob(sched, &HistJob,(void*)arguments);
 	}
 
 	// Wait for all threads to finish building their work(barrier)
@@ -107,7 +107,7 @@ void ReorderArray(relation* rel_array, int n_lsb, reordered_relation** new_rel, 
 	  else arguments->end = rel_array->num_tuples;
 
 		// Enqueue it in the scheduler
-		PushJob(sched, 1, (void*) arguments);
+		PushJob(sched, &PartitionJob, (void*) arguments);
 	}
 
 

@@ -177,7 +177,7 @@ typedef struct query_batch_listnode
 /** struct that represents a job as stored in the scheduler's job queue*/
 typedef struct jobqueue_node
 {
-  int function;
+  void (*function)(void*);
   void *arguments;
   struct jobqueue_node* next;
 }jobqueue_node;

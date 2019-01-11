@@ -12,7 +12,7 @@ int SchedulerInit(scheduler** sched, int num_of_threads);
  * Pushes a job to the queue of the scheduler. It locks the mutex
  * queue_access before pushing the job and unlocks it afterwards.
  */
-int PushJob(scheduler* sched, int function, void *arguments);
+int PushJob(scheduler* sched, void *function, void *arguments);
 
 /*
  * Used by the threads in ThreadFunction. locks the mutex

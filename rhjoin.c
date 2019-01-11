@@ -55,7 +55,7 @@ result* RadixHashJoin(relation *relR, relation* relS, scheduler* sched)
 			arguments->bucket_num = i;
 
 			// PushJob
-			PushJob(sched, 2, (void*)arguments);
+			PushJob(sched, &JoinJob, (void*)arguments);
 		}
 	}
 
