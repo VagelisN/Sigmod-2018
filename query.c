@@ -464,44 +464,7 @@ void ExecuteQuery(batch_listnode* curr_query, relation_map* rel_map, scheduler* 
 
   //all filters have been executed so we need to optimize the order of the joins
   if( curr_query->predicate_list->next!=NULL)
-  {
-    predicates_listnode* pred_list = JoinEnum(curr_query,query_stats,rel_map);
-    predicates_listnode* temp_old = curr_query->predicate_list;
-    predicates_listnode* temp_new = curr_query->predicate_list;
-    int found;
-    while(temp_old!=NULL)
-    {
-      found = 0;
-      temp_new = pred_list;
-      while(temp_new!=NULL)
-      {
-        if(temp_old->join_p->relation1 == temp_new->join_p->relation1&&
-           temp_old->join_p->relation2 == temp_new->join_p->relation2&&
-           temp_old->join_p->column1 ==temp_new->join_p->column1&&
-           temp_old->join_p->column2 ==temp_new->join_p->column2)
-        {
-          found =1;
-          break;
-        }
-        if(temp_new->next == NULL)break;
-        temp_new = temp_new->next;
-      }
-      if(found == 0)
-      {
-        temp_new->next = malloc (sizeof(predicates_listnode));
-        temp_new->next->next = NULL;
-        temp_new->next->filter_p = NULL;
-        temp_new ->next->join_p = malloc(sizeof(join_pred));
-        temp_new->next->join_p->relation1=temp_old->join_p->relation1;
-        temp_new->next->join_p->relation2=temp_old->join_p->relation2;
-        temp_new->next->join_p->column1=temp_old->join_p->column1;
-        temp_new->next->join_p->column2=temp_old->join_p->column2;
-      }
-      temp_old = temp_old->next;
-    }
-    FreePredicateList(curr_query->predicate_list);
-    curr_query->predicate_list = pred_list;
-  }
+    curr_query->predicate_list = JoinEnum(curr_query,query_stats,rel_map);
 
   while(curr_query->predicate_list != NULL)
   {

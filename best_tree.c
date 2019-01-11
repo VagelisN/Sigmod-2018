@@ -112,29 +112,42 @@ predicates_listnode* JoinEnum(batch_listnode* curr_query, column_stats*** query_
 	InitBestTree(&best_tree, curr_query->num_of_relations);
 	int s_new;
 
+  //the size of the tree is equal to 2^relations
 	int best_tree_size = (int)pow(2, curr_query->num_of_relations);
+
+  //
 	for (int i = 1; i < curr_query->num_of_relations; ++i)
 	{
 		//fprintf(stderr, "i %d\n",i );
+    // For all subsets S of the relations of size i
 		for (int s = 1; s < best_tree_size; ++s)
 		{
 			//fprintf(stderr, "\ts %d\n",s );
 			if(best_tree[s]->active_bits == i)
 			{
+        // For all the relations that are not in S
 				for (int j = 1; j <= curr_query->num_of_relations; ++j)
 				{
 					if ( (((int)pow(2,j-1)) & s) != 0)continue;
 					//fprintf(stderr, "\t \tj %d\n",j );
+          // If relation Rj is connected to S
 					temp_pred = Connected(best_tree,curr_query->num_of_relations, s, j-1,curr_query->predicate_list);
 					if (temp_pred == NULL)continue;
 
 					s_new = ( (s | (int)pow(2,j-1)));
+
+          // Create left deep tree that contains this relation
 					CreateJoinTree(&curr_tree,best_tree[s],curr_query,rel_map,s_new);
 					InserPredAtEnd(curr_tree,temp_pred,query_stats,rel_map,curr_query);
+
+          // Find the cost od the current tree
           if(s_new != best_tree_size-1) 
 					 CostTree(curr_tree,curr_query,temp_pred,rel_map);
+
 				  //fprintf(stderr, "join _pred %d %d \n",temp_pred->join_p->relation1,temp_pred->join_p->relation2 );
 					//fprintf(stderr, "s_new %d\n",s_new );
+
+          //Update Best Tree
 					if(best_tree[s_new]->best_tree == NULL || best_tree[s_new]->cost > curr_tree->cost)
 					{
 						if(best_tree[s_new]->best_tree == NULL || best_tree[s_new]->num_predicates == curr_tree->num_predicates)
@@ -143,8 +156,6 @@ predicates_listnode* JoinEnum(batch_listnode* curr_query, column_stats*** query_
   							FreePredicateList(best_tree[s_new]->best_tree);
   							free(best_tree[s_new]);
 							  best_tree[s_new] = curr_tree;
-							//fprintf(stderr, "MPHKA KAI ALLAJA TO tree\n");
-							//PrintPredList(best_tree[s_new]->best_tree);
 						}
             else
             {
@@ -167,16 +178,68 @@ predicates_listnode* JoinEnum(batch_listnode* curr_query, column_stats*** query_
 		}
 		/*for (int m = 1; m < best_tree_size; ++m)
 		{
-				fprintf(stderr, "Printfintg predicate list of best_tree[%d] cost %lf \n",m,best_tree[m]->cost );
+				fprintf(stderr, "Printing predicate list of best_tree[%d] cost %lf \n",m,best_tree[m]->cost );
 				PrintPredList(best_tree[m]->best_tree);
 		}*/
-		//exit(1);
 	}
 
 	//fprintf(stderr, "tree size%d\n",best_tree_size-1 );
 	//PrintPredList(best_tree[best_tree_size-1]->best_tree);
+
+
 	predicates_listnode *return_list =best_tree[best_tree_size-1]->best_tree;
 	best_tree[best_tree_size-1]->best_tree = NULL;
+
+  /* Some queries have two predicates that contain the same relations
+   * JoinEnum returns a list that contain only one of the two and so
+   * if the number of predicates of the best tree is less than the 
+   * number of predicates of the current query, find these predicates
+   * and insert them at end */
+  predicates_listnode* temp_old = curr_query->predicate_list;
+
+  int found, temp_num_pred = 0;
+  while(temp_old!=NULL)
+  {
+    temp_num_pred++;
+    temp_old= temp_old->next;
+  }
+  temp_old = curr_query->predicate_list;
+  if(temp_num_pred != best_tree[best_tree_size-1]->num_predicates )
+  {
+    //check if there were any predicates left out from JoinEnum
+    predicates_listnode* temp_new;
+    while(temp_old!=NULL)
+    {
+      found = 0;
+      temp_new = return_list;
+      while(temp_new!=NULL)
+      {
+        if(temp_old->join_p->relation1 == temp_new->join_p->relation1&&
+           temp_old->join_p->relation2 == temp_new->join_p->relation2&&
+           temp_old->join_p->column1 == temp_new->join_p->column1&&
+           temp_old->join_p->column2 == temp_new->join_p->column2)
+        {
+          found =1;
+          break;
+        }
+        if(temp_new->next == NULL)break;
+        temp_new = temp_new->next;
+      }
+      if(found == 0)
+      {
+        temp_new->next = malloc (sizeof(predicates_listnode));
+        temp_new->next->next = NULL;
+        temp_new->next->filter_p = NULL;
+        temp_new ->next->join_p = malloc(sizeof(join_pred));
+        temp_new->next->join_p->relation1=temp_old->join_p->relation1;
+        temp_new->next->join_p->relation2=temp_old->join_p->relation2;
+        temp_new->next->join_p->column1=temp_old->join_p->column1;
+        temp_new->next->join_p->column2=temp_old->join_p->column2;
+      }
+      temp_old = temp_old->next;
+    }
+    FreePredicateList(curr_query->predicate_list);
+  }
 	FreeBestTree(best_tree, curr_query,rel_map);
 	return return_list;
 }
@@ -215,17 +278,5 @@ void CostTree(best_tree_node *curr_tree, batch_listnode* curr_query, predicates_
 	ValuePredicate(curr_tree->tree_stats,curr_query,pred,rel_map);
 	//fprintf(stderr, "prev cost =%lf + %lf \n",curr_tree->cost ,curr_tree->tree_stats[pred->join_p->relation1][pred->join_p->column1]->f );
 	curr_tree->cost = (curr_tree->cost + curr_tree->tree_stats[pred->join_p->relation1][pred->join_p->column1]->f);
-	
-	//fprintf(stderr, "COST %lf\n",curr_tree->cost );
 }
 
-
-/*int main(int argc, char const *argv[]) {
-  best_tree_node **best_tree = NULL;
-  InitBestTree(&best_tree, 3);
-  for (size_t i = 0; i < pow(2, 3); i++) {
-    printf("active_bits: %d | single_relation: %d\n", best_tree[i]->active_bits, best_tree[i]->single_relation);
-  }
-  FreeBestTree(best_tree, 3);
-  return 0;
-}*/

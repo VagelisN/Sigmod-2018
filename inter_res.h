@@ -1,19 +1,6 @@
 #ifndef INTER_RES_H
 #define INTER_RES_H
 
-typedef struct inter_data
-{
-	uint64_t num_tuples;
-	uint64_t **table;
-}inter_data;
-
-typedef struct intermediate_result
-{
-	struct inter_data *data;
-	int num_of_relations;
-	struct intermediate_result *next;
-}inter_res;
-
 /* Initialises an inter_data variable.*/
 int InitInterData(inter_data** head, int num_of_relations, int num_tuples);
 

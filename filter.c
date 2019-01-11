@@ -12,15 +12,16 @@ int InsertSingleRowIdsToInterResult(inter_res** head, int relation_num, result* 
 {
   // Find the number of the results in res
   uint64_t num_of_results = GetResultNum(res);
-  //printf("Filter num_of_results: %lu\n", num_of_results);
+
   do
   {
     // If its the first instance of the inter_res node
     if ((*head)->data->num_tuples == 0)
     {
-      /* Insert all results to the inter_res */
+      // Insert all results to the inter_res
       (*head)->data->num_tuples = num_of_results;
       (*head)->data->table[relation_num] = malloc(num_of_results * sizeof(uint64_t));
+
       // Insert results one by one
       result *cur_node = res;
       uint64_t relative_i = 0;
@@ -37,10 +38,12 @@ int InsertSingleRowIdsToInterResult(inter_res** head, int relation_num, result* 
       }
       return 1;
     }
+
     else if((*head)->data->table[relation_num] != NULL)
     {
     	/* If the bucket is already active then remove the tuples that dont fulfil the filter */
-    	//Allocate and initialise the new inter_data variable.
+
+    	// Allocate and initialise the new inter_data variable.
       inter_data *temp_array = NULL;
       (*head)->data->num_tuples = GetResultNum(res);
       InitInterData(&temp_array, (*head)->num_of_relations, (*head)->data->num_tuples);
@@ -50,12 +53,13 @@ int InsertSingleRowIdsToInterResult(inter_res** head, int relation_num, result* 
     		if((*head)->data->table[i] != NULL)
     			temp_array->table[i] = malloc((*head)->data->num_tuples * sizeof(uint64_t));
     	}
-    	//Insert the results.
+
+    	// Insert the results.
       result *cur_node = res;
       uint64_t relative_i = 0;
     	for (size_t i = 0; i < (*head)->data->num_tuples; i++)
     	{
-    		//Insert the results that are stored in the res variable.
+    		// Insert the results that are stored in the res variable.
     		uint64_t *temp;
         if ((i - relative_i) >= cur_node->current_load)
         {
@@ -70,15 +74,17 @@ int InsertSingleRowIdsToInterResult(inter_res** head, int relation_num, result* 
     			if ((relation_num != j) && (*head)->data->table[j] != NULL)
     				temp_array->table[j][i] = (*head)->data->table[j][(*temp)];
     	}
+
       FreeInterData((*head)->data, (*head)->num_of_relations);
       (*head)->data = temp_array;
       return 1;
     }
     (*head) = (*head)->next;
   }while((*head) != NULL);
-  //Allocate a new inter_res node
+
+  // Allocate a new inter_res node
   InitInterResults(&(*head)->next, (*head)->num_of_relations);
-  //Insert the results to the new node
+  // Insert the results to the new node
   InsertSingleRowIdsToInterResult(&(*head)->next, relation_num, res);
 }
 

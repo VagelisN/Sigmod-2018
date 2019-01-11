@@ -79,7 +79,8 @@ typedef struct bc_index
 	int64_t* chain;
 }bc_index;
 
-/* list that holds the names of the files containing the relations
+/* 
+ * list that holds the names of the files containing the relations
  * and their respective file descriptors
  */
 
@@ -89,6 +90,25 @@ typedef struct relation_listnode
 	int fd;
 	struct relation_listnode *next;
 }relation_listnode;
+
+/*
+ *
+ */
+typedef struct inter_data
+{
+	uint64_t num_tuples;
+	uint64_t **table;
+}inter_data;
+
+/*
+ *
+ */
+typedef struct intermediate_result
+{
+	struct inter_data *data;
+	int num_of_relations;
+	struct intermediate_result *next;
+}inter_res;
 
 /*
  * struct that holds statistics for every relation's columns.

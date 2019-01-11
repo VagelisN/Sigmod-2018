@@ -22,6 +22,7 @@ int main(void)
 	int done_flag = 0;
 	// The list that holds the names of the relation files
 	relation_listnode *relation_list = NULL;
+
 	//fprintf(stderr,"If you've completed adding relations, type Done .\n");
 	while (done_flag == 0)
 	{
@@ -47,7 +48,6 @@ int main(void)
 
 	// Start getting batches of querries
 	//fprintf(stderr,"Give queries (or type Exit to quit):\n");
-	//freopen("/dev/tty", "r", stdin);
 	batch_listnode *batch = NULL, *batch_temp = NULL;
 
 	//Create the job scheduler as well as the threads
