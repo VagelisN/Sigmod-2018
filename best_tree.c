@@ -210,36 +210,33 @@ predicates_listnode* JoinEnum(batch_listnode* curr_query, column_stats*** query_
     predicates_listnode* temp_new;
     while(temp_old!=NULL)
     {
-      found = 0;
       temp_new = return_list;
       while(temp_new!=NULL)
       {
-        if(temp_old->join_p->relation1 == temp_new->join_p->relation1&&
-           temp_old->join_p->relation2 == temp_new->join_p->relation2&&
-           temp_old->join_p->column1 == temp_new->join_p->column1&&
-           temp_old->join_p->column2 == temp_new->join_p->column2)
+        if((temp_old->join_p->relation1 == temp_new->join_p->relation1 ||
+           temp_old->join_p->relation1 == temp_new->join_p->relation2) &&
+           (temp_old->join_p->relation2 == temp_new->join_p->relation2 ||
+            temp_old->join_p->relation2 == temp_new->join_p->relation1 )&&
+           (temp_old->join_p->column1 != temp_new->join_p->column1 ||
+           temp_old->join_p->column2 != temp_new->join_p->column2 ))
         {
-          found =1;
-          break;
+        predicates_listnode *temp= malloc (sizeof(predicates_listnode));
+        temp->next = temp_new->next;
+        temp_new->next = temp;
+        temp->filter_p = NULL;
+        temp->join_p = malloc(sizeof(join_pred));
+        temp->join_p->relation1=temp_old->join_p->relation1;
+        temp->join_p->relation2=temp_old->join_p->relation2;
+        temp->join_p->column1=temp_old->join_p->column1;
+        temp->join_p->column2=temp_old->join_p->column2;
         }
         if(temp_new->next == NULL)break;
         temp_new = temp_new->next;
       }
-      if(found == 0)
-      {
-        temp_new->next = malloc (sizeof(predicates_listnode));
-        temp_new->next->next = NULL;
-        temp_new->next->filter_p = NULL;
-        temp_new ->next->join_p = malloc(sizeof(join_pred));
-        temp_new->next->join_p->relation1=temp_old->join_p->relation1;
-        temp_new->next->join_p->relation2=temp_old->join_p->relation2;
-        temp_new->next->join_p->column1=temp_old->join_p->column1;
-        temp_new->next->join_p->column2=temp_old->join_p->column2;
-      }
       temp_old = temp_old->next;
     }
-    FreePredicateList(curr_query->predicate_list);
   }
+  FreePredicateList(curr_query->predicate_list);
 	FreeBestTree(best_tree, curr_query,rel_map);
 	return return_list;
 }
@@ -271,6 +268,71 @@ int CreateJoinTree(best_tree_node **dest, best_tree_node* source ,batch_listnode
     	source_tree=source_tree->next;
     }
     (*dest)->cost = source->cost;
+}
+
+int InserPredAtEnd(best_tree_node* tree, predicates_listnode* pred,column_stats ***query_stats,relation_map* rel_map,batch_listnode* curr_query)
+{
+  tree->num_predicates++;
+  if (tree->tree_stats[pred->join_p->relation1] == NULL)
+  {
+      tree->tree_stats[pred->join_p->relation1] =
+    calloc(rel_map[curr_query->relations[pred->join_p->relation1]].num_columns , sizeof(column_stats*));
+
+    for (int i = 0; i < rel_map[curr_query->relations[pred->join_p->relation1]].num_columns ; ++i)
+    {
+      if(query_stats[pred->join_p->relation1][i] == NULL)continue;
+
+      tree->tree_stats[pred->join_p->relation1][i] =  malloc(sizeof(column_stats));
+      column_stats* stats = tree->tree_stats[pred->join_p->relation1][i];
+      stats->l = query_stats[pred->join_p->relation1][i]->l;
+      stats->u = query_stats[pred->join_p->relation1][i]->u;
+      stats->f = query_stats[pred->join_p->relation1][i]->f;
+      stats->d = query_stats[pred->join_p->relation1][i]->d;
+    }
+  }
+  if (tree->tree_stats[pred->join_p->relation2] == NULL)
+  {
+      tree->tree_stats[pred->join_p->relation2] =
+    calloc(rel_map[curr_query->relations[pred->join_p->relation2]].num_columns , sizeof(column_stats*));
+
+    for (int i = 0; i < rel_map[curr_query->relations[pred->join_p->relation2]].num_columns ; ++i)
+    {
+      if(query_stats[pred->join_p->relation2][i] == NULL)continue;
+
+      tree->tree_stats[pred->join_p->relation2][i] =  malloc(sizeof(column_stats));
+      column_stats* stats = tree->tree_stats[pred->join_p->relation2][i];
+      stats->l = query_stats[pred->join_p->relation2][i]->l;
+      stats->u = query_stats[pred->join_p->relation2][i]->u;
+      stats->f = query_stats[pred->join_p->relation2][i]->f;
+      stats->d = query_stats[pred->join_p->relation2][i]->d;
+    }
+  }
+  if(tree->best_tree== NULL )
+  {
+    tree->best_tree = malloc(sizeof(predicates_listnode));
+    tree->best_tree->next = NULL;
+    tree->best_tree->filter_p = NULL;
+    tree->best_tree->join_p = malloc(sizeof(predicates_listnode));
+    tree->best_tree->join_p->relation1 = pred->join_p->relation1;
+    tree->best_tree->join_p->relation2 = pred->join_p->relation2;
+    tree->best_tree->join_p->column1 = pred->join_p->column1;
+    tree->best_tree->join_p->column2 = pred->join_p->column2;
+  }
+  else
+  {
+    predicates_listnode *temp = tree->best_tree;
+    while(temp->next != NULL)
+       temp = temp->next;
+
+    temp->next = malloc(sizeof(predicates_listnode));
+    temp->next->filter_p = NULL;
+    temp->next->next = NULL;
+    temp->next->join_p = malloc(sizeof(predicates_listnode));
+    temp->next->join_p->relation1 = pred->join_p->relation1;
+    temp->next->join_p->relation2 = pred->join_p->relation2;
+    temp->next->join_p->column1 = pred->join_p->column1;
+    temp->next->join_p->column2 = pred->join_p->column2;
+  }
 }
 
 void CostTree(best_tree_node *curr_tree, batch_listnode* curr_query, predicates_listnode* pred,relation_map *rel_map)

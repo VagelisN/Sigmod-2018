@@ -107,71 +107,6 @@ int ReadQuery(batch_listnode** curr_query, char* buffer)
   return 0;
 }
 
-int InserPredAtEnd(best_tree_node* tree, predicates_listnode* pred,column_stats ***query_stats,relation_map* rel_map,batch_listnode* curr_query)
-{
-  tree->num_predicates++;
-  if (tree->tree_stats[pred->join_p->relation1] == NULL)
-  {
-      tree->tree_stats[pred->join_p->relation1] =
-    calloc(rel_map[curr_query->relations[pred->join_p->relation1]].num_columns , sizeof(column_stats*));
-
-    for (int i = 0; i < rel_map[curr_query->relations[pred->join_p->relation1]].num_columns ; ++i)
-    {
-      if(query_stats[pred->join_p->relation1][i] == NULL)continue;
-
-      tree->tree_stats[pred->join_p->relation1][i] =  malloc(sizeof(column_stats));
-      column_stats* stats = tree->tree_stats[pred->join_p->relation1][i];
-      stats->l = query_stats[pred->join_p->relation1][i]->l;
-      stats->u = query_stats[pred->join_p->relation1][i]->u;
-      stats->f = query_stats[pred->join_p->relation1][i]->f;
-      stats->d = query_stats[pred->join_p->relation1][i]->d;
-    }
-  }
-  if (tree->tree_stats[pred->join_p->relation2] == NULL)
-  {
-      tree->tree_stats[pred->join_p->relation2] =
-    calloc(rel_map[curr_query->relations[pred->join_p->relation2]].num_columns , sizeof(column_stats*));
-
-    for (int i = 0; i < rel_map[curr_query->relations[pred->join_p->relation2]].num_columns ; ++i)
-    {
-      if(query_stats[pred->join_p->relation2][i] == NULL)continue;
-
-      tree->tree_stats[pred->join_p->relation2][i] =  malloc(sizeof(column_stats));
-      column_stats* stats = tree->tree_stats[pred->join_p->relation2][i];
-      stats->l = query_stats[pred->join_p->relation2][i]->l;
-      stats->u = query_stats[pred->join_p->relation2][i]->u;
-      stats->f = query_stats[pred->join_p->relation2][i]->f;
-      stats->d = query_stats[pred->join_p->relation2][i]->d;
-    }
-  }
-  if(tree->best_tree== NULL )
-  {
-    tree->best_tree = malloc(sizeof(predicates_listnode));
-    tree->best_tree->next = NULL;
-    tree->best_tree->filter_p = NULL;
-    tree->best_tree->join_p = malloc(sizeof(predicates_listnode));
-    tree->best_tree->join_p->relation1 = pred->join_p->relation1;
-    tree->best_tree->join_p->relation2 = pred->join_p->relation2;
-    tree->best_tree->join_p->column1 = pred->join_p->column1;
-    tree->best_tree->join_p->column2 = pred->join_p->column2;
-  }
-  else
-  {
-    predicates_listnode *temp = tree->best_tree;
-    while(temp->next != NULL)
-       temp = temp->next;
-
-    temp->next = malloc(sizeof(predicates_listnode));
-    temp->next->filter_p = NULL;
-    temp->next->next = NULL;
-    temp->next->join_p = malloc(sizeof(predicates_listnode));
-    temp->next->join_p->relation1 = pred->join_p->relation1;
-    temp->next->join_p->relation2 = pred->join_p->relation2;
-    temp->next->join_p->column1 = pred->join_p->column1;
-    temp->next->join_p->column2 = pred->join_p->column2;
-  }
-}
-
 int InsertPredicate(predicates_listnode **head,char* predicate)
 {
 
@@ -343,17 +278,18 @@ void FreeBatch(batch_listnode* batch)
 
 void PrintPredList(predicates_listnode* head)
 {
+  fprintf(stderr, "gamhthike\n" );
   while(head!= NULL)
   {
     if(head->filter_p != NULL)
     {
-      printf("    filter:\n");
-      printf("     %d %d %c %d\n",head->filter_p->relation ,head->filter_p->column,head->filter_p->comperator ,head->filter_p->value );
+      fprintf(stderr,"    filter:\n");
+     fprintf(stderr,"     %d %d %c %d\n",head->filter_p->relation ,head->filter_p->column,head->filter_p->comperator ,head->filter_p->value );
     }
     else
     {
-      printf("    join:\n");
-      printf("     %d %d %d %d \n",head->join_p->relation1, head->join_p->relation2, head->join_p->column1, head->join_p->column2 );
+      fprintf(stderr,"    join:\n");
+      fprintf(stderr,"     %d %d %d %d \n",head->join_p->relation1, head->join_p->relation2, head->join_p->column1, head->join_p->column2 );
     }
     head = head->next;
   }
@@ -464,7 +400,10 @@ void ExecuteQuery(batch_listnode* curr_query, relation_map* rel_map, scheduler* 
 
   //all filters have been executed so we need to optimize the order of the joins
   if( curr_query->predicate_list->next!=NULL)
-    curr_query->predicate_list = JoinEnum(curr_query,query_stats,rel_map);
+  {
+    predicates_listnode* temp = JoinEnum(curr_query,query_stats,rel_map);
+    curr_query->predicate_list = temp;
+  }
 
   while(curr_query->predicate_list != NULL)
   {
