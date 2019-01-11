@@ -112,21 +112,17 @@ predicates_listnode* JoinEnum(batch_listnode* curr_query, column_stats*** query_
   //the size of the tree is equal to 2^relations
 	int best_tree_size = (int)pow(2, curr_query->num_of_relations);
 
-  //
 	for (int i = 1; i < curr_query->num_of_relations; ++i)
 	{
-		//fprintf(stderr, "i %d\n",i );
     // For all subsets S of the relations of size i
 		for (int s = 1; s < best_tree_size; ++s)
 		{
-			//fprintf(stderr, "\ts %d\n",s );
 			if(best_tree[s]->active_bits == i)
 			{
         // For all the relations that are not in S
 				for (int j = 1; j <= curr_query->num_of_relations; ++j)
 				{
 					if ( (((int)pow(2,j-1)) & s) != 0)continue;
-					//fprintf(stderr, "\t \tj %d\n",j );
           // If relation Rj is connected to S
 					temp_pred = Connected(best_tree,curr_query->num_of_relations, s, j-1,curr_query->predicate_list);
 					if (temp_pred == NULL)continue;
@@ -140,9 +136,6 @@ predicates_listnode* JoinEnum(batch_listnode* curr_query, column_stats*** query_
           // Find the cost of the current tree
           if(s_new != best_tree_size-1)
 					 CostTree(curr_tree,curr_query,temp_pred,rel_map);
-
-				  //fprintf(stderr, "join _pred %d %d \n",temp_pred->join_p->relation1,temp_pred->join_p->relation2 );
-					//fprintf(stderr, "s_new %d\n",s_new );
 
           //Update Best Tree
 					if(best_tree[s_new]->best_tree == NULL || best_tree[s_new]->cost > curr_tree->cost)
@@ -173,16 +166,7 @@ predicates_listnode* JoinEnum(batch_listnode* curr_query, column_stats*** query_
 				}
 			}
 		}
-		/*for (int m = 1; m < best_tree_size; ++m)
-		{
-				fprintf(stderr, "Printing predicate list of best_tree[%d] cost %lf \n",m,best_tree[m]->cost );
-				PrintPredList(best_tree[m]->best_tree);
-		}*/
 	}
-
-	//fprintf(stderr, "tree size%d\n",best_tree_size-1 );
-	//PrintPredList(best_tree[best_tree_size-1]->best_tree);
-
 
 	predicates_listnode *return_list =best_tree[best_tree_size-1]->best_tree;
 	best_tree[best_tree_size-1]->best_tree = NULL;
@@ -332,6 +316,5 @@ int InserPredAtEnd(best_tree_node* tree, predicates_listnode* pred,column_stats 
 void CostTree(best_tree_node *curr_tree, batch_listnode* curr_query, predicates_listnode* pred,relation_map *rel_map)
 {
 	ValuePredicate(curr_tree->tree_stats,curr_query,pred,rel_map);
-	//fprintf(stderr, "prev cost =%lf + %lf \n",curr_tree->cost ,curr_tree->tree_stats[pred->join_p->relation1][pred->join_p->column1]->f );
 	curr_tree->cost = (curr_tree->cost + curr_tree->tree_stats[pred->join_p->relation1][pred->join_p->column1]->f);
 }

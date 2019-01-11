@@ -225,7 +225,9 @@ typedef struct scheduler
 }scheduler;
 
 /*
- *
+ * In this struct we hold all the variables that a HistJob needs. Start-end define
+ * the indexes of the array that we are going to check and the mini-histogram results
+ * will be written in the hist variable (which will be malloced firstly).
  */
 typedef struct hist_arguments
 {
@@ -238,7 +240,10 @@ typedef struct hist_arguments
 }hist_arguments;
 
 /*
- *
+ * This struct holds all the variables that a PatitionJob needs. Every PartitionJob
+ * will insert in the reordered array from start to end the right values. reordered
+ * is the only variable which we will change its values, but there is no need for mutexes
+ * because every thread will access different parts of the array.
  */
 typedef struct partition_arguments
 {
@@ -252,7 +257,8 @@ typedef struct partition_arguments
 }part_arguments;
 
 /*
- *
+ * Every JoinJob takes both the  reordered_relations and the bucket_num, and writes
+ * the results in a result list with buffer size = 128 KB.
  */
 typedef struct join_arguments
 {
