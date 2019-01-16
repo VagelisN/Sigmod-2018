@@ -9,10 +9,10 @@
 #include "rhjoin.h"
 #include "results.h"
 
-void ReorderArray(relation* rel_array, int n_lsb, reordered_relation** new_rel, scheduler *sched)
+void ReorderArray(relation* rel_array, reordered_relation** new_rel, scheduler *sched)
 {
 	int hist_size = 1;
-	for (int i = 0; i < n_lsb; ++i)
+	for (int i = 0; i < N_LSB; ++i)
 		hist_size *= 2;
 
 	// the number of hist jobs is equal to the number of threads
@@ -29,7 +29,7 @@ void ReorderArray(relation* rel_array, int n_lsb, reordered_relation** new_rel, 
 	  // Set the arguments
 	  hist_arguments *arguments = malloc(sizeof(hist_arguments));
 	  arguments->hist = &histograms[i];
-	  arguments->n_lsb = n_lsb;
+	  arguments->n_lsb = N_LSB;
 	  arguments->hist_size = hist_size;
 	  arguments->rel = rel_array;
 	  arguments->start = i * tuples_per_thread;
@@ -42,13 +42,13 @@ void ReorderArray(relation* rel_array, int n_lsb, reordered_relation** new_rel, 
 	  PushJob(sched, &HistJob,(void*)arguments);
 	}
 
-	// Wait for all threads to finish building their work(barrier)
-	Barrier(sched);
-
 	// Allocate the Hist and Psum arrays
 	int64_t *Psum = malloc(hist_size * sizeof(int64_t));
 	uint64_t *Hist = calloc(hist_size, sizeof(uint64_t));
 	memset(Psum, -1 , hist_size * sizeof(int64_t));
+
+	// Wait for all threads to finish building their work(barrier)
+	Barrier(sched);
 
 	// Build the whole Histogram from the
 	short int flag = 1;
@@ -69,11 +69,6 @@ void ReorderArray(relation* rel_array, int n_lsb, reordered_relation** new_rel, 
 		(*new_rel) = NULL;
 		return;
 	}
-
-	// Free allocated space
-	for (size_t i = 0; i < sched->num_of_threads; i++)
-	  free(histograms[i]);
-	free(histograms);
 
 	/*--------------------Build the reordered array----------------------*/
 
@@ -96,7 +91,7 @@ void ReorderArray(relation* rel_array, int n_lsb, reordered_relation** new_rel, 
 		arguments->reordered = (*new_rel)->rel_array;
 		arguments->hist_size = hist_size;
 		arguments->original = rel_array;
-		arguments->n_lsb = n_lsb;
+		arguments->n_lsb = N_LSB;
 
 		// tuples_per_thread is the same for both hist_jobs and partition_jobs
 		arguments->start = i * tuples_per_thread;
@@ -110,6 +105,10 @@ void ReorderArray(relation* rel_array, int n_lsb, reordered_relation** new_rel, 
 		PushJob(sched, &PartitionJob, (void*) arguments);
 	}
 
+	// Free allocated space
+	for (size_t i = 0; i < sched->num_of_threads; i++)
+	  free(histograms[i]);
+	free(histograms);
 
 	// Wait for all threads to finish building their work(barrier)
 	Barrier(sched);
@@ -210,7 +209,7 @@ void PartitionJob(void* args)// int start, int end, int size, int* Psum, int mod
 				arguments->reordered->tuples[i].row_id = arguments->original->tuples[j].row_id;
 				checked_values++;
 				previous_encounter = j + 1;
-				
+
 				// Find the next active bucket
 				short int flag = 0;
 				for (size_t iter = current_bucket+1; iter < arguments->hist_size; iter++)
@@ -233,4 +232,67 @@ void PartitionJob(void* args)// int start, int end, int size, int* Psum, int mod
 	}
 	free(arguments);
 	return;
+}
+
+
+void SerialReorderArray(relation* rel_array, reordered_relation** new_rel)
+{
+	int i = 0;
+	uint64_t hashed_value = 0;
+
+	(*new_rel) = malloc(sizeof(reordered_relation));
+	//Find the size of the psum and the hist arrays
+	(*new_rel)->hist_size = 1;
+	for (i = 0; i < N_LSB; ++i)
+		(*new_rel)->hist_size *= 2;
+
+	// Allocate space for the hist and psum arrays
+	(*new_rel)->psum = malloc((*new_rel)->hist_size * sizeof(int64_t));
+	(*new_rel)->hist = calloc((*new_rel)->hist_size , sizeof(uint64_t));
+	//temp_psum array is used only in this function for faster reordering of the array
+	int64_t* temp_psum = malloc((*new_rel)->hist_size * sizeof(int64_t));
+
+	memset((*new_rel)->psum, -1, (*new_rel)->hist_size * sizeof(int64_t));
+	memset(temp_psum, -1, (*new_rel)->hist_size * sizeof(int64_t));
+
+	//Run rel_array with the hash function and build the histogram
+	for (i = 0; i < rel_array->num_tuples; ++i)
+	{
+		hashed_value = HashFunction1((int32_t) rel_array->tuples[i].value, N_LSB);
+		(*new_rel)->hist[hashed_value]++;
+	}
+
+	//Build the psum array using the histogram
+	int NewStartingPoint = 0;
+	for (i = 0; i < (*new_rel)->hist_size; ++i)
+	{
+		/*If the current bucket has 0 values allocated to it then leave
+		 *psum[CurrentBucket][1] to -1.	*/
+		if ((*new_rel)->hist[i] > 0)
+		{
+			(*new_rel)->psum[i] = NewStartingPoint;
+			temp_psum[i] = NewStartingPoint;
+			NewStartingPoint += (*new_rel)->hist[i];
+		}
+	}
+
+	/*--------------------Build the reordered array----------------------*/
+
+	//Allocate space for the ordered array in new_rel variable
+	(*new_rel)->rel_array = malloc(sizeof(relation));
+	(*new_rel)->rel_array->num_tuples = rel_array->num_tuples;
+	(*new_rel)->rel_array->tuples = malloc(rel_array->num_tuples * sizeof(tuple));
+	//Traverse through the original array
+	for (i = 0; i < rel_array->num_tuples; ++i)
+	{
+		//Find the hash value of the current tuple
+		hashed_value = HashFunction1(rel_array->tuples[i].value, N_LSB);
+		//Using the hash value find the insert position using the temp_psum
+		int InsertPos = temp_psum[hashed_value];
+		(*new_rel)->rel_array->tuples[InsertPos].value = rel_array->tuples[i].value;
+		(*new_rel)->rel_array->tuples[InsertPos].row_id = rel_array->tuples[i].row_id;
+		temp_psum[hashed_value]++;//The InsertPos for the same bucket goes up 1 position
+	}
+	//Free temp_psum array
+	free(temp_psum);
 }

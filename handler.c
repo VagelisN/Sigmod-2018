@@ -27,7 +27,13 @@ int main(void)
 	while (done_flag == 0)
 	{
 		if (scanf("%s",buff) == EOF)
-			freopen("/dev/tty", "r", stdin);
+		{
+			if(freopen("/dev/tty", "r", stdin) == NULL)
+			{
+				fprintf(stderr, "freopen error\n");
+				exit(-1);
+			}
+		}
 		else
 		{
 			if (strcmp(buff,"Done") == 0 )
@@ -52,7 +58,9 @@ int main(void)
 
 	//Create the job scheduler as well as the threads
 	scheduler* sched = NULL;
+#if THREADS > 1
 	SchedulerInit(&sched, THREADS);
+#endif
 
 	//clock_t time_taken = clock();
 	while (1)
@@ -90,6 +98,8 @@ int main(void)
 	//time_taken = clock() - time_taken;
 	//fprintf(stderr, "Total running time is: %.2f seconds.\n", ((double)time_taken)/CLOCKS_PER_SEC);
 	FreeRelationMap(rel_map, relations_count);
+#if THREADS > 1
 	SchedulerDestroy(sched);
+#endif
 	return 0;
 }

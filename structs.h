@@ -8,8 +8,8 @@
 #define CACHE_SIZE 32768 //L1 cache is 32 KB
 #define RESULT_MAX_BUFFER 131072 //number of bits in a result node buffer
 #define RESULT_FINAL_BUFFER 1048576
-#define N_LSB 3 //number of least significant bits used in H1
-#define THREADS 3 // Number of threads used by the scheduler
+#define N_LSB 4 //number of least significant bits used in H1
+#define THREADS 4 // Number of threads used by the scheduler
 
 /** Type definition for a tuple */
 typedef struct tuple

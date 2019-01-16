@@ -18,12 +18,18 @@ result* RadixHashJoin(relation *relR, relation* relS, scheduler* sched)
 	reordered_relation* NewR = NULL;
 	reordered_relation* NewS = NULL;
 
+// Ιf we have more than 1 threads defined, use the parallel rhj
+#if THREADS > 1
 	// Create histogram,psum,R',S'
-	ReorderArray(relR, N_LSB, &NewR, sched);
-	ReorderArray(relS, N_LSB, &NewS, sched);
-
-
-	if (NewR == NULL || NewS == NULL)
+	ReorderArray(relR, &NewR, sched);
+	//If newR is NULL then return NULL without reordering the relation S.
+	if(NewR == NULL)
+	{
+		SchedulerDestroy(sched);
+		return NULL;
+	}
+	ReorderArray(relS, &NewS, sched);
+	if (NewS == NULL)
 	{
 		SchedulerDestroy(sched);
 		return NULL;
@@ -68,6 +74,53 @@ result* RadixHashJoin(relation *relR, relation* relS, scheduler* sched)
 	FreeReorderRelation(NewS);
 	FreeReorderRelation(NewR);
 	return final_results;
+
+#elif THREADS == 1
+
+	//Execute the serial preprocess
+	SerialReorderArray(relR, &NewR);
+	SerialReorderArray(relS, &NewS);
+
+	if (NewR == NULL || NewS == NULL)
+		return NULL;
+
+	result *results = NULL;
+	//Execute the serial rhj
+	for (i = 0; i < NewR->hist_size; ++i)
+	{
+		//if both relations have elements in this bucket
+		if (NewR->hist[i] != 0 && NewS->hist[i] != 0)
+		{
+			bc_index* ind = NULL;
+			//if R is bigger than S
+			if( NewR->hist[i] >= NewS->hist[i])
+			{
+
+				//Create a second layer index for the respective bucket of S
+				InitIndex(&ind, NewS->hist[i], NewS->psum[i]);
+				CreateIndex(NewS,&ind,i);
+				//Get results
+				GetResults(NewR,NewS,ind,&results,i,0);
+			}
+			//if S is bigger than R
+			else
+			{
+				//Create a second layer index for the respective bucket of R
+				InitIndex(&ind, NewR->hist[i], NewR->psum[i]);
+				CreateIndex(NewR,&ind,i);
+				//GetResults
+				GetResults(NewS,NewR,ind,&results,i,1);
+			}
+			DeleteIndex(&ind);
+		}
+	}
+	//Free NewS and NewR
+	FreeReorderRelation(NewS);
+	FreeReorderRelation(NewR);
+	return results;
+
+
+#endif
 }
 
 void JoinJob(void *arguments)

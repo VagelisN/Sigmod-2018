@@ -5,44 +5,44 @@ SRCS = handler.c preprocess.c results.c rhjoin.c query.c inter_res.c filter.c re
 HEADER = preprocess.h results.h rhjoin.h structs.h query.h inter_res.h filter.h relation_list.h relation_map.h scheduler.h stats.h best_tree.h
 
 $(PROG): $(OBJS)
-	gcc -g $(OBJS) -o $(PROG) -lpthread -lrt -lm
+	gcc -Ofast $(OBJS) -o $(PROG) -lpthread -lrt -lm
 
 
 handler.o: handler.c
-	gcc -g3 -c  handler.c
-	
+	gcc -Ofast -c  handler.c
+
 preprocess.o:
-	gcc -g3 -c preprocess.c
-	
+	gcc -Ofast -c preprocess.c
+
 results.o:
-	gcc -g3 -c results.c
-	
+	gcc -Ofast -c results.c
+
 rhjoin.o:
-	gcc -g3 -c rhjoin.c
+	gcc -Ofast -c rhjoin.c
 
 query.o:
-	gcc -g3 -c query.c
+	gcc -Ofast -c query.c
 
 inter_res.o:
-	gcc -g3 -c inter_res.c
+	gcc -Ofast -c inter_res.c
 
 filter.o:
-	gcc -g3 -c filter.c
+	gcc -Ofast -c filter.c
 
 relation_map.o:
-	gcc -g3 -c relation_map.c
+	gcc -Ofast -c relation_map.c
 
 relation_list.o:
-	gcc -g3 -c relation_list.c
+	gcc -Ofast -c relation_list.c
 
 scheduler.o:
-	gcc -g3 -c scheduler.c
+	gcc -Ofast -c scheduler.c
 
 stats.o:
-	gcc -g3 -c stats.c
+	gcc -Ofast -c stats.c
 
 best_tree.o:
-	gcc -g3 -c best_tree.c
+	gcc -Ofast -c best_tree.c
 
 clean:
 	rm $(OBJS) $(PROG)
