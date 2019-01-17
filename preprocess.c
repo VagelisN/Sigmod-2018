@@ -9,110 +9,174 @@
 #include "rhjoin.h"
 #include "results.h"
 
-void ReorderArray(relation* rel_array, reordered_relation** new_rel, scheduler *sched)
+#if THREADS > 1
+void ReorderArray(relation* relR, relation* relS, reordered_relation** newR, reordered_relation** newS, scheduler *sched)
 {
 	int hist_size = 1;
 	for (int i = 0; i < N_LSB; ++i)
 		hist_size *= 2;
 
-	// the number of hist jobs is equal to the number of threads
-	sched->answers_waiting = sched->num_of_threads;
+	/*---------------------------HIST JOBS------------------------------------*/
+	// the number of hist jobs is equal to the number of threads for each relation
+	sched->answers_waiting = 2 * sched->num_of_threads;
 
-	uint64_t **histograms = calloc(sched->num_of_threads , sizeof(uint64_t *));
+	/* Each position of this array is a histogram for a HistJob which we will use
+	 * to create the HistR and HistS.*/
+	uint64_t **histogramsR = calloc(sched->num_of_threads , sizeof(uint64_t *));
+	uint64_t **histogramsS = calloc(sched->num_of_threads , sizeof(uint64_t *));
 
 	// Split up the num_tuples so each thread gets the same
-	int tuples_per_thread = (rel_array->num_tuples) / sched->num_of_threads;
+	int tuples_per_threadR = (relR->num_tuples) / sched->num_of_threads;
+	int tuples_per_threadS = (relS->num_tuples) / sched->num_of_threads;
 
 	// For each thread
 	for (size_t i = 0; i < sched->num_of_threads; i++)
 	{
-	  // Set the arguments
+	  // Set the arguments for relR
 	  hist_arguments *arguments = malloc(sizeof(hist_arguments));
-	  arguments->hist = &histograms[i];
+	  arguments->hist = &histogramsR[i];
 	  arguments->n_lsb = N_LSB;
 	  arguments->hist_size = hist_size;
-	  arguments->rel = rel_array;
-	  arguments->start = i * tuples_per_thread;
-
+	  arguments->rel = relR;
+	  arguments->start = i * tuples_per_threadR;
 	  // If we are setting up the last thread, end is the end of the relation
-	  if(i != sched->num_of_threads - 1)arguments->end = (i+1) * tuples_per_thread;
-	  else arguments->end = rel_array->num_tuples;
+	  if(i != sched->num_of_threads - 1)arguments->end = (i+1) * tuples_per_threadR;
+	  else arguments->end = relR->num_tuples;
+ 		// Enqueue it in the scheduler
+	  PushJob(sched, &HistJob,(void*)arguments);
 
-	  // Enqueue it in the scheduler
+		//Set the arguments for relS
+		arguments = malloc(sizeof(hist_arguments));
+	  arguments->hist = &histogramsS[i];
+	  arguments->n_lsb = N_LSB;
+	  arguments->hist_size = hist_size;
+	  arguments->rel = relS;
+	  arguments->start = i * tuples_per_threadS;
+	  // If we are setting up the last thread, end is the end of the relation
+	  if(i != sched->num_of_threads - 1)arguments->end = (i+1) * tuples_per_threadS;
+	  else arguments->end = relS->num_tuples;
+ 		// Enqueue it in the scheduler
 	  PushJob(sched, &HistJob,(void*)arguments);
 	}
 
-	// Allocate the Hist and Psum arrays
-	int64_t *Psum = malloc(hist_size * sizeof(int64_t));
-	uint64_t *Hist = calloc(hist_size, sizeof(uint64_t));
-	memset(Psum, -1 , hist_size * sizeof(int64_t));
+	// Allocate the Hist and Psum arrays for both relations before the HistJobs finish
+	//For relation R
+	int64_t *PsumR = malloc(hist_size * sizeof(int64_t));
+	uint64_t *HistR = calloc(hist_size, sizeof(uint64_t));
+	memset(PsumR, -1 , hist_size * sizeof(int64_t));
+
+	//For relation S
+	int64_t *PsumS = malloc(hist_size * sizeof(int64_t));
+	uint64_t *HistS = calloc(hist_size, sizeof(uint64_t));
+	memset(PsumS, -1 , hist_size * sizeof(int64_t));
 
 	// Wait for all threads to finish building their work(barrier)
 	Barrier(sched);
 
-	// Build the whole Histogram from the
-	short int flag = 1;
-	int new_start = 0;
+	/*------------------------HIST JOBS finished--------------------------------------*/
+
+	// Build the whole Histogram from the thread histograms.
+	short int null_flag_R = 1;
+	short int null_flag_S = 1;
+	int new_start_R = 0;
+	int new_start_S = 0;
 	for (size_t i = 0; i < hist_size; ++i)
 	{
 		for (size_t j = 0; j < sched->num_of_threads; ++j)
-			Hist[i] += histograms[j][i];
-		if (Hist[i] > 0)
+		{
+			HistR[i] += histogramsR[j][i];
+			HistS[i] += histogramsS[j][i];
+		}
+		//Create the Psum arrays from the Hist[i] which is now complete
+		if (HistR[i] > 0)
 	  {
-			flag = 0;
-	    Psum[i] = new_start;
-	    new_start += Hist[i];
+			null_flag_R = 0;
+	    PsumR[i] = new_start_R;
+	    new_start_R += HistR[i];
 	  }
+		if (HistS[i] > 0) {
+			null_flag_S = 0;
+			PsumS[i] = new_start_S;
+			new_start_S += HistS[i];
+		}
 	}
-	if (flag == 1)
+	if (null_flag_R == 1 || null_flag_S == 1)
 	{
-		(*new_rel) = NULL;
+		(*newR) = NULL;
+		(*newS) = NULL;
 		return;
 	}
 
 	/*--------------------Build the reordered array----------------------*/
 
-	//Allocate space for the ordered array in new_rel variable
-	(*new_rel) = malloc(sizeof(reordered_relation));
-	(*new_rel)->rel_array = malloc(sizeof(relation));
-	(*new_rel)->rel_array->num_tuples = rel_array->num_tuples;
-	(*new_rel)->rel_array->tuples = calloc(rel_array->num_tuples , sizeof(tuple));
+	//Allocate space for the ordered array in newR variable
+	(*newR) = malloc(sizeof(reordered_relation));
+	(*newR)->rel_array = malloc(sizeof(relation));
+	(*newR)->rel_array->num_tuples = relR->num_tuples;
+	(*newR)->rel_array->tuples = calloc(relR->num_tuples , sizeof(tuple));
+	(*newR)->hist_size = hist_size;
+	(*newR)->hist = HistR;
+	(*newR)->psum = PsumR;
 
-	(*new_rel)->hist_size = hist_size;
-	(*new_rel)->hist = Hist;
-	(*new_rel)->psum = Psum;
+	//Allocate space for the newS reordered variable
+	(*newS) = malloc(sizeof(reordered_relation));
+	(*newS)->rel_array = malloc(sizeof(relation));
+	(*newS)->rel_array->num_tuples = relS->num_tuples;
+	(*newS)->rel_array->tuples = calloc(relS->num_tuples , sizeof(tuple));
+	(*newS)->hist_size = hist_size;
+	(*newS)->hist = HistS;
+	(*newS)->psum = PsumS;
 
-	//Set up the arguments
-	sched->answers_waiting = sched->num_of_threads;
+	//For each relation we have num_of_threads * PartitionJobs
+	sched->answers_waiting = 2 * sched->num_of_threads;
 
+	/*--------------------------------Partition JOBS---------------------------------------*/
 	for (size_t i = 0; i < sched->num_of_threads; i++)
 	{
+		//Set the arguments for newR PartitionJob
 		part_arguments *arguments = malloc(sizeof(part_arguments));
-		arguments->reordered = (*new_rel)->rel_array;
+		arguments->reordered = (*newR)->rel_array;
 		arguments->hist_size = hist_size;
-		arguments->original = rel_array;
+		arguments->original = relR;
 		arguments->n_lsb = N_LSB;
-
 		// tuples_per_thread is the same for both hist_jobs and partition_jobs
-		arguments->start = i * tuples_per_thread;
-		arguments->psum = Psum;
-
+		arguments->start = i * tuples_per_threadR;
+		arguments->psum = PsumR;
 	  // If we are setting up the last thread, end is the end of the relation
-	  if(i != sched->num_of_threads - 1)arguments->end = (i+1) * tuples_per_thread;
-	  else arguments->end = rel_array->num_tuples;
+	  if(i != sched->num_of_threads - 1)arguments->end = (i+1) * tuples_per_threadR;
+	  else arguments->end = relR->num_tuples;
+		// Enqueue it in the scheduler
+		PushJob(sched, &PartitionJob, (void*) arguments);
 
+		//Set the arguments for the newS PartitionJob
+		arguments = malloc(sizeof(part_arguments));
+		arguments->reordered = (*newS)->rel_array;
+		arguments->hist_size = hist_size;
+		arguments->original = relS;
+		arguments->n_lsb = N_LSB;
+		// tuples_per_thread is the same for both hist_jobs and partition_jobs
+		arguments->start = i * tuples_per_threadS;
+		arguments->psum = PsumS;
+		// If we are setting up the last thread, end is the end of the relation
+		if(i != sched->num_of_threads - 1)arguments->end = (i+1) * tuples_per_threadS;
+		else arguments->end = relS->num_tuples;
 		// Enqueue it in the scheduler
 		PushJob(sched, &PartitionJob, (void*) arguments);
 	}
 
-	// Free allocated space
+	// Free allocated space used by HistJobs
 	for (size_t i = 0; i < sched->num_of_threads; i++)
-	  free(histograms[i]);
-	free(histograms);
+	{
+	  free(histogramsR[i]);
+		free(histogramsS[i]);
+	}
+	free(histogramsR);
+	free(histogramsS);
 
 	// Wait for all threads to finish building their work(barrier)
 	Barrier(sched);
 }
+#endif
 
 void HistJob(void *arguments)
 {
@@ -234,7 +298,7 @@ void PartitionJob(void* args)// int start, int end, int size, int* Psum, int mod
 	return;
 }
 
-
+#if THREADS == 1
 void SerialReorderArray(relation* rel_array, reordered_relation** new_rel)
 {
 	int i = 0;
@@ -296,3 +360,4 @@ void SerialReorderArray(relation* rel_array, reordered_relation** new_rel)
 	//Free temp_psum array
 	free(temp_psum);
 }
+#endif

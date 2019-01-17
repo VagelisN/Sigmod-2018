@@ -21,19 +21,10 @@ result* RadixHashJoin(relation *relR, relation* relS, scheduler* sched)
 // Ιf we have more than 1 threads defined, use the parallel rhj
 #if THREADS > 1
 	// Create histogram,psum,R',S'
-	ReorderArray(relR, &NewR, sched);
+	ReorderArray(relR, relS, &NewR, &NewS, sched);
 	//If newR is NULL then return NULL without reordering the relation S.
-	if(NewR == NULL)
-	{
-		SchedulerDestroy(sched);
+	if(NewR == NULL || NewS == NULL)
 		return NULL;
-	}
-	ReorderArray(relS, &NewS, sched);
-	if (NewS == NULL)
-	{
-		SchedulerDestroy(sched);
-		return NULL;
-	}
 	struct result* results= NULL;
 
 	// Create an array with hist_size result lists
@@ -83,7 +74,6 @@ result* RadixHashJoin(relation *relR, relation* relS, scheduler* sched)
 
 	if (NewR == NULL || NewS == NULL)
 		return NULL;
-
 	result *results = NULL;
 	//Execute the serial rhj
 	for (i = 0; i < NewR->hist_size; ++i)
@@ -95,7 +85,6 @@ result* RadixHashJoin(relation *relR, relation* relS, scheduler* sched)
 			//if R is bigger than S
 			if( NewR->hist[i] >= NewS->hist[i])
 			{
-
 				//Create a second layer index for the respective bucket of S
 				InitIndex(&ind, NewS->hist[i], NewS->psum[i]);
 				CreateIndex(NewS,&ind,i);
@@ -118,8 +107,6 @@ result* RadixHashJoin(relation *relR, relation* relS, scheduler* sched)
 	FreeReorderRelation(NewS);
 	FreeReorderRelation(NewR);
 	return results;
-
-
 #endif
 }
 

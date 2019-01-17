@@ -6,9 +6,10 @@
 /*
  * Reorders an row stored array so it is sorted based on the values that belong to the
  * same bucket. Stores the ordered array , the histogram and the Psum array in a
- * ReorderedRelation variable.
+ * ReorderedRelation variable. UPDATED FUNCTIONALITY: Now reorderes both relations
+ * used by the RHJ.
  */
-void ReorderArray(relation* rel_array, reordered_relation** new_rel,scheduler *sched);
+void ReorderArray(relation* relR, relation* relS, reordered_relation** newR, reordered_relation** newS, scheduler *sched);
 
 /** Free the allocated memory used for ReorderedRelation variables */
 void FreeReorderRelation(reordered_relation *rel);
